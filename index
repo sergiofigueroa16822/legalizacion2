@@ -350,7 +350,7 @@
             const badge = document.getElementById('db-status-badge');
             
             // Definir posibles rutas (Relativa directa y Absoluta dinámica según GitHub Pages)
-            const jsonFileName = 'arancel_chile_4.json';
+            const jsonFileName = 'arancel_chile.json';
             const possiblePaths = [
                 `./${jsonFileName}`,
                 new URL(jsonFileName, window.location.href).href,
