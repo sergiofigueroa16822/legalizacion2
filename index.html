@@ -344,7 +344,8 @@
         <span id="toast-text">Checklist copiada al portapapeles</span>
     </div>
 
-   // BASE DE DATOS Y ESTADO GLOBAL
+<script>
+    // BASE DE DATOS Y ESTADO GLOBAL
     let arancelDatabase = [];
     let currentTariff = null;
 
@@ -473,47 +474,55 @@
         "RANCHO": "RANCHO DE NAVES / AERONAVES (COD. 40)"
       };
 
-      statusTitle.textContent = regimenNames[regimen] || "DUS AÉREA CHILE";
+      if (statusTitle) statusTitle.textContent = regimenNames[regimen] || "DUS AÉREA CHILE";
 
-      if (requiereAgente) {
-        badgeMandato.textContent = "Agente Aduana Obligatorio (≥ USD 3.000)";
-        badgeMandato.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-red-600 text-white";
-      } else {
-        badgeMandato.textContent = "Tramitación Directa / Simplificada (< USD 3.000)";
-        badgeMandato.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-600 text-white";
+      if (badgeMandato) {
+        if (requiereAgente) {
+          badgeMandato.textContent = "Agente Aduana Obligatorio (≥ USD 3.000)";
+          badgeMandato.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-red-600 text-white";
+        } else {
+          badgeMandato.textContent = "Tramitación Directa / Simplificada (< USD 3.000)";
+          badgeMandato.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-600 text-white";
+        }
       }
 
       // Guía de Despacho
       const resGdStatus = document.getElementById('res-gd-status');
       const resGdText = document.getElementById('res-gd-text');
-      if (trasladaCamion) {
-        resGdStatus.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-500"></i> OBLIGATORIA`;
-        resGdText.textContent = "Exigida para respaldar el tránsito terrestre hacia el aeropuerto.";
-      } else {
-        resGdStatus.innerHTML = `<i class="fa-solid fa-circle-minus text-slate-400"></i> NO REQUERIDA`;
-        resGdText.textContent = "Ingreso directo sin traslado en camión.";
+      if (resGdStatus && resGdText) {
+        if (trasladaCamion) {
+          resGdStatus.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-500"></i> OBLIGATORIA`;
+          resGdText.textContent = "Exigida para respaldar el tránsito terrestre hacia el aeropuerto.";
+        } else {
+          resGdStatus.innerHTML = `<i class="fa-solid fa-circle-minus text-slate-400"></i> NO REQUERIDA`;
+          resGdText.textContent = "Ingreso directo sin traslado en camión.";
+        }
       }
 
       // AWB Status
       const resAwbStatus = document.getElementById('res-awb-status');
       const resAwbText = document.getElementById('res-awb-text');
-      if (requiereAWBValorada) {
-        resAwbStatus.innerHTML = `<i class="fa-solid fa-file-invoice-dollar text-aduana-600"></i> AWB VALORADA (FLETE)`;
-        resAwbText.textContent = `Incoterm ${incoterm} exige desglose de flete contratado.`;
-      } else {
-        resAwbStatus.innerHTML = `<i class="fa-solid fa-file-lines text-slate-600"></i> AWB ESTÁNDAR`;
-        resAwbText.textContent = `Incoterm ${incoterm} (Flete por cobrar o flete no incluido).`;
+      if (resAwbStatus && resAwbText) {
+        if (requiereAWBValorada) {
+          resAwbStatus.innerHTML = `<i class="fa-solid fa-file-invoice-dollar text-aduana-600"></i> AWB VALORADA (FLETE)`;
+          resAwbText.textContent = `Incoterm ${incoterm} exige desglose de flete contratado.`;
+        } else {
+          resAwbStatus.innerHTML = `<i class="fa-solid fa-file-lines text-slate-600"></i> AWB ESTÁNDAR`;
+          resAwbText.textContent = `Incoterm ${incoterm} (Flete por cobrar o flete no incluido).`;
+        }
       }
 
       // Seguro Status
       const resSegStatus = document.getElementById('res-seg-status');
       const resSegText = document.getElementById('res-seg-text');
-      if (seguroContratado) {
-        resSegStatus.innerHTML = `<i class="fa-solid fa-shield-check text-emerald-500"></i> PÓLIZA EFECTIVA`;
-        resSegText.textContent = "Póliza real de seguro contratada en Chile.";
-      } else {
-        resSegStatus.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-500"></i> SEGURO TEÓRICO (2%)`;
-        resSegText.textContent = "Se aplicará 2% sobre valor FOB por tabla aduanera.";
+      if (resSegStatus && resSegText) {
+        if (seguroContratado) {
+          resSegStatus.innerHTML = `<i class="fa-solid fa-shield-check text-emerald-500"></i> PÓLIZA EFECTIVA`;
+          resSegText.textContent = "Póliza real de seguro contratada en Chile.";
+        } else {
+          resSegStatus.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-500"></i> SEGURO TEÓRICO (2%)`;
+          resSegText.textContent = "Se aplicará 2% sobre valor FOB por tabla aduanera.";
+        }
       }
     }
 
@@ -522,6 +531,7 @@
       cargarBaseDatosArancel();
     });
   </script>
+</body>
 
   <script src="login.js" defer></script>
 
