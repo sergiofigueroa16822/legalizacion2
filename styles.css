@@ -1,62 +1,124 @@
-/* Estilos específicos para la tarjeta de login */
-.login-card {
-  background: #ffffff;
-  padding: 2rem;
+/* ==========================================
+   CONFIGURACIÓN BASE Y VARIABLES
+   ========================================== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  /* Paleta institucional Aduana / Comercio Exterior */
+  --color-aduana-50: #eff6ff;
+  --color-aduana-100: #dbeafe;
+  --color-aduana-500: #3b82f6;
+  --color-aduana-600: #1d4ed8;
+  --color-aduana-700: #1e40af;
+  --color-aduana-800: #1e3a8a;
+  --color-aduana-900: #172554;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background-color: #f8fafc;
+  color: #1e293b;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Integración de clases de color personalizadas para Tailwind CSS CDN */
+.bg-aduana-600 { background-color: var(--color-aduana-600); }
+.bg-aduana-700 { background-color: var(--color-aduana-700); }
+.bg-aduana-800 { background-color: var(--color-aduana-800); }
+
+.text-aduana-600 { color: var(--color-aduana-600); }
+.text-aduana-700 { color: var(--color-aduana-700); }
+
+.border-aduana-500 { border-color: var(--color-aduana-500); }
+.focus\:ring-aduana-500:focus {
+  --tw-ring-color: var(--color-aduana-500);
+}
+
+/* ==========================================
+   COMPONENTES Y BÚSQUEDA DE ARANCEL
+   ========================================== */
+
+/* Barra de desplazamiento personalizada para el desplegable de aranceles */
+#hs-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+#hs-dropdown::-webkit-scrollbar-track {
+  background: #f1f5f9;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  width: 100%;
-  max-width: 360px;
-  margin: 2rem auto; /* Centrado horizontal sin afectar el layout general */
 }
 
-.login-card h2 {
-  margin-top: 0;
-  margin-bottom: 1.5rem;
-  text-align: center;
-  color: #333;
+#hs-dropdown::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 8px;
 }
 
-.form-group {
-  margin-bottom: 1rem;
+#hs-dropdown::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  color: #555;
-}
-
-.form-group input {
-  width: 100%;
-  padding: 0.6rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-sizing: border-box;
-}
-
-.login-card button {
-  width: 100%;
-  padding: 0.75rem;
-  background-color: #3ecf8e;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-weight: bold;
+/* Ítems del buscador de arancel */
+.hs-item-option {
+  transition: all 0.15s ease-in-out;
   cursor: pointer;
 }
 
-.login-card button:hover {
-  background-color: #34b27b;
+.hs-item-option:hover {
+  background-color: #f1f5f9;
 }
 
-.error-msg {
-  color: #e53e3e;
-  font-size: 0.9rem;
-  margin-top: 1rem;
-  text-align: center;
+/* ==========================================
+   CHECKLIST DE DOCUMENTOS
+   ========================================== */
+
+/* Transición suave para los elementos seleccionados en la checklist */
+.checklist-item {
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
-/* Utilidad para ocultar vistas desde JavaScript */
-.hidden {
-  display: none !important;
+.checklist-item:hover {
+  background-color: #f8fafc;
+}
+
+.checklist-item input[type="checkbox"]:checked + label {
+  text-decoration: line-through;
+  color: #64748b;
+}
+
+/* ==========================================
+   ALERTAS Y ESTADOS DINÁMICOS
+   ========================================== */
+
+.badge-vobo-sag {
+  background-color: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.badge-vobo-isp {
+  background-color: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.badge-vobo-sernapesca {
+  background-color: #e0f2fe;
+  color: #075985;
+  border: 1px solid #bae6fd;
+}
+
+.badge-vobo-general {
+  background-color: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+/* Animación sutil de aparición para mensajes flotantes / Toast */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+#toast-msg {
+  animation: fadeIn 0.25s ease-out forwards;
 }
