@@ -338,31 +338,33 @@
 
     </main>
 
-    <!-- NOTIFICACIÓN DE COPIADO TOAST -->
+   <!-- NOTIFICACIÓN DE COPIADO TOAST -->
     <div id="toast-msg" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-2.5 rounded-lg text-xs shadow-xl hidden flex items-center gap-2 border border-slate-700 z-50">
         <i class="fa-solid fa-circle-check text-emerald-400"></i>
         <span id="toast-text">Checklist copiada al portapapeles</span>
     </div>
 
-<script>
+  </div> <!-- Cierre correcto de #app-content -->
+
+  <script>
     // BASE DE DATOS Y ESTADO GLOBAL
     let arancelDatabase = [];
     let currentTariff = null;
 
-    // Normalizador de código para permitir búsquedas con y sin puntos
     function normalizarCodigo(str) {
       return String(str || '').replace(/[\s.]/g, '').toLowerCase();
     }
 
-    // Carga dinámica del archivo JSON arancel_chile.json
     async function cargarBaseDatosArancel() {
       const badge = document.getElementById('db-status-badge');
       try {
         const response = await fetch('arancel_chile.json');
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         arancelDatabase = await response.json();
-        badge.textContent = `${arancelDatabase.length} registros`;
-        badge.className = "text-[10px] bg-emerald-100 text-emerald-800 font-mono px-1.5 py-0.5 rounded border border-emerald-300 font-bold";
+        if (badge) {
+          badge.textContent = `${arancelDatabase.length} registros`;
+          badge.className = "text-[10px] bg-emerald-100 text-emerald-800 font-mono px-1.5 py-0.5 rounded border border-emerald-300 font-bold";
+        }
         
         if (arancelDatabase.length > 0) {
           currentTariff = arancelDatabase[0];
@@ -371,8 +373,10 @@
         }
       } catch (error) {
         console.error('Error al cargar arancel_chile.json:', error);
-        badge.textContent = "Error al cargar JSON";
-        badge.className = "text-[10px] bg-red-100 text-red-800 font-mono px-1.5 py-0.5 rounded border border-red-300 font-bold";
+        if (badge) {
+          badge.textContent = "Error al cargar JSON";
+          badge.className = "text-[10px] bg-red-100 text-red-800 font-mono px-1.5 py-0.5 rounded border border-red-300 font-bold";
+        }
       }
     }
 
@@ -456,7 +460,7 @@
     function evaluarReglasAereas() {
       const regimen = document.getElementById('sel-regimen').value;
       const incoterm = document.getElementById('sel-incoterm').value;
-      const awbType = document.querySelector('input[name="awb_type"]:checked').value;
+      const awbType = document.querySelector('input[name="awb_type"]:checked')?.value || 'DIRECT';
       const fobUSD = parseFloat(document.getElementById('num-fob').value) || 0;
       const trasladaCamion = document.getElementById('chk-traslado-camion').checked;
       const seguroContratado = document.getElementById('chk-seguro-contratado').checked;
@@ -486,7 +490,6 @@
         }
       }
 
-      // Guía de Despacho
       const resGdStatus = document.getElementById('res-gd-status');
       const resGdText = document.getElementById('res-gd-text');
       if (resGdStatus && resGdText) {
@@ -499,7 +502,6 @@
         }
       }
 
-      // AWB Status
       const resAwbStatus = document.getElementById('res-awb-status');
       const resAwbText = document.getElementById('res-awb-text');
       if (resAwbStatus && resAwbText) {
@@ -512,7 +514,6 @@
         }
       }
 
-      // Seguro Status
       const resSegStatus = document.getElementById('res-seg-status');
       const resSegText = document.getElementById('res-seg-text');
       if (resSegStatus && resSegText) {
@@ -526,18 +527,9 @@
       }
     }
 
-    // Inicializar al cargar el DOM
     document.addEventListener('DOMContentLoaded', () => {
       cargarBaseDatosArancel();
     });
   </script>
-</body>
-
-  <script src="login.js" defer></script>
-
-
-
-
-
 </body>
 </html>
