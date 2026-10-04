@@ -1,18 +1,17 @@
 
-
-
 const SUPABASE_URL = 'https://lmmoqcpptyzgscnjwvgk.supabase.co';
+// Reemplaza esta cadena con la anon key (JWT) real copiada de Supabase:
 const SUPABASE_ANON_KEY = 'sb_publishable_xRnGuxmB5oen-G7LDlI6JQ_SUEvLDMr';
 
 let supabase = null;
 
 // Inicialización de Supabase
-if (typeof window.supabase !== 'undefined' && SUPABASE_URL && !SUPABASE_URL.includes('TU_PROYECTO')) {
-  try {
+try {
+  if (window.supabase && typeof window.supabase.createClient === 'function') {
     supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  } catch (err) {
-    console.error("Error al inicializar Supabase:", err);
   }
+} catch (err) {
+  console.error("Error al inicializar Supabase:", err);
 }
 
 // Variables globales para referencias del DOM
@@ -26,19 +25,16 @@ function initDOMElements() {
   submitBtn = document.getElementById('submitBtn');
 }
 
-// Muestra la aplicación y oculta el login
 function showApp() {
   if (loginCard) loginCard.classList.add('hidden');
   if (appContent) appContent.classList.remove('hidden');
 }
 
-// Muestra el login y oculta la aplicación
 function showLogin() {
   if (loginCard) loginCard.classList.remove('hidden');
   if (appContent) appContent.classList.add('hidden');
 }
 
-// Verifica el estado de la sesión activa
 async function checkSession() {
   if (!supabase) {
     if (localStorage.getItem('isLoggedIn') === 'true') {
@@ -62,7 +58,6 @@ async function checkSession() {
   }
 }
 
-// Manejo del evento Submit del formulario de Login
 function setupLoginFormListener() {
   if (!loginForm) return;
 
@@ -81,7 +76,7 @@ function setupLoginFormListener() {
     const email = emailInput ? emailInput.value : '';
     const password = passwordInput ? passwordInput.value : '';
 
-    // Si Supabase no está configurado, permite login local de prueba
+    // Login en modo offline / fallback
     if (!supabase) {
       if (email && password) {
         localStorage.setItem('isLoggedIn', 'true');
@@ -100,7 +95,7 @@ function setupLoginFormListener() {
       return;
     }
 
-    // Inicio de sesión con Supabase
+    // Login con Supabase
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email,
@@ -113,20 +108,13 @@ function setupLoginFormListener() {
             ? 'Correo o contraseña incorrectos.' 
             : error.message;
         }
-        if (submitBtn) {
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Ingresar';
-        }
       } else {
         localStorage.setItem('isLoggedIn', 'true');
-        if (submitBtn) {
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Ingresar';
-        }
         showApp();
       }
     } catch (err) {
       if (errorMessage) errorMessage.textContent = 'Error de conexión con el servidor.';
+    } finally {
       if (submitBtn) {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Ingresar';
@@ -135,7 +123,6 @@ function setupLoginFormListener() {
   });
 }
 
-// Función de Cierre de Sesión (exportada opcionalmente al scope global)
 window.logout = async function() {
   localStorage.removeItem('isLoggedIn');
   if (supabase) {
@@ -144,7 +131,6 @@ window.logout = async function() {
   showLogin();
 };
 
-// Inicialización segura cuando el DOM está 100% cargado
 document.addEventListener('DOMContentLoaded', () => {
   initDOMElements();
   setupLoginFormListener();
