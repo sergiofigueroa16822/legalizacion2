@@ -1,14 +1,10 @@
-// ==========================================
-// CONFIGURACIÓN DE SUPABASE
-// ==========================================
-
 
 // ==========================================
 // CONFIGURACIÓN DE SUPABASE
 // ==========================================
 
 // Pega aquí los datos de tu proyecto Supabase.
-// No uses una service_role key en el navegador.
+// Asegúrate de usar la anon public key (suele empezar con "eyJ...").
 const SUPABASE_URL = 'https://lmmoqcpptyzgscnjwvgk.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_xRnGuxmB5oen-G7LDlI6JQ_SUEvLDMr';
 
@@ -40,15 +36,15 @@ function initSupabaseClient() {
     if (
       !SUPABASE_URL ||
       SUPABASE_URL.includes('TU-PROYECTO') ||
-      !SUPABASE_PUBLISHABLE_KEY ||
-      SUPABASE_PUBLISHABLE_KEY.includes('TU_CLAVE')
+      !SUPABASE_ANON_KEY ||
+      SUPABASE_ANON_KEY.includes('TU_CLAVE')
     ) {
-      throw new Error('Debes configurar SUPABASE_URL y SUPABASE_PUBLISHABLE_KEY en login.js.');
+      throw new Error('Debes configurar SUPABASE_URL y SUPABASE_ANON_KEY en login.js.');
     }
 
     supabaseClient = window.supabase.createClient(
       SUPABASE_URL,
-      SUPABASE_PUBLISHABLE_KEY,
+      SUPABASE_ANON_KEY,
       {
         auth: {
           persistSession: true,
@@ -181,9 +177,6 @@ async function handleLogin(event) {
     }
 
     console.log('Login correcto:', data.session.user.email);
-
-    // Se muestra aquí para que el cambio sea inmediato.
-    // onAuthStateChange también confirma el cambio de sesión.
     mostrarAplicacionPrincipal();
   } catch (error) {
     console.error('Error inesperado en login:', error);
