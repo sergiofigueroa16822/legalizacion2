@@ -1,535 +1,319 @@
 <!DOCTYPE html>
-<html lang="es" class="h-full bg-slate-50">
+<html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DUS Legalización Aérea Chile + Vistos Buenos Arancelarios</title>
+  <title>DUS Aérea Chile | Validador Aduanero</title>
   
-  <!-- Tailwind & Fuentes -->
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Google Fonts (Inter) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Estilos Personalizados -->
   <link rel="stylesheet" href="styles.css">
-
-  <!-- SDK Supabase y Lógica de Autenticación -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="login.js" defer></script>
-
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            aduana: { 50: '#f0f4f9', 100: '#dbe5f1', 600: '#004b87', 800: '#003360', 900: '#002244' },
-            copper: { 500: '#d97706', 600: '#b45309' }
-          },
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-            mono: ['JetBrains Mono', 'monospace']
-          }
-        }
-      }
-    }
-  </script>
 </head>
-<body class="h-full text-slate-800 flex flex-col font-sans antialiased bg-slate-50">
+<body class="bg-slate-100 font-sans text-slate-800 antialiased min-h-screen">
 
-  <!-- 1. VISTA DE INICIO DE SESIÓN -->
-  <div class="login-card max-w-md mx-auto my-12 p-6 bg-white rounded-xl shadow-md border border-slate-200">
-    <h2 class="text-xl font-bold text-slate-900 mb-4 text-center">Iniciar Sesión</h2>
-    
-    <form id="loginForm" class="space-y-4">
-      <div class="form-group">
-        <label for="email" class="block text-xs font-bold text-slate-700 mb-1">Correo electrónico</label>
-        <input type="email" id="email" required placeholder="tu@email.com" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-aduana-600">
-      </div>
+  <!-- ========================================== -->
+  <!-- VISTA 1: INICIO DE SESIÓN (LOGIN)          -->
+  <!-- ========================================== -->
+  <div id="login-view" class="min-h-screen flex items-center justify-center p-4 bg-slate-900 bg-opacity-95">
+    <div class="max-w-md w-full bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-700">
       
-      <div class="form-group">
-        <label for="password" class="block text-xs font-bold text-slate-700 mb-1">Contraseña</label>
-        <input type="password" id="password" required placeholder="••••••••" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-aduana-600">
+      <!-- Encabezado del Login -->
+      <div class="bg-aduana-700 p-6 text-center text-white space-y-2">
+        <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-white/10 text-white mb-1">
+          <i class="fa-solid fa-plane-departure text-2xl"></i>
+        </div>
+        <h1 class="text-xl font-bold tracking-tight">DUS Aérea Chile</h1>
+        <p class="text-xs text-blue-100">Validador Normativo Aduanero & Legalización DUS</p>
       </div>
-      
-      <button type="submit" id="submitBtn" class="w-full bg-aduana-600 hover:bg-aduana-800 text-white font-bold py-2 px-4 rounded-lg transition text-sm">
-        Ingresar
-      </button>
-    </form>
 
-    <div id="errorMessage" class="error-msg text-red-600 text-xs mt-3 text-center"></div>
+      <!-- Formulario de Autenticación -->
+      <div class="p-6 space-y-4">
+        <form id="login-form" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1" for="login-email">Correo Electrónico</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                <i class="fa-solid fa-envelope text-xs"></i>
+              </span>
+              <input type="email" id="login-email" required placeholder="usuario@agencia.cl" class="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-aduana-500 focus:border-aduana-500 outline-none transition">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1" for="login-password">Contraseña</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                <i class="fa-solid fa-lock text-xs"></i>
+              </span>
+              <input type="password" id="login-password" required placeholder="••••••••" class="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-aduana-500 focus:border-aduana-500 outline-none transition">
+            </div>
+          </div>
+
+          <!-- Div para desplegar mensajes de error dinámicos -->
+          <div id="login-error" class="p-2.5 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs hidden"></div>
+
+          <button type="submit" id="login-submit-btn" class="w-full bg-aduana-600 hover:bg-aduana-700 active:bg-aduana-800 text-white font-bold py-2.5 rounded-lg shadow-md transition flex items-center justify-center gap-2 text-sm">
+            <span>Ingresar al Sistema</span>
+            <i class="fa-solid fa-arrow-right text-xs"></i>
+          </button>
+        </form>
+
+        <div class="pt-4 border-t border-slate-100 text-center">
+          <p class="text-[11px] text-slate-400">Acceso restringido para personal de operaciones y agentes de aduana.</p>
+        </div>
+      </div>
+
+    </div>
   </div>
 
-  <!-- 2. VISTA DE LA APLICACIÓN PRINCIPAL (AQUÍ VA TU HEADER Y MAIN) -->
-  <div id="app-content" class="hidden flex-1 flex flex-col">
+
+  <!-- ========================================== -->
+  <!-- VISTA 2: APLICACIÓN PRINCIPAL              -->
+  <!-- ========================================== -->
+  <div id="app-view" class="hidden min-h-screen flex flex-col">
     
-    <!-- Header principal -->
-    <header class="bg-aduana-900 text-white shadow-md border-b-4 border-aduana-600 no-print">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap justify-between items-center gap-4">
-        <div class="flex items-center space-x-3">
-          <div class="bg-aduana-600 text-white font-bold text-xl p-2.5 rounded-xl shadow-sm border border-aduana-500">
+    <!-- Barra Superior de Navegación -->
+    <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40 shadow-md">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-aduana-600 flex items-center justify-center font-bold text-sm">
             <i class="fa-solid fa-plane-departure"></i>
           </div>
           <div>
-            <h1 class="text-lg font-extrabold tracking-tight leading-none text-white flex items-center gap-2">
-              DUS Aérea + Vistos Buenos Chile
-              <span class="text-xs bg-aduana-800 text-sky-200 font-mono px-2 py-0.5 rounded font-semibold border border-aduana-600">Arancel SNA & CNA Cap. IV</span>
-            </h1>
-            <p class="text-xs text-slate-300 mt-1">Asistente de Legalización Aduanera, Póliza, AWB y Certificados Regulatorios</p>
+            <h1 class="font-bold text-sm leading-none">DUS Aérea Chile</h1>
+            <span class="text-[10px] text-slate-400">Normativa CNA & Compendio Aduanero</span>
           </div>
         </div>
-        
-        <div class="flex items-center gap-2.5 text-xs">
-          <button onclick="copyChecklistToClipboard()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1.5 font-medium">
-            <i class="fa-regular fa-copy"></i> Copiar
-          </button>
-          <button onclick="window.print()" class="bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-1.5 rounded-lg transition font-medium flex items-center gap-1.5 shadow-sm">
-            <i class="fa-solid fa-print"></i> Imprimir Expediente
-          </button>
-          <button onclick="logout()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg transition font-medium flex items-center gap-1.5">
-            <i class="fa-solid fa-right-from-bracket"></i> Salir
+
+        <div class="flex items-center gap-3">
+          <span id="db-status-badge" class="text-[10px] bg-slate-800 text-slate-300 font-mono px-2 py-1 rounded border border-slate-700">
+            Cargando Base de Datos...
+          </span>
+          <button onclick="window.logout()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span>Salir</span>
           </button>
         </div>
       </div>
     </header>
 
-    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-        <!-- PANEL IZQUIERDO: CONFIGURADOR & BUSCADOR ARANCELARIO (5 columnas) -->
-        <section class="lg:col-span-5 space-y-5 no-print">
-            
-            <!-- TARJETA: BUSCADOR DE ARANCEL DE ADUANAS DE CHILE -->
-            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-3 relative">
-                <div class="border-b border-slate-100 pb-2 flex justify-between items-center">
-                    <label class="block text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                        <i class="fa-solid fa-barcode text-aduana-600 text-sm"></i> 1. Código Arancelario / Glosa Chilena
-                    </label>
-                    <span id="db-status-badge" class="text-[10px] bg-slate-100 text-slate-600 font-mono px-1.5 py-0.5 rounded">Cargando BD...</span>
-                </div>
-
-                <div class="relative">
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                            <i class="fa-solid fa-magnifying-glass text-xs"></i>
-                        </span>
-                        <input type="text" id="hs-search-input" onkeyup="filterTariffCodes()" placeholder="Buscar por código (ej. 0101.21.00 u 01012100) o descripción..." 
-                               class="w-full pl-9 pr-8 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:ring-2 focus:ring-aduana-600 focus:border-aduana-600 bg-slate-50">
-                        <button onclick="clearHsSearch()" class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600">
-                            <i class="fa-solid fa-xmark text-xs"></i>
-                        </button>
-                    </div>
-
-                    <!-- Lista desplegable de sugerencias -->
-                    <div id="hs-dropdown" class="hidden absolute z-30 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 overflow-y-auto custom-scroll divide-y divide-slate-100 text-xs">
-                        <!-- JS Inject Results -->
-                    </div>
-                </div>
-
-                <!-- Partida Seleccionada Actual -->
-                <div id="selected-tariff-card" class="p-3 bg-slate-900 text-white rounded-lg border border-slate-800 space-y-1">
-                    <div class="flex justify-between items-center text-[10px] font-mono text-slate-400">
-                        <span>CÓDIGO ARANCELARIO SELECCIONADO</span>
-                        <span id="tariff-organismo-badge" class="bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-bold border border-amber-500/30">N/A</span>
-                    </div>
-                    <div class="flex items-baseline gap-2">
-                        <span id="tariff-code-display" class="font-mono text-sm font-extrabold text-amber-400">--</span>
-                        <span id="tariff-glosa-display" class="font-bold text-xs truncate text-slate-100">Seleccione un código</span>
-                    </div>
-                    <p id="tariff-vobo-desc" class="text-[11px] text-slate-300 leading-tight pt-1 border-t border-slate-800/80">
-                        Ingrese un código o palabra clave para realizar la consulta en la base arancelaria.
-                    </p>
-                </div>
-            </div>
-
-            <!-- TARJETA: PARAMETROS OPERATIVOS DUS -->
-            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-4">
-                
-                <div class="border-b border-slate-100 pb-2 flex justify-between items-center">
-                    <h2 class="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                        <i class="fa-solid fa-sliders text-aduana-600"></i> 2. Datos Operativos de Salida
-                    </h2>
-                    <span class="text-[10px] text-slate-400 font-mono">CNA Cap. IV</span>
-                </div>
-
-                <!-- Regimen / Destinación Aduanera -->
-                <div class="space-y-1">
-                    <label class="block text-[11px] font-bold text-slate-700">Régimen / Destinación Aduanera</label>
-                    <select id="sel-regimen" onchange="evaluarReglasAereas()" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-aduana-600 bg-slate-50">
-                        <option value="DEF" selected>Exportación Definitiva (Código 10)</option>
-                        <option value="TEMP_SALIDA">Salida Temporal (Código 20)</option>
-                        <option value="TEMP_PERFECC">Salida Temporal p/ Perfeccionamiento Pasivo (Código 21)</option>
-                        <option value="REEXP">Reexportación de Mercancías (Código 30)</option>
-                        <option value="RANCHO">Rancho / Provisiones de A bordo (Código 40)</option>
-                    </select>
-                </div>
-
-                <!-- Incoterm Aéreo -->
-                <div class="space-y-1">
-                    <label class="block text-[11px] font-bold text-slate-700">Incoterm 2020 (Exclusivo Aéreo/Multimodal)</label>
-                    <select id="sel-incoterm" onchange="evaluarReglasAereas()" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs font-bold text-aduana-900 bg-slate-50 focus:ring-2 focus:ring-aduana-600">
-                        <option value="FCA" selected>FCA - Free Carrier (Entregado al Transportista)</option>
-                        <option value="CPT">CPT - Carriage Paid To (Flete Pagado hasta Destino)</option>
-                        <option value="CIP">CIP - Carriage & Insurance Paid To (Flete y Seguro Pagados)</option>
-                        <option value="EXW">EXW - Ex Works (En Fábrica)</option>
-                        <option value="DAP">DAP - Delivered at Place (Entregado en Destino)</option>
-                        <option value="DPU">DPU - Delivered at Place Unloaded (Descargado en Destino)</option>
-                        <option value="DDP">DDP - Delivered Duty Paid (Derechos Pagados)</option>
-                    </select>
-                </div>
-
-                <!-- Emisor AWB -->
-                <div class="space-y-1">
-                    <label class="block text-[11px] font-bold text-slate-700">Emisor del Documento de Transporte (AWB)</label>
-                    <div class="grid grid-cols-2 gap-2">
-                        <label class="p-2 border rounded-lg cursor-pointer text-xs flex items-center gap-2 font-medium bg-slate-50 border-slate-200 hover:bg-slate-100">
-                            <input type="radio" name="awb_type" value="DIRECT" checked onchange="evaluarReglasAereas()" class="text-aduana-600">
-                            <span>
-                                <strong class="block text-slate-800 text-[11px]">Aerolínea Directa</strong>
-                                <span class="text-[9px] text-slate-500 block">MAWB Directo</span>
-                            </span>
-                        </label>
-                        <label class="p-2 border rounded-lg cursor-pointer text-xs flex items-center gap-2 font-medium bg-slate-50 border-slate-200 hover:bg-slate-100">
-                            <input type="radio" name="awb_type" value="FORWARDER" onchange="evaluarReglasAereas()" class="text-aduana-600">
-                            <span>
-                                <strong class="block text-slate-800 text-[11px]">Freight Forwarder</strong>
-                                <span class="text-[9px] text-slate-500 block">HAWB + MAWB Consolidado</span>
-                            </span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- FOB USD & Aduana -->
-                <div class="grid grid-cols-2 gap-2.5">
-                    <div>
-                        <label class="block text-[11px] font-bold text-slate-700">Valor Estimado FOB (USD)</label>
-                        <div class="relative mt-0.5">
-                            <span class="absolute inset-y-0 left-0 pl-2 flex items-center text-slate-400 font-bold text-xs">$</span>
-                            <input type="number" id="num-fob" value="5500" min="0" step="500" oninput="evaluarReglasAereas()" class="w-full pl-5 pr-2 py-1.5 border border-slate-300 rounded-lg text-xs font-bold text-slate-900 bg-slate-50">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-bold text-slate-700">Aduana Tramitación</label>
-                        <select id="sel-aduana" class="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 bg-slate-50 mt-0.5">
-                            <option value="33">AMB Santiago (Cod. 33)</option>
-                            <option value="01">Arica Aéreo (Cod. 01)</option>
-                            <option value="02">Iquique Aéreo (Cod. 02)</option>
-                            <option value="08">Antofagasta (Cod. 08)</option>
-                            <option value="28">Puerto Montt (Cod. 28)</option>
-                            <option value="29">Punta Arenas (Cod. 29)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Factores Adicionales -->
-                <div class="pt-2 border-t border-slate-100 space-y-1.5">
-                    <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-700">
-                        <input type="checkbox" id="chk-traslado-camion" checked onchange="evaluarReglasAereas()" class="rounded text-aduana-600">
-                        <span class="text-[11px]">¿Tránsito terrestre en camión hacia Aeropuerto?</span>
-                    </label>
-
-                    <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-700">
-                        <input type="checkbox" id="chk-seguro-contratado" onchange="evaluarReglasAereas()" class="rounded text-aduana-600">
-                        <span class="text-[11px]">¿Póliza de seguro efectiva contratada en Chile?</span>
-                    </label>
-                </div>
-
-            </div>
-        </section>
-
-        <!-- PANEL DERECHO: CHECKLIST & VISTOS BUENOS ADUANEROS (7 columnas) -->
-        <section class="lg:col-span-7 space-y-5">
-            
-            <!-- TARJETA SÍNTESIS DE LEGALIZACIÓN DUS -->
-            <div id="status-banner" class="p-4 rounded-xl border bg-aduana-50 border-aduana-200 flex items-start gap-3 print-card">
-                <div id="status-icon" class="text-2xl text-aduana-600 mt-0.5">
-                    <i class="fa-solid fa-plane-circle-check"></i>
-                </div>
-                <div class="flex-grow space-y-1">
-                    <div class="flex flex-wrap justify-between items-start gap-2">
-                        <h3 id="status-title" class="font-extrabold text-aduana-900 text-xs sm:text-sm uppercase tracking-wide">
-                            DUS EXPORTACIÓN DEFINITIVA AÉREA
-                        </h3>
-                        <span id="badge-mandato" class="text-[10px] font-bold px-2 py-0.5 rounded bg-red-600 text-white">
-                            Agente Obligatorio (> USD 3.000)
-                        </span>
-                    </div>
-                    <p id="status-summary" class="text-xs text-slate-700 leading-relaxed">
-                        Evaluación para salida de carga por vía aérea con respaldo documental de transporte y certificados sectoriales exigibles.
-                    </p>
-                </div>
-            </div>
-
-            <!-- TARJETA DE VISTOS BUENOS SECTORIALES (PROMINENTE) -->
-            <div id="vobo-card-alert" class="p-4 rounded-xl border border-amber-300 bg-amber-50/90 shadow-sm space-y-2">
-                <div class="flex items-center justify-between border-b border-amber-200/80 pb-2">
-                    <div class="flex items-center gap-2 font-bold text-amber-900 text-xs">
-                        <i class="fa-solid fa-building-shield text-amber-600 text-sm"></i>
-                        <span>REQUISITOS SECTORIALES Y CERTIFICADOS (VISTOS BUENOS)</span>
-                    </div>
-                    <span id="vobo-organismo-tag" class="bg-amber-800 text-white text-[10px] font-mono px-2 py-0.5 rounded font-bold">
-                        N/A
-                    </span>
-                </div>
-                <div class="text-xs space-y-1 text-slate-800">
-                    <div id="vobo-title" class="font-bold text-amber-950">Seleccione una partida arancelaria</div>
-                    <p id="vobo-full-desc" class="text-[11px] leading-relaxed text-slate-700">
-                        Los requerimientos de Vistos Buenos sectoriales se actualizarán automáticamente al seleccionar un código arancelario.
-                    </p>
-                </div>
-            </div>
-
-            <!-- TABLA DE EVALUACIÓN RÁPIDA (GD, AWB, SEGURO) -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div class="p-3 rounded-xl border border-slate-200 bg-white space-y-1 shadow-sm print-card">
-                    <span class="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block">1. Guía de Despacho SII</span>
-                    <div id="res-gd-status" class="font-bold text-xs text-slate-900 flex items-center gap-1">
-                        <i class="fa-solid fa-circle-check text-emerald-500"></i> OBLIGATORIA
-                    </div>
-                    <p id="res-gd-text" class="text-[10px] text-slate-500 leading-tight">
-                        Exigida para respaldar el tránsito hacia el Aeropuerto.
-                    </p>
-                </div>
-
-                <div class="p-3 rounded-xl border border-slate-200 bg-white space-y-1 shadow-sm print-card">
-                    <span class="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block">2. Valoración AWB (Flete)</span>
-                    <div id="res-awb-status" class="font-bold text-xs text-aduana-800 flex items-center gap-1">
-                        <i class="fa-solid fa-file-invoice text-aduana-600"></i> AWB VALORADA
-                    </div>
-                    <p id="res-awb-text" class="text-[10px] text-slate-500 leading-tight">
-                        Debe detallar flete según Incoterm.
-                    </p>
-                </div>
-
-                <div class="p-3 rounded-xl border border-slate-200 bg-white space-y-1 shadow-sm print-card">
-                    <span class="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block">3. Póliza / Seguro</span>
-                    <div id="res-seg-status" class="font-bold text-xs text-slate-900 flex items-center gap-1">
-                        <i class="fa-solid fa-shield-halved text-amber-500"></i> CONDICIONAL
-                    </div>
-                    <p id="res-seg-text" class="text-[10px] text-slate-500 leading-tight">
-                        Seguro teórico (2%) si no hay póliza real.
-                    </p>
-                </div>
-            </div>
-
-            <!-- CHECKLIST CONSOLIDADA DE DOCUMENTOS OBLIGATORIOS -->
-            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden print-card">
-                <div class="bg-slate-900 text-white px-4 py-3 flex justify-between items-center border-b border-slate-800">
-                    <h3 class="font-bold text-xs sm:text-sm flex items-center gap-2">
-                        <i class="fa-solid fa-clipboard-check text-amber-400"></i> Expediente Digital - Checklist DUS Segundo Mensaje
-                    </h3>
-                    <span class="text-[10px] bg-slate-800 text-slate-300 font-mono px-2 py-0.5 rounded">Respaldo Legajo Legal</span>
-                </div>
-
-                <div id="checklist-container" class="divide-y divide-slate-100 text-xs">
-                    <!-- Dynamic rendering by JS -->
-                </div>
-            </div>
-
-            <!-- RESUMEN EJECUTIVO IMPRESO / EXPORTABLE -->
-            <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 text-xs space-y-2">
-                <div class="font-bold text-slate-900 flex items-center gap-1.5">
-                    <i class="fa-solid fa-gavel text-aduana-600"></i> Consideraciones del Compendio de Normas Aduaneras (SNA)
-                </div>
-                <ul id="normative-list" class="space-y-1 text-slate-600 text-[11px] list-disc pl-4">
-                    <!-- JS generated items -->
-                </ul>
-            </div>
-
-        </section>
-
-    </main>
-
-   <!-- NOTIFICACIÓN DE COPIADO TOAST -->
-    <div id="toast-msg" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-2.5 rounded-lg text-xs shadow-xl hidden flex items-center gap-2 border border-slate-700 z-50">
-        <i class="fa-solid fa-circle-check text-emerald-400"></i>
-        <span id="toast-text">Checklist copiada al portapapeles</span>
-    </div>
-
-  </div> <!-- Cierre correcto de #app-content -->
-
-  <script>
-    // BASE DE DATOS Y ESTADO GLOBAL
-    let arancelDatabase = [];
-    let currentTariff = null;
-
-    function normalizarCodigo(str) {
-      return String(str || '').replace(/[\s.]/g, '').toLowerCase();
-    }
-
-    async function cargarBaseDatosArancel() {
-      const badge = document.getElementById('db-status-badge');
-      try {
-        const response = await fetch('arancel_chile.json');
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        arancelDatabase = await response.json();
-        if (badge) {
-          badge.textContent = `${arancelDatabase.length} registros`;
-          badge.className = "text-[10px] bg-emerald-100 text-emerald-800 font-mono px-1.5 py-0.5 rounded border border-emerald-300 font-bold";
-        }
-        
-        if (arancelDatabase.length > 0) {
-          currentTariff = arancelDatabase[0];
-          updateTariffUI();
-          evaluarReglasAereas();
-        }
-      } catch (error) {
-        console.error('Error al cargar arancel_chile.json:', error);
-        if (badge) {
-          badge.textContent = "Error al cargar JSON";
-          badge.className = "text-[10px] bg-red-100 text-red-800 font-mono px-1.5 py-0.5 rounded border border-red-300 font-bold";
-        }
-      }
-    }
-
-    function filterTariffCodes() {
-      const queryRaw = document.getElementById('hs-search-input').value.trim();
-      const queryNorm = normalizarCodigo(queryRaw);
-      const queryText = queryRaw.toLowerCase();
-      const dropdown = document.getElementById('hs-dropdown');
+    <!-- Contenido Principal -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
       
-      if (!queryRaw) {
-        dropdown.classList.add('hidden');
-        return;
-      }
+      <!-- COLUMNA IZQUIERDA: CONFIGURACIÓN DE PARÁMETROS -->
+      <section class="lg:col-span-5 space-y-6">
+        
+        <!-- Búsqueda de Arancel y Partida -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+          <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+            <i class="fa-solid fa-magnifying-glass text-aduana-600"></i>
+            Clasificación Arancelaria
+          </h2>
 
-      const matches = arancelDatabase.filter(item => {
-        const codeNorm = normalizarCodigo(item.code);
-        const glosaText = String(item.glosa || '').toLowerCase();
-        const orgText = String(item.organismo || '').toLowerCase();
-        const voboText = String(item.vobo_nombre || '').toLowerCase();
-        return codeNorm.includes(queryNorm) || glosaText.includes(queryText) || orgText.includes(queryText) || voboText.includes(queryText);
-      }).slice(0, 30);
-
-      if (matches.length === 0) {
-        dropdown.innerHTML = `
-          <div class="p-3 text-slate-400 text-center text-[11px]">
-            No se encontraron partidas exactas. Se aplicará Régimen General de Salida.
-          </div>
-        `;
-      } else {
-        dropdown.innerHTML = matches.map(item => `
-          <div onclick="selectTariff('${item.code}')" class="p-2.5 hover:bg-slate-100 cursor-pointer transition flex items-start justify-between gap-2">
-            <div>
-              <div class="font-mono font-bold text-aduana-600 text-xs">${item.code || 'S/C'}</div>
-              <div class="font-semibold text-slate-800 text-[11px]">${item.glosa || 'Sin Glosa'}</div>
-              <div class="text-[10px] text-slate-500 leading-tight">${item.vobo_nombre || ''}</div>
+          <div class="relative">
+            <div class="relative">
+              <input type="text" id="hs-search-input" oninput="filterTariffCodes()" placeholder="Buscar por código arancelario o glosa..." class="w-full pl-9 pr-8 py-2 border border-slate-300 rounded-xl text-xs font-mono focus:ring-2 focus:ring-aduana-500 outline-none">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                <i class="fa-solid fa-search text-xs"></i>
+              </span>
+              <button onclick="clearHsSearch()" class="absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-xs"></i>
+              </button>
             </div>
-            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded ${item.obligatorio ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-slate-100 text-slate-600'}">
-              ${item.organismo || 'GENERAL'}
+
+            <!-- Desplegable de Resultados de Búsqueda -->
+            <div id="hs-dropdown" class="absolute z-50 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-60 overflow-y-auto hidden divide-y divide-slate-100">
+            </div>
+          </div>
+
+          <!-- Ficha de la Partida Arancelaria Seleccionada -->
+          <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2">
+            <div class="flex items-center justify-between">
+              <span id="tariff-code-display" class="font-mono font-bold text-aduana-700 text-sm">--.--.--.--</span>
+              <span id="tariff-organismo-badge" class="text-[9px] font-extrabold px-2 py-0.5 rounded bg-slate-200 text-slate-700">GENERAL</span>
+            </div>
+            <p id="tariff-glosa-display" class="text-xs font-medium text-slate-700 leading-snug">Seleccione una partida del buscador para evaluar vistos buenos.</p>
+            <p id="tariff-vobo-desc" class="text-[11px] text-slate-500 italic"></p>
+          </div>
+        </div>
+
+        <!-- Opciones de Operación y Valores DUS -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+          <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+            <i class="fa-solid fa-sliders text-aduana-600"></i>
+            Parámetros de la Operación
+          </h2>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Régimen Aduanero</label>
+              <select id="sel-regimen" onchange="evaluarReglasAereas()" class="w-full p-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-aduana-500">
+                <option value="DEF">10 - Exportación Definitiva</option>
+                <option value="TEMP_SALIDA">20 - Salida Temporal</option>
+                <option value="TEMP_PERFECC">21 - Salida Temp. Perfeccionamiento</option>
+                <option value="REEXP">30 - Reexportación</option>
+                <option value="RANCHO">40 - Rancho Aéreo</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Incoterm</label>
+              <select id="sel-incoterm" onchange="evaluarReglasAereas()" class="w-full p-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-aduana-500">
+                <option value="FCA">FCA - Free Carrier</option>
+                <option value="CPT">CPT - Carriage Paid To</option>
+                <option value="CIP">CIP - Carriage & Insurance Paid</option>
+                <option value="DAP">DAP - Delivered at Place</option>
+                <option value="DPU">DPU - Delivered Place Unloaded</option>
+                <option value="DDP">DDP - Delivered Duty Paid</option>
+                <option value="EXW">EXW - Ex Works</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Valor FOB estimado (USD)</label>
+              <input type="number" id="num-fob" value="3500" min="0" oninput="evaluarReglasAereas()" class="w-full p-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-aduana-500 font-mono">
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo de Guía Aérea</label>
+              <div class="flex items-center gap-3 pt-1">
+                <label class="inline-flex items-center text-xs gap-1 cursor-pointer">
+                  <input type="radio" name="awb_type" value="DIRECT" checked onchange="evaluarReglasAereas()" class="text-aduana-600">
+                  <span>Directa (MAWB)</span>
+                </label>
+                <label class="inline-flex items-center text-xs gap-1 cursor-pointer">
+                  <input type="radio" name="awb_type" value="FORWARDER" onchange="evaluarReglasAereas()" class="text-aduana-600">
+                  <span>Consolidada (HAWB)</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-2 border-t border-slate-100 space-y-2">
+            <label class="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700">
+              <input type="checkbox" id="chk-traslado-camion" checked onchange="evaluarReglasAereas()" class="rounded text-aduana-600 focus:ring-aduana-500">
+              <span>Requiere traslado terrestre con Guía de Despacho</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700">
+              <input type="checkbox" id="chk-seguro-contratado" onchange="evaluarReglasAereas()" class="rounded text-aduana-600 focus:ring-aduana-500">
+              <span>Póliza de seguro efectiva contratada</span>
+            </label>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- COLUMNA DERECHA: RESULTADOS, CHECKLIST Y NORMAS -->
+      <section class="lg:col-span-7 space-y-6">
+        
+        <!-- Tarjeta Principal de Evaluación -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h2 id="status-title" class="font-bold text-slate-800 text-sm">DUS EXPORTACIÓN DEFINITIVA AÉREA (COD. 10)</h2>
+              <p class="text-[11px] text-slate-500">Requisitos para primer y segundo mensaje de legalización</p>
+            </div>
+            <span id="badge-mandato" class="text-[10px] font-bold px-2 py-0.5 rounded bg-red-600 text-white">
+              Agente Aduana Obligatorio (≥ USD 3.000)
             </span>
           </div>
-        `).join('');
-      }
-      dropdown.classList.remove('hidden');
-    }
 
-    function selectTariff(code) {
-      const found = arancelDatabase.find(t => t.code === code);
-      if (found) {
-        currentTariff = found;
-        updateTariffUI();
-        evaluarReglasAereas();
-      }
-      document.getElementById('hs-dropdown').classList.add('hidden');
-      document.getElementById('hs-search-input').value = "";
-    }
+          <!-- Resumen de Requisitos Clave en Cajas -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+              <div class="text-[10px] font-bold text-slate-400 uppercase">Guía de Despacho</div>
+              <div id="res-gd-status" class="font-bold text-xs text-slate-700 mt-1">OBLIGATORIA</div>
+              <div id="res-gd-text" class="text-[10px] text-slate-500 mt-0.5">Respaldar tránsito hacia aeropuerto.</div>
+            </div>
 
-    function clearHsSearch() {
-      document.getElementById('hs-search-input').value = "";
-      document.getElementById('hs-dropdown').classList.add('hidden');
-    }
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+              <div class="text-[10px] font-bold text-slate-400 uppercase">Documento Guía Aérea</div>
+              <div id="res-awb-status" class="font-bold text-xs text-slate-700 mt-1">AWB ESTÁNDAR</div>
+              <div id="res-awb-text" class="text-[10px] text-slate-500 mt-0.5">Sin desglose obligatorio.</div>
+            </div>
 
-    function updateTariffUI() {
-      if (!currentTariff) return;
-      document.getElementById('tariff-code-display').textContent = currentTariff.code || 'S/C';
-      document.getElementById('tariff-glosa-display').textContent = currentTariff.glosa || 'Sin glosa disponible';
-      document.getElementById('tariff-organismo-badge').textContent = currentTariff.organismo || 'GENERAL';
-      document.getElementById('tariff-vobo-desc').textContent = currentTariff.desc || currentTariff.vobo_nombre || 'Sin observaciones adicionales.';
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+              <div class="text-[10px] font-bold text-slate-400 uppercase">Seguro de Carga</div>
+              <div id="res-seg-status" class="font-bold text-xs text-slate-700 mt-1">SEGURO TEÓRICO (2%)</div>
+              <div id="res-seg-text" class="text-[10px] text-slate-500 mt-0.5">Cálculo en ausencia de póliza.</div>
+            </div>
+          </div>
 
-      document.getElementById('vobo-organismo-tag').textContent = currentTariff.organismo || 'RÉGIMEN GENERAL';
-      document.getElementById('vobo-title').textContent = currentTariff.vobo_nombre || 'Sin Visto Bueno Obligatorio';
-      document.getElementById('vobo-full-desc').textContent = currentTariff.desc || 'Mercancía bajo régimen general no sujeta a control fitosanitario u organismo restrictivo directo en origen.';
+          <!-- Alerta de Visto Bueno / Organismo Regulador -->
+          <div id="vobo-card-alert" class="p-4 rounded-xl border border-slate-200 bg-slate-100/80 shadow-sm space-y-2">
+            <div class="flex items-center justify-between">
+              <span id="vobo-organismo-tag" class="text-[10px] font-extrabold px-2 py-0.5 rounded bg-slate-700 text-white">
+                RÉGIMEN GENERAL
+              </span>
+              <span class="text-[10px] text-slate-500 font-medium">Fiscalización Aduanera</span>
+            </div>
+            <h3 id="vobo-title" class="text-xs font-bold text-slate-800">Sin Visto Bueno Obligatorio</h3>
+            <p id="vobo-full-desc" class="text-[11px] text-slate-600 leading-relaxed">
+              Mercancía bajo régimen general no sujeta a control fitosanitario u organismo restrictivo directo en origen.
+            </p>
+          </div>
+        </div>
 
-      const voboCard = document.getElementById('vobo-card-alert');
-      if (!currentTariff.obligatorio) {
-        voboCard.className = "p-4 rounded-xl border border-slate-200 bg-slate-100/80 shadow-sm space-y-2";
-      } else {
-        voboCard.className = "p-4 rounded-xl border border-amber-300 bg-amber-50/90 shadow-sm space-y-2";
-      }
-    }
+        <!-- Checklist Interactiva de Documentos -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+              <i class="fa-solid fa-list-check text-aduana-600"></i>
+              Checklist Expediente de Legalización
+            </h2>
+            <button onclick="copyChecklistToClipboard()" class="text-xs text-aduana-600 hover:text-aduana-700 font-semibold flex items-center gap-1">
+              <i class="fa-solid fa-copy"></i>
+              <span>Copiar Resumen</span>
+            </button>
+          </div>
 
-    function evaluarReglasAereas() {
-      const regimen = document.getElementById('sel-regimen').value;
-      const incoterm = document.getElementById('sel-incoterm').value;
-      const awbType = document.querySelector('input[name="awb_type"]:checked')?.value || 'DIRECT';
-      const fobUSD = parseFloat(document.getElementById('num-fob').value) || 0;
-      const trasladaCamion = document.getElementById('chk-traslado-camion').checked;
-      const seguroContratado = document.getElementById('chk-seguro-contratado').checked;
+          <!-- Contenedor donde app.js renderiza la lista de documentos -->
+          <div id="checklist-container" class="divide-y divide-slate-100 border border-slate-100 rounded-xl overflow-hidden">
+          </div>
 
-      const requiereAgente = fobUSD >= 3000;
-      const requiereAWBValorada = ["CPT", "CIP", "DAP", "DPU", "DDP"].includes(incoterm);
+          <div id="toast-msg" class="hidden p-2 rounded bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs text-center font-medium">
+            ¡Checklist copiada al portapapeles!
+          </div>
+        </div>
 
-      const badgeMandato = document.getElementById('badge-mandato');
-      const statusTitle = document.getElementById('status-title');
-      const regimenNames = {
-        "DEF": "DUS EXPORTACIÓN DEFINITIVA AÉREA (COD. 10)",
-        "TEMP_SALIDA": "SALIDA TEMPORAL DE MERCANCÍAS (COD. 20)",
-        "TEMP_PERFECC": "SALIDA TEMPORAL P/ PERFECCIONAMIENTO (COD. 21)",
-        "REEXP": "REEXPORTACIÓN DE MERCANCÍAS (COD. 30)",
-        "RANCHO": "RANCHO DE NAVES / AERONAVES (COD. 40)"
-      };
+        <!-- Consideraciones Normativas SNA -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+          <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+            <i class="fa-solid fa-book-bookmark text-aduana-600"></i>
+            Consideraciones Normativas (Compendio Aduanero)
+          </h2>
+          <ul id="normative-list" class="text-xs text-slate-600 space-y-2 list-disc pl-4 leading-relaxed">
+          </ul>
+        </div>
 
-      if (statusTitle) statusTitle.textContent = regimenNames[regimen] || "DUS AÉREA CHILE";
+      </section>
+    </main>
 
-      if (badgeMandato) {
-        if (requiereAgente) {
-          badgeMandato.textContent = "Agente Aduana Obligatorio (≥ USD 3.000)";
-          badgeMandato.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-red-600 text-white";
-        } else {
-          badgeMandato.textContent = "Tramitación Directa / Simplificada (< USD 3.000)";
-          badgeMandato.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-600 text-white";
-        }
-      }
+  </div>
 
-      const resGdStatus = document.getElementById('res-gd-status');
-      const resGdText = document.getElementById('res-gd-text');
-      if (resGdStatus && resGdText) {
-        if (trasladaCamion) {
-          resGdStatus.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-500"></i> OBLIGATORIA`;
-          resGdText.textContent = "Exigida para respaldar el tránsito terrestre hacia el aeropuerto.";
-        } else {
-          resGdStatus.innerHTML = `<i class="fa-solid fa-circle-minus text-slate-400"></i> NO REQUERIDA`;
-          resGdText.textContent = "Ingreso directo sin traslado en camión.";
-        }
-      }
+  <!-- ========================================== -->
+  <!-- CARGA DE SCRIPTS Y LIBRERÍAS AL FINAL      -->
+  <!-- ========================================== -->
+  <!-- 1. SDK Oficial de Supabase v2 desde CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- 2. Lógica de Autenticación -->
+  <script src="login.js"></script>
 
-      const resAwbStatus = document.getElementById('res-awb-status');
-      const resAwbText = document.getElementById('res-awb-text');
-      if (resAwbStatus && resAwbText) {
-        if (requiereAWBValorada) {
-          resAwbStatus.innerHTML = `<i class="fa-solid fa-file-invoice-dollar text-aduana-600"></i> AWB VALORADA (FLETE)`;
-          resAwbText.textContent = `Incoterm ${incoterm} exige desglose de flete contratado.`;
-        } else {
-          resAwbStatus.innerHTML = `<i class="fa-solid fa-file-lines text-slate-600"></i> AWB ESTÁNDAR`;
-          resAwbText.textContent = `Incoterm ${incoterm} (Flete por cobrar o flete no incluido).`;
-        }
-      }
+  <!-- 3. Lógica de Aplicación (Arancel, Checklist y Normativa) -->
+  <script src="app.js"></script>
 
-      const resSegStatus = document.getElementById('res-seg-status');
-      const resSegText = document.getElementById('res-seg-text');
-      if (resSegStatus && resSegText) {
-        if (seguroContratado) {
-          resSegStatus.innerHTML = `<i class="fa-solid fa-shield-check text-emerald-500"></i> PÓLIZA EFECTIVA`;
-          resSegText.textContent = "Póliza real de seguro contratada en Chile.";
-        } else {
-          resSegStatus.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-500"></i> SEGURO TEÓRICO (2%)`;
-          resSegText.textContent = "Se aplicará 2% sobre valor FOB por tabla aduanera.";
-        }
-      }
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      cargarBaseDatosArancel();
-    });
-  </script>
 </body>
 </html>
