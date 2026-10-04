@@ -349,7 +349,7 @@
         async function cargarBaseDatosArancel() {
             const badge = document.getElementById('db-status-badge');
             try {
-                const response = await fetch('arancel_chile_4.json');
+                const response = await fetch('arancel_chile.json');
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 
                 arancelDatabase = await response.json();
@@ -363,7 +363,7 @@
                     evaluarReglasAereas();
                 }
             } catch (error) {
-                console.error('Error al cargar arancel_chile_4.json:', error);
+                console.error('Error al cargar arancel_chile.json:', error);
                 badge.textContent = "Error al cargar JSON";
                 badge.className = "text-[10px] bg-red-100 text-red-800 font-mono px-1.5 py-0.5 rounded border border-red-300 font-bold";
             }
