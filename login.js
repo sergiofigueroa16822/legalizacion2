@@ -1,36 +1,74 @@
 // ==========================================
 // CONFIGURACIÓN DE SUPABASE
 // ==========================================
+
+
+// ==========================================
+// CONFIGURACIÓN DE SUPABASE
+// ==========================================
+
+// Pega aquí los datos de tu proyecto Supabase.
+// No uses una service_role key en el navegador.
 const SUPABASE_URL = 'https://lmmoqcpptyzgscnjwvgk.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_xRnGuxmB5oen-G7LDlI6JQ_SUEvLDMr';
 
 let supabaseClient = null;
+let authSubscription = null;
 
-try {
-  if (window.supabase && typeof window.supabase.createClient === 'function') {
+
+// ==========================================
+// REFERENCIAS DEL DOM
+// ==========================================
+let loginView = null;
+let appView = null;
+let loginForm = null;
+let emailInput = null;
+let passwordInput = null;
+let errorContainer = null;
+let submitBtn = null;
+
+
+// ==========================================
+// INICIALIZACIÓN DEL CLIENTE SUPABASE
+// ==========================================
+function initSupabaseClient() {
+  try {
+    if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+      throw new Error('El SDK de Supabase no fue cargado correctamente.');
+    }
+
+    if (
+      !SUPABASE_URL ||
+      SUPABASE_URL.includes('TU-PROYECTO') ||
+      !SUPABASE_PUBLISHABLE_KEY ||
+      SUPABASE_PUBLISHABLE_KEY.includes('TU_CLAVE')
+    ) {
+      throw new Error('Debes configurar SUPABASE_URL y SUPABASE_PUBLISHABLE_KEY en login.js.');
+    }
+
     supabaseClient = window.supabase.createClient(
       SUPABASE_URL,
-      SUPABASE_ANON_KEY
+      SUPABASE_PUBLISHABLE_KEY,
+      {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true
+        }
+      }
     );
-  } else {
-    console.error('El SDK de Supabase no se ha cargado correctamente.');
+
+    console.log('Cliente Supabase inicializado correctamente.');
+  } catch (error) {
+    console.error('Error al inicializar Supabase:', error);
+    supabaseClient = null;
   }
-} catch (err) {
-  console.error('Error al inicializar el cliente de Supabase:', err);
 }
 
 
 // ==========================================
-// REFERENCIAS AL DOM
+// REFERENCIAS HTML
 // ==========================================
-let loginView;
-let appView;
-let loginForm;
-let emailInput;
-let passwordInput;
-let errorContainer;
-let submitBtn;
-
 function initDOMElements() {
   loginView = document.getElementById('login-view');
   appView = document.getElementById('app-view');
@@ -43,20 +81,35 @@ function initDOMElements() {
 
 
 // ==========================================
-// INICIALIZACIÓN DE LA APLICACIÓN
+// INICIO DE LA PÁGINA
 // ==========================================
 document.addEventListener('DOMContentLoaded', async () => {
   initDOMElements();
+  initSupabaseClient();
 
-  if (loginForm) {
-    loginForm.addEventListener('submit', handleLogin);
-  }
-
-  if (!supabaseClient) {
-    mostrarError('No fue posible conectar con el servicio de autenticación.');
+  if (!loginView || !appView || !loginForm) {
+    console.error('No se encontraron los elementos HTML requeridos para el login.');
     return;
   }
 
+  loginForm.addEventListener('submit', handleLogin);
+
+  if (!supabaseClient) {
+    mostrarError(
+      'No se pudo inicializar el servicio de autenticación. Revisa la configuración de Supabase.'
+    );
+    return;
+  }
+
+  escucharCambiosDeAutenticacion();
+  await revisarSesionExistente();
+});
+
+
+// ==========================================
+// REVISIÓN DE SESIÓN AL CARGAR
+// ==========================================
+async function revisarSesionExistente() {
   try {
     const {
       data: { session },
@@ -64,42 +117,46 @@ document.addEventListener('DOMContentLoaded', async () => {
     } = await supabaseClient.auth.getSession();
 
     if (error) {
-      console.warn('No se pudo verificar la sesión:', error.message);
+      console.error('Error al revisar sesión:', error);
+      mostrarLogin();
       return;
     }
 
-    if (session) {
+    if (session?.user) {
+      console.log('Sesión activa detectada:', session.user.email);
       mostrarAplicacionPrincipal();
+      return;
     }
-  } catch (err) {
-    console.error('Error al revisar la sesión activa:', err);
-  }
 
-  escucharCambiosDeAutenticacion();
-});
+    mostrarLogin();
+  } catch (error) {
+    console.error('Error inesperado al revisar sesión:', error);
+    mostrarLogin();
+  }
+}
 
 
 // ==========================================
 // LOGIN
 // ==========================================
-async function handleLogin(e) {
-  e.preventDefault();
+async function handleLogin(event) {
+  event.preventDefault();
 
-  const email = emailInput ? emailInput.value.trim() : '';
-  const password = passwordInput ? passwordInput.value : '';
+  const email = emailInput?.value.trim() || '';
+  const password = passwordInput?.value || '';
 
   if (!email || !password) {
-    mostrarError('Por favor, ingresa tu correo y contraseña.');
+    mostrarError('Ingresa tu correo electrónico y contraseña.');
     return;
   }
 
   if (!supabaseClient) {
-    mostrarError('Error de conexión con el servicio de autenticación.');
+    mostrarError('No hay conexión con el servicio de autenticación.');
     return;
   }
 
-  setLoadingState(true);
   ocultarError();
+  setLoadingState(true);
 
   try {
     const { data, error } = await supabaseClient.auth.signInWithPassword({
@@ -108,16 +165,29 @@ async function handleLogin(e) {
     });
 
     if (error) {
+      console.error('Error de autenticación:', error);
       mostrarError(traducirMensajeError(error.message));
       return;
     }
 
-    if (data.session || data.user) {
-      mostrarAplicacionPrincipal();
+    if (!data.session?.user) {
+      console.warn('Supabase no devolvió una sesión después del login:', data);
+
+      mostrarError(
+        'El usuario fue validado, pero no se creó una sesión. Revisa si el correo está confirmado en Supabase.'
+      );
+
+      return;
     }
-  } catch (err) {
-    console.error('Error durante el login:', err);
-    mostrarError('Ocurrió un error inesperado al intentar conectar.');
+
+    console.log('Login correcto:', data.session.user.email);
+
+    // Se muestra aquí para que el cambio sea inmediato.
+    // onAuthStateChange también confirma el cambio de sesión.
+    mostrarAplicacionPrincipal();
+  } catch (error) {
+    console.error('Error inesperado en login:', error);
+    mostrarError('Ocurrió un error inesperado al iniciar sesión.');
   } finally {
     setLoadingState(false);
   }
@@ -125,13 +195,22 @@ async function handleLogin(e) {
 
 
 // ==========================================
-// CAMBIOS DE ESTADO DE AUTENTICACIÓN
+// EVENTOS DE AUTENTICACIÓN
 // ==========================================
 function escucharCambiosDeAutenticacion() {
   if (!supabaseClient) return;
 
-  supabaseClient.auth.onAuthStateChange((event, session) => {
-    if (event === 'SIGNED_IN' && session) {
+  if (authSubscription) {
+    authSubscription.unsubscribe();
+  }
+
+  const { data } = supabaseClient.auth.onAuthStateChange((event, session) => {
+    console.log('Evento de autenticación:', event);
+
+    if (
+      (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') &&
+      session?.user
+    ) {
       mostrarAplicacionPrincipal();
     }
 
@@ -139,11 +218,13 @@ function escucharCambiosDeAutenticacion() {
       mostrarLogin();
     }
   });
+
+  authSubscription = data.subscription;
 }
 
 
 // ==========================================
-// VISTAS
+// CAMBIO DE VISTAS
 // ==========================================
 function mostrarAplicacionPrincipal() {
   if (loginView) {
@@ -177,19 +258,21 @@ function mostrarLogin() {
 
 
 // ==========================================
-// LOGOUT
+// CIERRE DE SESIÓN
 // ==========================================
-window.logout = async function () {
+window.logout = async function logout() {
   try {
     if (supabaseClient) {
       const { error } = await supabaseClient.auth.signOut();
 
       if (error) {
-        console.error('Error al cerrar sesión:', error.message);
+        console.error('Error al cerrar sesión:', error);
+        mostrarError('No se pudo cerrar la sesión correctamente.');
+        return;
       }
     }
-  } catch (err) {
-    console.error('Error inesperado al cerrar sesión:', err);
+  } catch (error) {
+    console.error('Error inesperado al cerrar sesión:', error);
   } finally {
     mostrarLogin();
   }
@@ -205,12 +288,17 @@ function setLoadingState(isLoading) {
   submitBtn.disabled = isLoading;
 
   if (isLoading) {
+    submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
+
     submitBtn.innerHTML = `
       <i class="fa-solid fa-spinner fa-spin text-xs"></i>
       <span>Autenticando...</span>
     `;
+
     return;
   }
+
+  submitBtn.classList.remove('opacity-70', 'cursor-not-allowed');
 
   submitBtn.innerHTML = `
     <span>Ingresar al Sistema</span>
@@ -236,28 +324,28 @@ function ocultarError() {
   errorContainer.classList.add('hidden');
 }
 
-function traducirMensajeError(msg = '') {
-  const mensaje = msg.toLowerCase();
+function traducirMensajeError(mensajeSupabase = '') {
+  const mensaje = mensajeSupabase.toLowerCase();
 
   if (mensaje.includes('invalid login credentials')) {
     return 'Correo o contraseña incorrectos.';
   }
 
   if (mensaje.includes('email not confirmed')) {
-    return 'El correo electrónico todavía no ha sido confirmado.';
+    return 'El correo electrónico aún no ha sido confirmado.';
   }
 
   if (mensaje.includes('too many requests')) {
-    return 'Demasiados intentos fallidos. Inténtalo nuevamente en unos minutos.';
+    return 'Demasiados intentos. Espera unos minutos antes de volver a intentarlo.';
   }
 
   if (mensaje.includes('user not found')) {
-    return 'No existe una cuenta registrada con ese correo.';
+    return 'No existe una cuenta con ese correo electrónico.';
   }
 
   if (mensaje.includes('network')) {
-    return 'No fue posible conectar con el servicio. Revisa tu conexión a internet.';
+    return 'No se pudo conectar con Supabase. Revisa tu conexión a internet.';
   }
 
-  return 'No fue posible iniciar sesión. Verifica tus datos e inténtalo nuevamente.';
+  return `No fue posible iniciar sesión: ${mensajeSupabase}`;
 }
