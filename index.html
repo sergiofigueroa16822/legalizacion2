@@ -39,7 +39,7 @@
             line-height: 1.5;
         }
 
-        /* Pantalla / Modal de Login */
+        /* Pantalla de Login */
         #auth-screen {
             position: fixed;
             inset: 0;
@@ -92,7 +92,7 @@
 
         .error-msg { color: #ef4444; font-size: 0.85rem; margin-top: 1rem; display: none; }
 
-        /* Encabezado Principal */
+        /* Encabezado */
         header {
             background: #0f172a;
             color: white;
@@ -142,7 +142,7 @@
             font-weight: 600;
         }
 
-        /* Maquetación del Contenido */
+        /* Contenido */
         main {
             max-width: 1200px;
             margin: 2rem auto;
@@ -171,6 +171,28 @@
             border-bottom: 1px solid var(--border-color);
             padding-bottom: 0.5rem;
         }
+
+        /* Resultados Arancelarios */
+        .arancel-results {
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        .arancel-item {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .arancel-item:hover { background-color: #f1f5f9; }
+        .arancel-item:last-child { border-bottom: none; }
+        .arancel-code { font-weight: 700; color: var(--primary); font-size: 0.9rem; }
+        .arancel-desc { font-size: 0.85rem; color: #334155; }
 
         .status-badge {
             display: inline-block;
@@ -232,7 +254,7 @@
         </header>
 
         <main>
-            <!-- Columna Izquierda: Búsqueda y Datos Operativos -->
+            <!-- Columna Izquierda: Búsqueda Arancelaria y Datos Operativos -->
             <section class="col-left">
                 <div class="card">
                     <div class="card-header">
@@ -241,9 +263,15 @@
                     </div>
                     <div class="input-group">
                         <label>Buscar Código o Descripción</label>
-                        <input type="text" placeholder="Ej: 0808.10.00 - Manzanas frescas...">
+                        <input type="text" id="arancel-search" placeholder="Ej: 0808.10.00 o Manzanas...">
                     </div>
-                    <p style="font-size: 0.85rem; color: var(--text-muted);">Ingrese un código o palabra clave para realizar la consulta en la base arancelaria.</p>
+                    
+                    <!-- Contenedor dinámico para los resultados del JSON -->
+                    <div id="arancel-results" class="arancel-results"></div>
+                    
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">
+                        Ingrese un código o palabra clave para realizar la consulta en la base arancelaria.
+                    </p>
                 </div>
 
                 <div class="card">
@@ -321,7 +349,7 @@
         </main>
     </div>
 
-    <!-- 3. SCRIPT DE AUTENTICACIÓN SUPABASE -->
+    <!-- 3. SCRIPTS: SUPABASE & VINCULACIÓN CON JSON -->
     <script>
         const SUPABASE_URL = "https://lmmoqcpptyzgscnjwvgk.supabase.co"; 
         const SUPABASE_ANON_KEY = "sb_publishable_xRnGuxmB5oen-G7LDlI6JQ_SUEvLDMr"; 
@@ -335,6 +363,63 @@
         const userEmailDisplay = document.getElementById('user-email');
         const btnLogout = document.getElementById('btn-logout');
 
+        // Variables para la base arancelaria
+        let arancelData = [];
+        const searchInput = document.getElementById('arancel-search');
+        const resultsContainer = document.getElementById('arancel-results');
+
+        // Carga del archivo arancel_chile.json
+        async function loadArancelData() {
+            try {
+                const response = await fetch('arancel_chile.json');
+                if (!response.ok) throw new Error('Error al cargar la base de datos arancelaria');
+                arancelData = await response.json();
+            } catch (err) {
+                console.error('Error arancel_chile.json:', err);
+            }
+        }
+
+        // Búsqueda interactiva en el array cargado del JSON
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase().trim();
+                
+                if (query.length < 2) {
+                    resultsContainer.style.display = 'none';
+                    resultsContainer.innerHTML = '';
+                    return;
+                }
+
+                const filtered = arancelData.filter(item => {
+                    const codigo = (item.codigo || item.subpartida || item.hs_code || '').toString().toLowerCase();
+                    const descripcion = (item.descripcion || item.glosa || item.description || '').toLowerCase();
+                    return codigo.includes(query) || descripcion.includes(query);
+                });
+
+                renderResults(filtered);
+            });
+        }
+
+        function renderResults(items) {
+            if (items.length === 0) {
+                resultsContainer.innerHTML = '<div class="arancel-item"><span class="arancel-desc">No se encontraron coincidencias.</span></div>';
+            } else {
+                resultsContainer.innerHTML = items.slice(0, 30).map(item => `
+                    <div class="arancel-item" onclick="selectArancel('${item.codigo || item.subpartida || item.hs_code}')">
+                        <div class="arancel-code">${item.codigo || item.subpartida || item.hs_code}</div>
+                        <div class="arancel-desc">${item.descripcion || item.glosa || item.description}</div>
+                    </div>
+                `).join('');
+            }
+            resultsContainer.style.display = 'block';
+        }
+
+        function selectArancel(code) {
+            searchInput.value = code;
+            resultsContainer.style.display = 'none';
+        }
+
+        // Control de autenticación Supabase
         async function checkAuth() {
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (session) {
@@ -373,6 +458,7 @@
             userEmailDisplay.textContent = user.email;
             authScreen.style.display = 'none';
             appContent.style.display = 'block';
+            loadArancelData(); // Carga el JSON al iniciar la sesión
         }
 
         function showLogin() {
