@@ -12,7 +12,7 @@ const submitBtn = document.getElementById('submitBtn');
 async function checkSession() {
   const { data: { session } } = await supabase.auth.getSession();
   if (session) {
-    window.location.href = 'dashboard.html';
+    window.location.href = 'index.html';
   }
 }
 checkSession();
