@@ -1,12 +1,9 @@
-// Reemplaza con tus credenciales de Supabase
+
+
+
 const SUPABASE_URL = 'https://lmmoqcpptyzgscnjwvgk.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_xRnGuxmB5oen-G7LDlI6JQ_SUEvLDMr';
 
-
-
-// 1. Reemplaza con las credenciales reales de tu proyecto en Supabase
-const SUPABASE_URL = 'https://TU_PROYECTO.supabase.co';
-const SUPABASE_ANON_KEY = 'TU_SUPABASE_ANON_KEY';
 
 let supabase = null;
 
