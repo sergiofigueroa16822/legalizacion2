@@ -286,72 +286,73 @@
         </div>
     </div>
 
-    <!-- 3. SCRIPT DE AUTENTICACIÓN SUPABASE -->
-    <script>
-        // Configuración de Supabase
-        const SUPABASE_URL = "https://TU_PROYECTO.supabase.co"; 
-        const SUPABASE_ANON_KEY = "TU_LLAVE_ANONIMA_AQUI"; 
+<!-- 3. SCRIPT DE AUTENTICACIÓN SUPABASE -->
+<script>
+    // Configuración de Supabase
+    const SUPABASE_URL = "https://lmmoqcpptyzgscnjwvgk.supabase.co"; 
+    const SUPABASE_ANON_KEY = "sb_publishable_xRnGuxmB5oen-G7LDlI6JQ_SUEvLDMr"; 
 
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Inicialización del cliente de Supabase
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Referencias del DOM
-        const authScreen = document.getElementById('auth-screen');
-        const appContent = document.getElementById('app-content');
-        const loginForm = document.getElementById('login-form');
-        const errorMessage = document.getElementById('error-message');
-        const userEmailDisplay = document.getElementById('user-email');
-        const btnLogout = document.getElementById('btn-logout');
+    // Referencias del DOM
+    const authScreen = document.getElementById('auth-screen');
+    const appContent = document.getElementById('app-content');
+    const loginForm = document.getElementById('login-form');
+    const errorMessage = document.getElementById('error-message');
+    const userEmailDisplay = document.getElementById('user-email');
+    const btnLogout = document.getElementById('btn-logout');
 
-        // Verificar sesión activa
-        async function checkAuth() {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-                showApp(session.user);
-            } else {
-                showLogin();
-            }
-        }
-
-        // Iniciar Sesión
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            errorMessage.style.display = 'none';
-
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email: email,
-                password: password,
-            });
-
-            if (error) {
-                errorMessage.textContent = 'Credenciales inválidas o cuenta no autorizada.';
-                errorMessage.style.display = 'block';
-            } else {
-                showApp(data.user);
-            }
-        });
-
-        // Cerrar Sesión
-        btnLogout.addEventListener('click', async () => {
-            await supabase.auth.signOut();
+    // Verificar sesión activa
+    async function checkAuth() {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) {
+            showApp(session.user);
+        } else {
             showLogin();
+        }
+    }
+
+    // Iniciar Sesión
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        errorMessage.style.display = 'none';
+
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+            email: email,
+            password: password,
         });
 
-        function showApp(user) {
-            userEmailDisplay.textContent = user.email;
-            authScreen.style.display = 'none';
-            appContent.style.display = 'block';
+        if (error) {
+            errorMessage.textContent = 'Credenciales inválidas o cuenta no autorizada.';
+            errorMessage.style.display = 'block';
+        } else {
+            showApp(data.user);
         }
+    });
 
-        function showLogin() {
-            authScreen.style.display = 'flex';
-            appContent.style.display = 'none';
-        }
+    // Cerrar Sesión
+    btnLogout.addEventListener('click', async () => {
+        await supabaseClient.auth.signOut();
+        showLogin();
+    });
 
-        // Ejecutar al cargar la página
-        checkAuth();
-    </script>
+    function showApp(user) {
+        userEmailDisplay.textContent = user.email;
+        authScreen.style.display = 'none';
+        appContent.style.display = 'block';
+    }
+
+    function showLogin() {
+        authScreen.style.display = 'flex';
+        appContent.style.display = 'none';
+    }
+
+    // Ejecutar al cargar la página
+    checkAuth();
+</script>
 </body>
 </html>
