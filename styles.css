@@ -1,13 +1,4 @@
-body {
-  font-family: Arial, sans-serif;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  background-color: #f4f6f8;
-  margin: 0;
-}
-
+/* Estilos específicos para la tarjeta de login */
 .login-card {
   background: #ffffff;
   padding: 2rem;
@@ -15,6 +6,7 @@ body {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   width: 100%;
   max-width: 360px;
+  margin: 2rem auto; /* Centrado horizontal sin afectar el layout general */
 }
 
 .login-card h2 {
@@ -42,7 +34,7 @@ body {
   box-sizing: border-box;
 }
 
-button {
+.login-card button {
   width: 100%;
   padding: 0.75rem;
   background-color: #3ecf8e;
@@ -53,7 +45,7 @@ button {
   cursor: pointer;
 }
 
-button:hover {
+.login-card button:hover {
   background-color: #34b27b;
 }
 
@@ -62,4 +54,9 @@ button:hover {
   font-size: 0.9rem;
   margin-top: 1rem;
   text-align: center;
+}
+
+/* Utilidad para ocultar vistas desde JavaScript */
+.hidden {
+  display: none !important;
 }
