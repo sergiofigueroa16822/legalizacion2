@@ -1,50 +1,88 @@
+'use strict';
 
 // ==========================================
 // CONFIGURACIÓN DE SUPABASE
 // ==========================================
 
-// Pega aquí los datos de tu proyecto Supabase.
-// Asegúrate de usar la anon public key (suele empezar con "eyJ...").
 const SUPABASE_URL = 'https://lmmoqcpptyzgscnjwvgk.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_xRnGuxmB5oen-G7LDlI6JQ_SUEvLDMr';
+const SUPABASE_PUBLISHABLE_KEY =
+  'sb_publishable_xRnGuxmB5oen-G7LDlI6JQ_SUEvLDMr';
 
 let supabaseClient = null;
 let authSubscription = null;
 
+// ==========================================
+// ELEMENTOS DEL DOM
+// ==========================================
+
+let loginView;
+let appView;
+let loginForm;
+let emailInput;
+let passwordInput;
+let errorContainer;
+let submitBtn;
 
 // ==========================================
-// REFERENCIAS DEL DOM
+// INICIO
 // ==========================================
-let loginView = null;
-let appView = null;
-let loginForm = null;
-let emailInput = null;
-let passwordInput = null;
-let errorContainer = null;
-let submitBtn = null;
 
+document.addEventListener('DOMContentLoaded', iniciarAplicacion);
+
+async function iniciarAplicacion() {
+  obtenerElementosDOM();
+  inicializarSupabase();
+
+  if (!loginForm || !loginView || !appView) {
+    console.error(
+      'Faltan elementos obligatorios: login-form, login-view o app-view.'
+    );
+    return;
+  }
+
+  loginForm.addEventListener('submit', iniciarSesion);
+
+  if (!supabaseClient) {
+    mostrarError(
+      'No se pudo iniciar Supabase. Revisa la URL y la clave pública.'
+    );
+    return;
+  }
+
+  // Primero se registra el listener para no perder eventos de autenticación.
+  registrarEventosAuth();
+
+  // Luego se comprueba si existe una sesión guardada.
+  await comprobarSesion();
+}
 
 // ==========================================
-// INICIALIZACIÓN DEL CLIENTE SUPABASE
+// CONFIGURACIÓN
 // ==========================================
-function initSupabaseClient() {
+
+function inicializarSupabase() {
   try {
-    if (!window.supabase || typeof window.supabase.createClient !== 'function') {
-      throw new Error('El SDK de Supabase no fue cargado correctamente.');
+    if (
+      !window.supabase ||
+      typeof window.supabase.createClient !== 'function'
+    ) {
+      throw new Error(
+        'El SDK de Supabase no está disponible. Revisa el orden de los scripts.'
+      );
     }
 
     if (
       !SUPABASE_URL ||
-      SUPABASE_URL.includes('TU-PROYECTO') ||
-      !SUPABASE_ANON_KEY ||
-      SUPABASE_ANON_KEY.includes('TU_CLAVE')
+      !SUPABASE_PUBLISHABLE_KEY ||
+      SUPABASE_URL.includes('TU-') ||
+      SUPABASE_PUBLISHABLE_KEY.includes('TU_')
     ) {
-      throw new Error('Debes configurar SUPABASE_URL y SUPABASE_ANON_KEY en login.js.');
+      throw new Error('La configuración de Supabase está incompleta.');
     }
 
     supabaseClient = window.supabase.createClient(
       SUPABASE_URL,
-      SUPABASE_ANON_KEY,
+      SUPABASE_PUBLISHABLE_KEY,
       {
         auth: {
           persistSession: true,
@@ -54,18 +92,14 @@ function initSupabaseClient() {
       }
     );
 
-    console.log('Cliente Supabase inicializado correctamente.');
+    console.log('Supabase inicializado correctamente.');
   } catch (error) {
-    console.error('Error al inicializar Supabase:', error);
+    console.error('Error inicializando Supabase:', error);
     supabaseClient = null;
   }
 }
 
-
-// ==========================================
-// REFERENCIAS HTML
-// ==========================================
-function initDOMElements() {
+function obtenerElementosDOM() {
   loginView = document.getElementById('login-view');
   appView = document.getElementById('app-view');
   loginForm = document.getElementById('login-form');
@@ -75,171 +109,164 @@ function initDOMElements() {
   submitBtn = document.getElementById('login-submit-btn');
 }
 
-
 // ==========================================
-// INICIO DE LA PÁGINA
+// SESIÓN EXISTENTE
 // ==========================================
-document.addEventListener('DOMContentLoaded', async () => {
-  initDOMElements();
-  initSupabaseClient();
 
-  if (!loginView || !appView || !loginForm) {
-    console.error('No se encontraron los elementos HTML requeridos para el login.');
-    return;
-  }
-
-  loginForm.addEventListener('submit', handleLogin);
-
-  if (!supabaseClient) {
-    mostrarError(
-      'No se pudo inicializar el servicio de autenticación. Revisa la configuración de Supabase.'
-    );
-    return;
-  }
-
-  escucharCambiosDeAutenticacion();
-  await revisarSesionExistente();
-});
-
-
-// ==========================================
-// REVISIÓN DE SESIÓN AL CARGAR
-// ==========================================
-async function revisarSesionExistente() {
+async function comprobarSesion() {
   try {
-    const {
-      data: { session },
-      error
-    } = await supabaseClient.auth.getSession();
+    const { data, error } = await supabaseClient.auth.getSession();
 
     if (error) {
-      console.error('Error al revisar sesión:', error);
+      console.error('Error obteniendo sesión:', error);
       mostrarLogin();
       return;
     }
 
-    if (session?.user) {
-      console.log('Sesión activa detectada:', session.user.email);
-      mostrarAplicacionPrincipal();
-      return;
+    if (data.session && data.session.user) {
+      console.log('Sesión existente:', data.session.user.email);
+      mostrarAplicacion();
+    } else {
+      mostrarLogin();
     }
-
-    mostrarLogin();
   } catch (error) {
-    console.error('Error inesperado al revisar sesión:', error);
+    console.error('Error inesperado comprobando sesión:', error);
     mostrarLogin();
   }
 }
 
+// ==========================================
+// EVENTOS DE AUTH
+// ==========================================
+
+function registrarEventosAuth() {
+  if (!supabaseClient) return;
+
+  const respuesta = supabaseClient.auth.onAuthStateChange(
+    (evento, session) => {
+      console.log('Evento Supabase Auth:', evento);
+
+      if (
+        (evento === 'SIGNED_IN' ||
+          evento === 'INITIAL_SESSION' ||
+          evento === 'TOKEN_REFRESHED') &&
+        session &&
+        session.user
+      ) {
+        // Se difiere para evitar operaciones complejas dentro del callback.
+        setTimeout(() => {
+          mostrarAplicacion();
+        }, 0);
+      }
+
+      if (evento === 'SIGNED_OUT') {
+        setTimeout(() => {
+          mostrarLogin();
+        }, 0);
+      }
+    }
+  );
+
+  authSubscription = respuesta.data.subscription;
+}
 
 // ==========================================
-// LOGIN
+// INICIO DE SESIÓN
 // ==========================================
-async function handleLogin(event) {
+
+async function iniciarSesion(event) {
   event.preventDefault();
 
-  const email = emailInput?.value.trim() || '';
-  const password = passwordInput?.value || '';
+  const email = emailInput.value.trim();
+  const password = passwordInput.value;
+
+  ocultarError();
 
   if (!email || !password) {
-    mostrarError('Ingresa tu correo electrónico y contraseña.');
+    mostrarError('Ingresa el correo electrónico y la contraseña.');
     return;
   }
 
   if (!supabaseClient) {
-    mostrarError('No hay conexión con el servicio de autenticación.');
+    mostrarError('El cliente Supabase no está disponible.');
     return;
   }
 
-  ocultarError();
-  setLoadingState(true);
+  cambiarEstadoBoton(true);
 
   try {
-    const { data, error } = await supabaseClient.auth.signInWithPassword({
+    console.log('Intentando autenticar:', email);
+
+    const respuesta = await supabaseClient.auth.signInWithPassword({
       email,
       password
     });
 
+    const { data, error } = respuesta;
+
+    console.log('Respuesta de Supabase:', {
+      user: data?.user?.email || null,
+      existeSession: Boolean(data?.session),
+      error: error || null
+    });
+
     if (error) {
-      console.error('Error de autenticación:', error);
-      mostrarError(traducirMensajeError(error.message));
+      mostrarError(convertirError(error));
       return;
     }
 
-    if (!data.session?.user) {
-      console.warn('Supabase no devolvió una sesión después del login:', data);
-
+    if (!data || !data.session || !data.user) {
       mostrarError(
-        'El usuario fue validado, pero no se creó una sesión. Revisa si el correo está confirmado en Supabase.'
+        'Supabase no devolvió una sesión. Verifica que el correo esté confirmado y que el proveedor Email esté habilitado.'
       );
-
       return;
     }
 
-    console.log('Login correcto:', data.session.user.email);
-    mostrarAplicacionPrincipal();
+    // Cambio inmediato de vista.
+    mostrarAplicacion();
   } catch (error) {
-    console.error('Error inesperado en login:', error);
-    mostrarError('Ocurrió un error inesperado al iniciar sesión.');
+    console.error('Error durante la autenticación:', error);
+    mostrarError(`Error de conexión: ${error.message}`);
   } finally {
-    setLoadingState(false);
+    cambiarEstadoBoton(false);
   }
 }
 
-
 // ==========================================
-// EVENTOS DE AUTENTICACIÓN
+// VISTAS
 // ==========================================
-function escucharCambiosDeAutenticacion() {
-  if (!supabaseClient) return;
 
-  if (authSubscription) {
-    authSubscription.unsubscribe();
-  }
+function mostrarAplicacion() {
+  console.log('Cambiando a la aplicación principal.');
 
-  const { data } = supabaseClient.auth.onAuthStateChange((event, session) => {
-    console.log('Evento de autenticación:', event);
-
-    if (
-      (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') &&
-      session?.user
-    ) {
-      mostrarAplicacionPrincipal();
-    }
-
-    if (event === 'SIGNED_OUT') {
-      mostrarLogin();
-    }
-  });
-
-  authSubscription = data.subscription;
-}
-
-
-// ==========================================
-// CAMBIO DE VISTAS
-// ==========================================
-function mostrarAplicacionPrincipal() {
   if (loginView) {
     loginView.classList.add('hidden');
+    loginView.style.display = 'none';
   }
 
   if (appView) {
     appView.classList.remove('hidden');
+    appView.style.display = 'flex';
   }
 
   if (typeof window.initApp === 'function') {
     window.initApp();
+  } else {
+    console.warn(
+      'app.js no cargó o no contiene window.initApp().'
+    );
   }
 }
 
 function mostrarLogin() {
   if (appView) {
     appView.classList.add('hidden');
+    appView.style.display = 'none';
   }
 
   if (loginView) {
     loginView.classList.remove('hidden');
+    loginView.style.display = 'flex';
   }
 
   if (loginForm) {
@@ -249,60 +276,53 @@ function mostrarLogin() {
   ocultarError();
 }
 
+// ==========================================
+// CERRAR SESIÓN
+// ==========================================
 
-// ==========================================
-// CIERRE DE SESIÓN
-// ==========================================
-window.logout = async function logout() {
+window.logout = async function () {
   try {
     if (supabaseClient) {
       const { error } = await supabaseClient.auth.signOut();
 
       if (error) {
-        console.error('Error al cerrar sesión:', error);
-        mostrarError('No se pudo cerrar la sesión correctamente.');
+        console.error('Error cerrando sesión:', error);
+        mostrarError(error.message);
         return;
       }
     }
+
+    mostrarLogin();
   } catch (error) {
-    console.error('Error inesperado al cerrar sesión:', error);
-  } finally {
+    console.error('Error inesperado cerrando sesión:', error);
     mostrarLogin();
   }
 };
 
+// ==========================================
+// UI
+// ==========================================
 
-// ==========================================
-// ESTADO DEL BOTÓN
-// ==========================================
-function setLoadingState(isLoading) {
+function cambiarEstadoBoton(cargando) {
   if (!submitBtn) return;
 
-  submitBtn.disabled = isLoading;
+  submitBtn.disabled = cargando;
 
-  if (isLoading) {
-    submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
-
+  if (cargando) {
     submitBtn.innerHTML = `
       <i class="fa-solid fa-spinner fa-spin text-xs"></i>
       <span>Autenticando...</span>
     `;
-
-    return;
+    submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
+  } else {
+    submitBtn.innerHTML = `
+      <span>Ingresar al Sistema</span>
+      <i class="fa-solid fa-arrow-right text-xs"></i>
+    `;
+    submitBtn.classList.remove('opacity-70', 'cursor-not-allowed');
   }
-
-  submitBtn.classList.remove('opacity-70', 'cursor-not-allowed');
-
-  submitBtn.innerHTML = `
-    <span>Ingresar al Sistema</span>
-    <i class="fa-solid fa-arrow-right text-xs"></i>
-  `;
 }
 
-
-// ==========================================
-// MENSAJES DE ERROR
-// ==========================================
 function mostrarError(mensaje) {
   if (!errorContainer) return;
 
@@ -317,28 +337,32 @@ function ocultarError() {
   errorContainer.classList.add('hidden');
 }
 
-function traducirMensajeError(mensajeSupabase = '') {
-  const mensaje = mensajeSupabase.toLowerCase();
+function convertirError(error) {
+  const mensaje = String(error?.message || '').toLowerCase();
 
   if (mensaje.includes('invalid login credentials')) {
     return 'Correo o contraseña incorrectos.';
   }
 
   if (mensaje.includes('email not confirmed')) {
-    return 'El correo electrónico aún no ha sido confirmado.';
-  }
-
-  if (mensaje.includes('too many requests')) {
-    return 'Demasiados intentos. Espera unos minutos antes de volver a intentarlo.';
+    return 'El correo electrónico todavía no está confirmado.';
   }
 
   if (mensaje.includes('user not found')) {
-    return 'No existe una cuenta con ese correo electrónico.';
+    return 'No existe un usuario con ese correo.';
   }
 
-  if (mensaje.includes('network')) {
-    return 'No se pudo conectar con Supabase. Revisa tu conexión a internet.';
+  if (mensaje.includes('too many requests')) {
+    return 'Demasiados intentos. Espera unos minutos.';
   }
 
-  return `No fue posible iniciar sesión: ${mensajeSupabase}`;
+  if (
+    mensaje.includes('failed to fetch') ||
+    mensaje.includes('network') ||
+    mensaje.includes('fetch')
+  ) {
+    return 'No se pudo conectar con Supabase. Revisa la URL, la conexión y el navegador.';
+  }
+
+  return `Supabase: ${error.message || 'error desconocido'}`;
 }
