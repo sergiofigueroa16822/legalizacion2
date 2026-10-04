@@ -57,6 +57,37 @@
 </head>
 <body class="h-full text-slate-800 flex flex-col font-sans antialiased bg-slate-50">
 
+
+
+
+    <!-- SDK de Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Vinculación del JS externo con defer para ejecutarse tras cargar el DOM -->
+  <script src="js/login.js" defer></script>
+</head>
+<body>
+
+  <div class="login-card">
+    <h2>Iniciar Sesión</h2>
+    
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="email">Correo electrónico</label>
+        <input type="email" id="email" required placeholder="tu@email.com">
+      </div>
+      
+      <div class="form-group">
+        <label for="password">Contraseña</label>
+        <input type="password" id="password" required placeholder="••••••••">
+      </div>
+      
+      <button type="submit" id="submitBtn">Ingresar</button>
+    </form>
+
+    <div id="errorMessage" class="error-msg"></div>
+  </div>
+
     <header class="bg-aduana-900 text-white shadow-md border-b-4 border-aduana-600 no-print">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap justify-between items-center gap-4">
             <div class="flex items-center space-x-3">
