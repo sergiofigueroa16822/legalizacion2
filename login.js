@@ -1,49 +1,69 @@
-
-const SUPABASE_URL = 'https://lmmoqcpptyzgscnjwvgk.supabase.co';
-// Reemplaza esta cadena con la anon key (JWT) real copiada de Supabase:
-const SUPABASE_ANON_KEY = 'sb_publishable_xRnGuxmB5oen-G7LDlI6JQ_SUEvLDMr';
 // ==========================================
+// CONFIGURACIÓN DE SUPABASE
+// ==========================================
+const SUPABASE_URL = 'https://lmmoqcpptyzgscnjwvgk.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_xRnGuxmB5oen-G7LDlI6JQ_SUEvLDMr';
 
+// Inicialización segura del cliente Supabase v2
+let supabase = null;
 
-// Inicialización del cliente Supabase v2
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+try {
+  if (window.supabase && typeof window.supabase.createClient === 'function') {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  } else {
+    console.error("El SDK de Supabase no se ha cargado en window.supabase");
+  }
+} catch (err) {
+  console.error("Error al inicializar el cliente de Supabase:", err);
+}
 
 // ==========================================
 // REFERENCIAS AL DOM
 // ==========================================
-const loginView = document.getElementById('login-view');
-const appView = document.getElementById('app-view');
-const loginForm = document.getElementById('login-form');
-const emailInput = document.getElementById('login-email');
-const passwordInput = document.getElementById('login-password');
-const errorContainer = document.getElementById('login-error');
-const submitBtn = document.getElementById('login-submit-btn');
+let loginView, appView, loginForm, emailInput, passwordInput, errorContainer, submitBtn;
+
+function initDOMElements() {
+  loginView = document.getElementById('login-view');
+  appView = document.getElementById('app-view');
+  loginForm = document.getElementById('login-form');
+  emailInput = document.getElementById('login-email');
+  passwordInput = document.getElementById('login-password');
+  errorContainer = document.getElementById('login-error');
+  submitBtn = document.getElementById('login-submit-btn');
+}
 
 // ==========================================
-// EVENT LISTENERS Y MANEJO DE INICIO DE SESIÓN
+// EVENT LISTENERS Y FLUJO PRINCIPAL
 // ==========================================
 document.addEventListener('DOMContentLoaded', async () => {
-  // Verificar si existe una sesión activa al cargar la página
-  const { data: { session } } = await supabase.auth.getSession();
-  
-  if (session) {
-    mostrarAplicacionPrincipal();
+  initDOMElements();
+
+  // Verificar si hay sesión activa al cargar la página
+  if (supabase) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        mostrarAplicacionPrincipal();
+      }
+    } catch (e) {
+      console.warn("No se pudo verificar la sesión con Supabase:", e);
+    }
   }
 
-  // Escuchar el evento de envío del formulario de Login
+  // Escuchar evento de envío del formulario
   if (loginForm) {
     loginForm.addEventListener('submit', handleLogin);
   }
 });
 
 /**
- * Procesa la autenticación del usuario mediante Supabase Auth
+ * Procesa la autenticación del usuario
  */
 async function handleLogin(e) {
   e.preventDefault();
   
-  const email = emailInput.value.trim();
-  const password = passwordInput.value;
+  const email = emailInput ? emailInput.value.trim() : '';
+  const password = passwordInput ? passwordInput.value : '';
 
   if (!email || !password) {
     mostrarError('Por favor, ingresa tu correo y contraseña.');
@@ -52,6 +72,12 @@ async function handleLogin(e) {
 
   setLoadingState(true);
   ocultarError();
+
+  if (!supabase) {
+    mostrarError('Error de conexión con el servicio de autenticación.');
+    setLoadingState(false);
+    return;
+  }
 
   try {
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -65,43 +91,47 @@ async function handleLogin(e) {
       return;
     }
 
-    // Autenticación exitosa
     if (data.user) {
       mostrarAplicacionPrincipal();
     }
   } catch (err) {
-    console.error('Error inesperado durante el login:', err);
-    mostrarError('Ocurrió un error inesperado. Inténtalo nuevamente.');
+    console.error('Error durante el login:', err);
+    mostrarError('Ocurrió un error inesperado al intentar conectar.');
+  } finally {
     setLoadingState(false);
   }
 }
 
 // ==========================================
-// GESTIÓN DE VISTAS Y ESTADOS DE INTERFAZ
+// GESTIÓN DE INTERFAZ Y VISTAS
 // ==========================================
 
 function mostrarAplicacionPrincipal() {
-  loginView.classList.add('hidden');
-  appView.classList.remove('hidden');
+  if (loginView) loginView.classList.add('hidden');
+  if (appView) appView.classList.remove('hidden');
 
-  // Si app.js define una función de inicialización, la ejecutamos
+  // Si app.js tiene una función de inicio, la ejecutamos
   if (typeof window.initApp === 'function') {
     window.initApp();
   }
 }
 
 /**
- * Función global para cerrar sesión (invocada desde el botón "Salir" en index.html)
+ * Función global de Logout invocada desde el botón Salir
  */
 window.logout = async function () {
-  await supabase.auth.signOut();
-  appView.classList.add('hidden');
-  loginView.classList.remove('hidden');
-  loginForm.reset();
+  if (supabase) {
+    await supabase.auth.signOut();
+  }
+  if (appView) appView.classList.add('hidden');
+  if (loginView) loginView.classList.remove('hidden');
+  if (loginForm) loginForm.reset();
   ocultarError();
 };
 
 function setLoadingState(isLoading) {
+  if (!submitBtn) return;
+
   if (isLoading) {
     submitBtn.disabled = true;
     submitBtn.innerHTML = `
@@ -118,27 +148,29 @@ function setLoadingState(isLoading) {
 }
 
 function mostrarError(mensaje) {
+  if (!errorContainer) return;
   errorContainer.textContent = mensaje;
   errorContainer.classList.remove('hidden');
 }
 
 function ocultarError() {
+  if (!errorContainer) return;
   errorContainer.textContent = '';
   errorContainer.classList.add('hidden');
 }
 
 /**
- * Traduce errores comunes de Supabase Auth a un español descriptivo
+ * Traductor de respuestas de error de Supabase
  */
 function traducirMensajeError(msg) {
   if (msg.includes('Invalid login credentials')) {
-    return 'Credenciales inválidas. Verifica tu correo y contraseña.';
+    return 'Correo o contraseña incorrectos.';
   }
   if (msg.includes('Email not confirmed')) {
-    return 'El correo electrónico no ha sido confirmado aún.';
+    return 'El correo electrónico no ha sido confirmado en Supabase.';
   }
   if (msg.includes('Too many requests')) {
-    return 'Demasiados intentos fallidos. Inténtalo más tarde.';
+    return 'Demasiados intentos fallidos. Inténtalo de nuevo en unos minutos.';
   }
   return msg;
 }
