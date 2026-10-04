@@ -4,10 +4,9 @@
 const SUPABASE_URL = 'https://lmmoqcpptyzgscnjwvgk.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_xRnGuxmB5oen-G7LDlI6JQ_SUEvLDMr';
 
-
 let supabase = null;
 
-// Inicialización segura de Supabase
+// Inicialización de Supabase
 if (typeof window.supabase !== 'undefined' && SUPABASE_URL && !SUPABASE_URL.includes('TU_PROYECTO')) {
   try {
     supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -16,28 +15,32 @@ if (typeof window.supabase !== 'undefined' && SUPABASE_URL && !SUPABASE_URL.incl
   }
 }
 
-const loginCard = document.querySelector('.login-card');
-const appContent = document.getElementById('app-content');
-const loginForm = document.getElementById('loginForm');
-const errorMessage = document.getElementById('errorMessage');
-const submitBtn = document.getElementById('submitBtn');
+// Variables globales para referencias del DOM
+let loginCard, appContent, loginForm, errorMessage, submitBtn;
 
-// Función para mostrar la aplicación y ocultar el login
+function initDOMElements() {
+  loginCard = document.querySelector('.login-card');
+  appContent = document.getElementById('app-content');
+  loginForm = document.getElementById('loginForm');
+  errorMessage = document.getElementById('errorMessage');
+  submitBtn = document.getElementById('submitBtn');
+}
+
+// Muestra la aplicación y oculta el login
 function showApp() {
   if (loginCard) loginCard.classList.add('hidden');
   if (appContent) appContent.classList.remove('hidden');
 }
 
-// Función para mostrar el login y ocultar la aplicación
+// Muestra el login y oculta la aplicación
 function showLogin() {
   if (loginCard) loginCard.classList.remove('hidden');
   if (appContent) appContent.classList.add('hidden');
 }
 
-// Verifica el estado de la sesión
+// Verifica el estado de la sesión activa
 async function checkSession() {
   if (!supabase) {
-    // Si aún no se ha configurado la URL real de Supabase, verifica si hay sesión local
     if (localStorage.getItem('isLoggedIn') === 'true') {
       showApp();
     } else {
@@ -54,39 +57,50 @@ async function checkSession() {
       showLogin();
     }
   } catch (e) {
-    console.warn("No se pudo verificar sesión con la base de datos:", e);
+    console.warn("No se pudo verificar la sesión con Supabase:", e);
     showLogin();
   }
 }
 
-// Manejo del formulario de inicio de sesión
-if (loginForm) {
+// Manejo del evento Submit del formulario de Login
+function setupLoginFormListener() {
+  if (!loginForm) return;
+
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    errorMessage.textContent = '';
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Cargando...';
+    if (errorMessage) errorMessage.textContent = '';
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Cargando...';
+    }
 
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
 
-    // Si Supabase aún tiene la URL de ejemplo, permite ingreso local
+    const email = emailInput ? emailInput.value : '';
+    const password = passwordInput ? passwordInput.value : '';
+
+    // Si Supabase no está configurado, permite login local de prueba
     if (!supabase) {
       if (email && password) {
         localStorage.setItem('isLoggedIn', 'true');
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Ingresar';
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Ingresar';
+        }
         showApp();
       } else {
-        errorMessage.textContent = 'Ingresa un correo y contraseña válidos.';
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Ingresar';
+        if (errorMessage) errorMessage.textContent = 'Ingresa un correo y contraseña válidos.';
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Ingresar';
+        }
       }
       return;
     }
 
-    // Inicio de sesión real contra la base de datos de Supabase
+    // Inicio de sesión con Supabase
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email,
@@ -94,47 +108,45 @@ if (loginForm) {
       });
 
       if (error) {
-        errorMessage.textContent = error.message === 'Invalid login credentials' 
-          ? 'Correo o contraseña incorrectos' 
-          : error.message;
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Ingresar';
+        if (errorMessage) {
+          errorMessage.textContent = error.message === 'Invalid login credentials' 
+            ? 'Correo o contraseña incorrectos.' 
+            : error.message;
+        }
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Ingresar';
+        }
       } else {
         localStorage.setItem('isLoggedIn', 'true');
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Ingresar';
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Ingresar';
+        }
         showApp();
       }
     } catch (err) {
-      errorMessage.textContent = 'Error de conexión con la base de datos.';
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Ingresar';
+      if (errorMessage) errorMessage.textContent = 'Error de conexión con el servidor.';
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Ingresar';
+      }
     }
   });
 }
 
-// Función de Cierre de Sesión
-async function logout() {
+// Función de Cierre de Sesión (exportada opcionalmente al scope global)
+window.logout = async function() {
   localStorage.removeItem('isLoggedIn');
   if (supabase) {
     await supabase.auth.signOut();
   }
   showLogin();
-}
+};
 
-// Ejecutar comprobación al cargar la página
+// Inicialización segura cuando el DOM está 100% cargado
 document.addEventListener('DOMContentLoaded', () => {
+  initDOMElements();
+  setupLoginFormListener();
   checkSession();
 });
-
-
-
-
-
-
-
-
-
-
-
-
