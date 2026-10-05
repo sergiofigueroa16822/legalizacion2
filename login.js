@@ -40,7 +40,17 @@ async function iniciarAplicacion() {
     return;
   }
 
+  // Escuchador para iniciar sesión
   loginForm.addEventListener('submit', iniciarSesion);
+
+  // Escuchador global delegatorio para CERRAR SESIÓN (no falla si el botón se renderiza dinámicamente)
+  document.addEventListener('click', (e) => {
+    const logoutBtn = e.target.closest('#logout-btn');
+    if (logoutBtn) {
+      e.preventDefault();
+      cerrarSesion();
+    }
+  });
 
   if (!supabaseClient) {
     mostrarError(
@@ -49,10 +59,8 @@ async function iniciarAplicacion() {
     return;
   }
 
-  // Primero se registra el listener para no perder eventos de autenticación.
+  // Registrar listeners de auth y comprobar sesión persistente
   registrarEventosAuth();
-
-  // Luego se comprueba si existe una sesión guardada.
   await comprobarSesion();
 }
 
@@ -110,7 +118,7 @@ function obtenerElementosDOM() {
 }
 
 // ==========================================
-// SESIÓN EXISTENTE
+// COMPROBAR SESIÓN EXISTENTE
 // ==========================================
 
 async function comprobarSesion() {
@@ -136,7 +144,7 @@ async function comprobarSesion() {
 }
 
 // ==========================================
-// EVENTOS DE AUTH
+// EVENTOS AUTH (SUPABASE)
 // ==========================================
 
 function registrarEventosAuth() {
@@ -153,7 +161,6 @@ function registrarEventosAuth() {
         session &&
         session.user
       ) {
-        // Se difiere para evitar operaciones complejas dentro del callback.
         setTimeout(() => {
           mostrarAplicacion();
         }, 0);
@@ -204,12 +211,6 @@ async function iniciarSesion(event) {
 
     const { data, error } = respuesta;
 
-    console.log('Respuesta de Supabase:', {
-      user: data?.user?.email || null,
-      existeSession: Boolean(data?.session),
-      error: error || null
-    });
-
     if (error) {
       mostrarError(convertirError(error));
       return;
@@ -217,12 +218,11 @@ async function iniciarSesion(event) {
 
     if (!data || !data.session || !data.user) {
       mostrarError(
-        'Supabase no devolvió una sesión. Verifica que el correo esté confirmado y que el proveedor Email esté habilitado.'
+        'Supabase no devolvió una sesión. Verifica que el correo esté confirmado.'
       );
       return;
     }
 
-    // Cambio inmediato de vista.
     mostrarAplicacion();
   } catch (error) {
     console.error('Error durante la autenticación:', error);
@@ -233,7 +233,27 @@ async function iniciarSesion(event) {
 }
 
 // ==========================================
-// VISTAS
+// CERRAR SESIÓN
+// ==========================================
+
+async function cerrarSesion() {
+  if (supabaseClient) {
+    try {
+      await supabaseClient.auth.signOut();
+    } catch (err) {
+      console.error('Error al cerrar sesión en Supabase:', err);
+    }
+  }
+  mostrarLogin();
+}
+
+// Compatibilidad por si utilizas onclick="handleLogout()" en el HTML
+window.handleLogout = function() {
+  cerrarSesion();
+};
+
+// ==========================================
+// CONTROL DE VISTAS
 // ==========================================
 
 function mostrarAplicacion() {
@@ -249,12 +269,14 @@ function mostrarAplicacion() {
     appView.style.display = 'flex';
   }
 
+  document.body.classList.remove('overflow-hidden');
+
+  if (typeof renderChecklist === 'function') {
+    renderChecklist();
+  }
+
   if (typeof window.initApp === 'function') {
     window.initApp();
-  } else {
-    console.warn(
-      'app.js no cargó o no contiene window.initApp().'
-    );
   }
 }
 
@@ -273,44 +295,12 @@ function mostrarLogin() {
     loginForm.reset();
   }
 
+  document.body.classList.add('overflow-hidden');
   ocultarError();
 }
 
 // ==========================================
-// CERRAR SESIÓN
-// ==========================================
-document.addEventListener('DOMContentLoaded', () => {
-  const loginForm = document.getElementById('login-form');
-  const loginView = document.getElementById('login-view');
-  const appView = document.getElementById('app-view');
-  const logoutBtn = document.getElementById('logout-btn');
-
-  // 1. Iniciar sesión: Oculta login y muestra la app
-  if (loginForm) {
-    loginForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-
-      loginView.classList.add('hidden');
-      appView.classList.remove('hidden');
-      appView.classList.add('flex');
-    });
-  }
-
-  // 2. Cerrar sesión: Oculta la app y muestra el login
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', () => {
-      appView.classList.add('hidden');
-      appView.classList.remove('flex');
-      loginView.classList.remove('hidden');
-
-      // Resetea el formulario al salir
-      if (loginForm) loginForm.reset();
-    });
-  }
-});
-
-// ==========================================
-// UI
+// UTILIDADES UI Y ERRORES
 // ==========================================
 
 function cambiarEstadoBoton(cargando) {
@@ -374,55 +364,5 @@ function convertirError(error) {
     return 'No se pudo conectar con Supabase. Revisa la URL, la conexión y el navegador.';
   }
 
-
-
-
-  document.addEventListener('DOMContentLoaded', () => {
-  const loginForm = document.getElementById('login-form');
-  
-  if (loginForm) {
-    loginForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      
-      const email = document.getElementById('login-email').value;
-      const pass = document.getElementById('login-password').value;
-      const errorDiv = document.getElementById('login-error');
-
-      // Validación simple de credenciales
-      if (email && pass) {
-        // 1. Ocultar la pantalla de Login
-        document.getElementById('login-view').style.display = 'none';
-
-        // 2. Mostrar la Vista Principal de la App
-        const appView = document.getElementById('app-view');
-        appView.style.display = 'flex';
-
-        // 3. Reactivar el scroll en la página
-        document.body.classList.remove('overflow-hidden');
-
-        // Si tienes alguna inicialización de tablas o checklist, la ejecutas aquí
-        if (typeof renderChecklist === 'function') renderChecklist();
-      } else {
-        errorDiv.textContent = "Por favor ingrese un correo y contraseña válidos.";
-        errorDiv.classList.remove('hidden');
-      }
-    });
-  }
-});
-
-// Función global de Salir / Cerrar Sesión
-window.handleLogout = function() {
-  // 1. Ocultar la aplicación
-  document.getElementById('app-view').style.display = 'none';
-
-  // 2. Mostrar nuevamente el Login
-  document.getElementById('login-view').style.display = 'flex';
-
-  // 3. Volver a bloquear el scroll
-  document.body.classList.add('overflow-hidden');
-
-  // 4. Limpiar los campos del formulario
-  document.getElementById('login-form').reset();
-};
   return `Supabase: ${error.message || 'error desconocido'}`;
 }
