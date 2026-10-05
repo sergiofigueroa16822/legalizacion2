@@ -279,25 +279,35 @@ function mostrarLogin() {
 // ==========================================
 // CERRAR SESIÓN
 // ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+  const loginForm = document.getElementById('login-form');
+  const loginView = document.getElementById('login-view');
+  const appView = document.getElementById('app-view');
+  const logoutBtn = document.getElementById('logout-btn');
 
-window.logout = async function () {
-  try {
-    if (supabaseClient) {
-      const { error } = await supabaseClient.auth.signOut();
+  // 1. Iniciar sesión: Oculta login y muestra la app
+  if (loginForm) {
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
 
-      if (error) {
-        console.error('Error cerrando sesión:', error);
-        mostrarError(error.message);
-        return;
-      }
-    }
-
-    mostrarLogin();
-  } catch (error) {
-    console.error('Error inesperado cerrando sesión:', error);
-    mostrarLogin();
+      loginView.classList.add('hidden');
+      appView.classList.remove('hidden');
+      appView.classList.add('flex');
+    });
   }
-};
+
+  // 2. Cerrar sesión: Oculta la app y muestra el login
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      appView.classList.add('hidden');
+      appView.classList.remove('flex');
+      loginView.classList.remove('hidden');
+
+      // Resetea el formulario al salir
+      if (loginForm) loginForm.reset();
+    });
+  }
+});
 
 // ==========================================
 // UI
