@@ -33,12 +33,12 @@
   <!-- Estilos Personalizados -->
   <link rel="stylesheet" href="styles.css">
 </head>
-<body class="bg-slate-50 font-sans text-slate-800 antialiased h-full overflow-hidden">
+<body class="bg-slate-50 font-sans text-slate-800 antialiased min-h-screen">
 
   <!-- ========================================== -->
   <!-- VISTA 1: INICIO DE SESIÓN (LOGIN)          -->
   <!-- ========================================== -->
-  <div id="login-view" class="fixed inset-0 z-50 min-h-screen flex items-center justify-center p-4 bg-slate-900/95">
+  <div id="login-view" class="min-h-screen flex items-center justify-center p-4 bg-slate-900">
     <div class="max-w-md w-full bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-700">
       
       <!-- Encabezado del Login -->
@@ -76,7 +76,7 @@
           <!-- Div para mensajes de error -->
           <div id="login-error" class="p-2.5 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs hidden"></div>
 
-          <button type="submit" id="login-submit-btn" class="w-full bg-aduana-600 hover:bg-aduana-700 active:bg-aduana-800 text-white font-bold py-2.5 rounded-lg shadow-md transition flex items-center justify-center gap-2 text-sm">
+          <button type="submit" id="login-submit-btn" class="w-full bg-aduana-600 hover:bg-aduana-700 active:bg-aduana-800 text-white font-bold py-2.5 rounded-lg shadow-md transition flex items-center justify-center gap-2 text-sm cursor-pointer">
             <span>Ingresar al Sistema</span>
             <i class="fa-solid fa-arrow-right text-xs"></i>
           </button>
@@ -93,7 +93,7 @@
   <!-- ========================================== -->
   <!-- VISTA 2: APLICACIÓN PRINCIPAL              -->
   <!-- ========================================== -->
-  <div id="app-view" style="display: none;" class="min-h-screen flex flex-col">
+  <div id="app-view" class="hidden min-h-screen flex-col">
 
     <header class="bg-aduana-900 text-white shadow-md border-b-4 border-aduana-600 no-print">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap justify-between items-center gap-4">
