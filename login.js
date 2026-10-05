@@ -364,5 +364,55 @@ function convertirError(error) {
     return 'No se pudo conectar con Supabase. Revisa la URL, la conexión y el navegador.';
   }
 
+
+
+
+  document.addEventListener('DOMContentLoaded', () => {
+  const loginForm = document.getElementById('login-form');
+  
+  if (loginForm) {
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('login-email').value;
+      const pass = document.getElementById('login-password').value;
+      const errorDiv = document.getElementById('login-error');
+
+      // Validación simple de credenciales
+      if (email && pass) {
+        // 1. Ocultar la pantalla de Login
+        document.getElementById('login-view').style.display = 'none';
+
+        // 2. Mostrar la Vista Principal de la App
+        const appView = document.getElementById('app-view');
+        appView.style.display = 'flex';
+
+        // 3. Reactivar el scroll en la página
+        document.body.classList.remove('overflow-hidden');
+
+        // Si tienes alguna inicialización de tablas o checklist, la ejecutas aquí
+        if (typeof renderChecklist === 'function') renderChecklist();
+      } else {
+        errorDiv.textContent = "Por favor ingrese un correo y contraseña válidos.";
+        errorDiv.classList.remove('hidden');
+      }
+    });
+  }
+});
+
+// Función global de Salir / Cerrar Sesión
+window.handleLogout = function() {
+  // 1. Ocultar la aplicación
+  document.getElementById('app-view').style.display = 'none';
+
+  // 2. Mostrar nuevamente el Login
+  document.getElementById('login-view').style.display = 'flex';
+
+  // 3. Volver a bloquear el scroll
+  document.body.classList.add('overflow-hidden');
+
+  // 4. Limpiar los campos del formulario
+  document.getElementById('login-form').reset();
+};
   return `Supabase: ${error.message || 'error desconocido'}`;
 }
