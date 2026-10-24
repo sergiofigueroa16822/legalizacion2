@@ -288,6 +288,102 @@
                 </div>
             </div>
 
+
+  <!-- ------------------------------------------------------------------------------------ -->
+
+
+
+<!-- Widget Contenedor del Validador -->
+<div id="validador-pdf-widget" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; max-width: 450px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); font-family: system-ui, -apple-system, sans-serif;">
+    <h3 style="margin-top: 0; color: #1e293b; font-size: 18px; margin-bottom: 8px;">Validador de Documentos con IA</h3>
+    <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">Sube un archivo PDF para analizar su contenido y validar datos.</p>
+    
+    <!-- Selector de archivos -->
+    <input type="file" id="archivoPdfWidget" accept=".pdf" style="width: 100%; margin-bottom: 12px; font-size: 14px;">
+    
+    <!-- Botón de acción -->
+    <button onclick="procesarPDFWidget()" style="width: 100%; padding: 10px; background: #2563eb; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s;">
+        Analizar Documento
+    </button>
+
+    <!-- Área de resultados -->
+    <div id="resultadoPdfWidget" style="margin-top: 15px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 6px; font-size: 13px; color: #334155; white-space: pre-wrap; max-height: 200px; overflow-y: auto;">Esperando archivo...</div>
+</div>
+
+<!-- Librería PDF.js para leer el documento en el navegador -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    async function procesarPDFWidget() {
+        const input = document.getElementById('archivoPdfWidget');
+        const divResultado = document.getElementById('resultadoPdfWidget');
+
+        if (input.files.length === 0) {
+            alert('Por favor selecciona un archivo PDF primero.');
+            return;
+        }
+
+        const archivo = input.files[0];
+        divResultado.innerText = 'Leyendo documento y consultando a la IA...';
+
+        try {
+            // 1. Extraer el texto del PDF localmente
+            const arrayBuffer = await archivo.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            let textoExtraido = '';
+
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const pagina = await pdf.getPage(i);
+                const contenido = await pagina.getTextContent();
+                const textosPagina = contenido.items.map(item => item.str);
+                textoExtraido += textosPagina.join(' ') + '\n';
+            }
+
+            // 2. Enviar el texto a tu función de Supabase recién probada
+            const urlSupabase = 'https://lmmoqcpptyzgscnjwvgk.supabase.co/functions/v1/llama-function';
+            
+            const respuesta = await fetch(urlSupabase, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    prompt: `Por favor analiza, revisa y valida el siguiente contenido extraído de un documento:\n\n${textoExtraido}` 
+                })
+            });
+
+            const datos = await respuesta.json();
+
+            if (!respuesta.ok) {
+                throw new Error(datos.error?.message || 'Error en la respuesta del servidor');
+            }
+
+            // 3. Mostrar el resultado de la IA dentro del widget
+            divResultado.innerText = datos.reply;
+
+        } catch (error) {
+            console.error(error);
+            divResultado.innerText = 'Error: ' + error.message;
+        }
+    }
+</script>
+
+
+
+
+
+  <!-- --------------------------------------------------------------------------------------- -->
+
+
+
+
+
+
+
+
+
+          
             <!-- TARJETA DE VISTOS BUENOS SECTORIALES (PROMINENTE) -->
             <div id="vobo-card-alert" class="p-4 rounded-xl border border-amber-300 bg-amber-50/90 shadow-sm space-y-2">
                 <div class="flex items-center justify-between border-b border-amber-200/80 pb-2">
