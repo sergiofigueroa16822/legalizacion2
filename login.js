@@ -337,3 +337,35 @@ function convertirError(error) {
 
   return `Supabase: ${error.message || 'Error desconocido'}`;
 }
+
+
+
+
+
+async function consultarAsistente(promptUsuario) {
+  const urlSupabase = 'https://lmmoqcpptyzgscnjwvgk.supabase.co/functions/v1/llama-function';
+  
+  try {
+    const respuesta = await fetch(urlSupabase, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // Nota: Si usas autenticación de Supabase en tu app, puedes pasar el token aquí. 
+        // Como tu función permite acceso libre con CORS, con el Content-Type basta para pruebas.
+      },
+      body: JSON.stringify({ prompt: promptUsuario })
+    });
+
+    const datos = await respuesta.json();
+
+    if (!respuesta.ok) {
+      throw new Error(datos.error || 'Error al comunicarse con la función');
+    }
+
+    console.log("Respuesta de la IA:", datos.reply);
+    return datos.reply;
+
+  } catch (error) {
+    console.error("Hubo un problema:", error.message);
+  }
+}
