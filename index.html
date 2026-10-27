@@ -306,18 +306,26 @@
                 throw new Error('No se pudo extraer texto del PDF (puede ser un PDF escaneado como imagen).');
             }
 
+            // Truncado preventivo a 12,000 caracteres para no saturar los límites de la Edge Function
+            const textoSeguro = textoExtraido.length > 12000 
+                ? textoExtraido.substring(0, 12000) + '\n\n[Texto truncado por longitud...]'
+                : textoExtraido;
+
             divResultado.innerText = 'Consultando a la IA en Supabase...';
 
-            // 2. Enviar petición a la Edge Function de Supabase
+            // 2. Enviar petición a la Edge Function de Supabase con credenciales de autorización
             const urlSupabase = 'https://lmmoqcpptyzgscnjwvgk.supabase.co/functions/v1/llama-function';
+            const supabaseAnonKey = 'sb_publishable_xRnGuxmB5oen-G7LDlI6JQ_SUEvLDMr'; 
             
             const respuesta = await fetch(urlSupabase, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${supabaseAnonKey}`,
+                    'apikey': supabaseAnonKey
                 },
                 body: JSON.stringify({ 
-                    prompt: `Analiza, revisa y valida el siguiente contenido extraído de un documento:\n\n${textoExtraido}` 
+                    prompt: `Analiza, revisa y valida el siguiente contenido extraído de un documento:\n\n${textoSeguro}` 
                 })
             });
 
