@@ -252,99 +252,100 @@
 
  <!-- ------------------------------------------------------------------------------------
 <marquee>TRABAJANDO EN RESOLVER EL ANALISIS POR IA</marquee>
-<!-- Widget Contenedor del Validador -->
-<div id="validador-pdf-widget" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; max-width: 450px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); font-family: system-ui, -apple-system, sans-serif;">
-    <h3 style="margin-top: 0; color: #1e293b; font-size: 18px; margin-bottom: 8px;">Validador de Documentos con IA</h3>
-    <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">Sube un archivo PDF para analizar su contenido y validar datos.</p>
+<!-- Widget Prevalidador Aduanero DUS -->
+<div id="validador-pdf-widget" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 20px; max-width: 550px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); font-family: system-ui, -apple-system, sans-serif;">
+    <h3 style="margin-top: 0; color: #0f172a; font-size: 18px; margin-bottom: 6px;">📋 Prevalidador Aduanero de Exportaciones (DUS)</h3>
+    <p style="color: #64748b; font-size: 13px; margin-bottom: 14px;">Adjunta los documentos de la carpeta (DUS, Factura de Exportación, BL/AWB, CRT, Packing List, Certificate of Origin, etc.).</p>
     
-    <!-- Selector de archivos -->
-    <input type="file" id="archivoPdfWidget" accept=".pdf" style="width: 100%; margin-bottom: 12px; font-size: 14px;">
+    <!-- Selector múltiple de archivos -->
+    <input type="file" id="archivoPdfWidget" accept=".pdf, .png, .jpg, .jpeg, .webp" multiple style="width: 100%; margin-bottom: 12px; font-size: 13px;">
     
     <!-- Botón de acción -->
-    <button id="btnAnalizarPdf" onclick="procesarPDFWidget()" style="width: 100%; padding: 10px; background: #2563eb; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s;">
-        Analizar Documento
+    <button id="btnAnalizarPdf" onclick="procesarArchivosAduana()" style="width: 100%; padding: 11px; background: #0284c7; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s;">
+        Auditar Carpetas y Cruzar Información
     </button>
 
     <!-- Área de resultados -->
-    <div id="resultadoPdfWidget" style="margin-top: 15px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 6px; font-size: 13px; color: #334155; white-space: pre-wrap; max-height: 250px; overflow-y: auto;">Esperando archivo...</div>
+    <div id="resultadoPdfWidget" style="margin-top: 15px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 14px; border-radius: 6px; font-size: 13px; color: #1e293b; white-space: pre-wrap; max-height: 400px; overflow-y: auto;">Esperando archivos para auditar...</div>
 </div>
 
-<!-- Librería PDF.js para renderizar el documento en el navegador -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
 <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-    async function procesarPDFWidget() {
+    async function procesarArchivosAduana() {
         const input = document.getElementById('archivoPdfWidget');
         const divResultado = document.getElementById('resultadoPdfWidget');
         const boton = document.getElementById('btnAnalizarPdf');
 
         if (!input.files || input.files.length === 0) {
-            alert('Por favor selecciona un archivo PDF primero.');
+            alert('Por favor selecciona al menos un archivo (DUS, Factura, B/L, etc.).');
             return;
         }
 
-        const archivo = input.files[0];
-        divResultado.innerText = 'Cargando y evaluando documento...';
+        const archivos = Array.from(input.files);
+        divResultado.innerText = `Iniciando auditoría de ${archivos.length} archivo(s)...`;
         boton.disabled = true;
         boton.style.opacity = '0.6';
 
         try {
-            const arrayBuffer = await archivo.arrayBuffer();
-            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            let expedienteTexto = "";
+            let imagenesBase64 = [];
 
-            // 1. Verificar si tiene texto digital nativo
-            let textoDigital = '';
-            for (let i = 1; i <= pdf.numPages; i++) {
-                const pagina = await pdf.getPage(i);
-                const contenido = await pagina.getTextContent();
-                const lineas = contenido.items.map(item => item.str).filter(str => str.trim().length > 0);
-                if (lineas.length > 0) {
-                    textoDigital += `--- Página ${i} ---\n` + lineas.join(' ') + '\n\n';
+            for (let i = 0; i < archivos.length; i++) {
+                const archivo = archivos[i];
+                divResultado.innerText = `Procesando archivo ${i + 1} de ${archivos.length}: ${archivo.name}...`;
+
+                if (archivo.type === 'application/pdf') {
+                    const arrayBuffer = await archivo.arrayBuffer();
+                    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                    
+                    let textoDigitalPdf = "";
+                    for (let p = 1; p <= pdf.numPages; p++) {
+                        const pagina = await pdf.getPage(p);
+                        const contenido = await pagina.getTextContent();
+                        const lineas = contenido.items.map(item => item.str).filter(str => str.trim().length > 0);
+                        if (lineas.length > 0) {
+                            textoDigitalPdf += lineas.join(' ') + '\n';
+                        }
+                    }
+
+                    // Si el PDF contiene texto vectorial suficiente
+                    if (textoDigitalPdf.trim().length > 80) {
+                        expedienteTexto += `\n=== DOCUMENTO PDF (${archivo.name}) ===\n` + textoDigitalPdf + "\n";
+                    } else {
+                        // Si es PDF escaneado, convertimos sus páginas a imágenes
+                        for (let p = 1; p <= pdf.numPages; p++) {
+                            const pagina = await pdf.getPage(p);
+                            const viewport = pagina.getViewport({ scale: 1.8 });
+                            const canvas = document.createElement('canvas');
+                            const context = canvas.getContext('2d');
+                            canvas.height = viewport.height;
+                            canvas.width = viewport.width;
+
+                            await pagina.render({ canvasContext: context, viewport: viewport }).promise;
+                            const b64 = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+                            imagenesBase64.push({ nombre: `${archivo.name} (Pág ${p})`, base64: b64 });
+                        }
+                    }
+                } else if (archivo.type.startsWith('image/')) {
+                    // Si es directamente una imagen (JPG/PNG)
+                    const base64 = await archivoToBase64(archivo);
+                    imagenesBase64.push({ nombre: archivo.name, base64: base64 });
                 }
             }
+
+            divResultado.innerText = 'Enviando legajo a la IA para validación aduanera cruzada...';
 
             const urlSupabase = 'https://lmmoqcpptyzgscnjwvgk.supabase.co/functions/v1/llama-function';
             const supabaseAnonKey = 'sb_publishable_xRnGuxmB5oen-G7LDlI6JQ_SUEvLDMr';
-            let payload = {};
 
-            // 2. Si el PDF trae texto digital enriquecido, se procesa por texto
-            if (textoDigital.trim().length > 100) {
-                divResultado.innerText = 'Documento digital detectado. Analizando texto...';
-                payload = {
-                    tipo: 'texto',
-                    prompt: `Analiza, revisa y valida el siguiente contenido extraído de un documento:\n\n${textoDigital.substring(0, 12000)}`
-                };
-            } else {
-                // 3. Si es un PDF escaneado (como set.pdf), se convierte cada página a imagen Base64 de alta resolución
-                divResultado.innerText = `PDF escaneado detectado (${pdf.numPages} pág). Renderizando páginas como imágenes...`;
-                const imagenesBase64 = [];
+            const payload = {
+                texto_expediente: expedienteTexto,
+                imagenes: imagenesBase64
+            };
 
-                for (let i = 1; i <= pdf.numPages; i++) {
-                    const pagina = await pdf.getPage(i);
-                    const viewport = pagina.getViewport({ scale: 2.0 }); // Escala 2.0 para máxima nitidez en timbres y códigos
-
-                    const canvas = document.createElement('canvas');
-                    const context = canvas.getContext('2d');
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
-
-                    await pagina.render({ canvasContext: context, viewport: viewport }).promise;
-                    
-                    const base64Data = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
-                    imagenesBase64.push(base64Data);
-                }
-
-                divResultado.innerText = 'Enviando imágenes a la IA con Visión Multimodal...';
-                payload = {
-                    tipo: 'imagen',
-                    prompt: 'Analiza detalladamente este expediente aduanero escaneado (DUS, AWB, Factura, Guía de despacho, etc.). Extrae con precisión los RUTs, números de declaración, pesos, bultos y valores FOB.',
-                    imagenes: imagenesBase64
-                };
-            }
-
-            // 4. Enviar a Supabase Edge Function
             const respuesta = await fetch(urlSupabase, {
                 method: 'POST',
                 headers: {
@@ -362,23 +363,26 @@
                 throw new Error(mensajeError);
             }
 
-            if (datos.reply) {
-                divResultado.innerText = datos.reply;
-            } else {
-                divResultado.innerText = 'Respuesta recibida:\n' + JSON.stringify(datos, null, 2);
-            }
+            divResultado.innerText = datos.reply || JSON.stringify(datos, null, 2);
 
         } catch (error) {
-            console.error('Detalle del error:', error);
-            divResultado.innerText = '❌ Error al procesar: ' + error.message;
+            console.error('Error durante el análisis:', error);
+            divResultado.innerText = '❌ Error al procesar expedientes: ' + error.message;
         } finally {
             boton.disabled = false;
             boton.style.opacity = '1';
         }
     }
+
+    function archivoToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = error => reject(error);
+        });
+    }
 </script>
-
-
               
   <!--            
               
