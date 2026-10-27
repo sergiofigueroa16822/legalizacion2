@@ -250,7 +250,7 @@
                     </div>
                 </div>
 
- <!-- ------------------------------------------------------------------------------------ -->
+ <!-- ------------------------------------------------------------------------------------
 <marquee>TRABAJANDO EN RESOLVER EL ANALISIS POR IA</marquee>
 
 <!-- Widget Contenedor del Validador -->
@@ -270,129 +270,121 @@
     <div id="resultadoPdfWidget" style="margin-top: 15px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 6px; font-size: 13px; color: #334155; white-space: pre-wrap; max-height: 250px; overflow-y: auto;">Esperando archivo...</div>
 </div>
 
-<!-- Librería PDF.js para leer el documento en el navegador -->
+              }
+
+
+<!-- Librería PDF.js para renderizar el documento en el navegador -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
-              
-              <!-- Librería Tesseract.js para OCR en PDFs escaneados -->
-<script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
-
-
 <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-// Configuración de workers
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    async function procesarPDFWidget() {
+        const input = document.getElementById('archivoPdfWidget');
+        const divResultado = document.getElementById('resultadoPdfWidget');
+        const boton = document.getElementById('btnAnalizarPdf');
 
-async function procesarPDFWidget() {
-    const input = document.getElementById('archivoPdfWidget');
-    const divResultado = document.getElementById('resultadoPdfWidget');
-    const boton = document.getElementById('btnAnalizarPdf');
-
-    if (!input.files || input.files.length === 0) {
-        alert('Por favor selecciona un archivo PDF primero.');
-        return;
-    }
-
-    const archivo = input.files[0];
-    divResultado.innerText = 'Leyendo y extrayendo texto del PDF...';
-    boton.disabled = true;
-    boton.style.opacity = '0.6';
-
-    try {
-        const arrayBuffer = await archivo.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-        let textoExtraido = '';
-
-        // 1. Intentar extracción de texto nativa (PDF con texto digital)
-        for (let i = 1; i <= pdf.numPages; i++) {
-            const pagina = await pdf.getPage(i);
-            const contenido = await pagina.getTextContent();
-            const lineas = contenido.items.map(item => item.str).filter(str => str.trim().length > 0);
-            if (lineas.length > 0) {
-                textoExtraido += `--- Página ${i} ---\n` + lineas.join(' ') + '\n\n';
-            }
+        if (!input.files || input.files.length === 0) {
+            alert('Por favor selecciona un archivo PDF primero.');
+            return;
         }
 
-        // 2. Si el texto está vacío, el PDF es escaneado (como el set.pdf). Aplicar OCR local con Tesseract.js
-        if (!textoExtraido.trim()) {
-            divResultado.innerText = 'PDF escaneado detectado. Aplicando OCR local (reconocimiento de imagen)... Esto puede tomar unos segundos.';
-            
+        const archivo = input.files[0];
+        divResultado.innerText = 'Cargando y evaluando PDF...';
+        boton.disabled = true;
+        boton.style.opacity = '0.6';
+
+        try {
+            const arrayBuffer = await archivo.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+            // 1. Verificar si tiene texto digital nativo
+            let textoDigital = '';
             for (let i = 1; i <= pdf.numPages; i++) {
                 const pagina = await pdf.getPage(i);
-                const viewport = pagina.getViewport({ scale: 1.5 }); // Escala óptima para lectura OCR
-                
-                const canvas = document.createElement('canvas');
-                const context = canvas.getContext('2d');
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
-
-                await pagina.render({ canvasContext: context, viewport: viewport }).promise;
-                
-                // Convertir la página renderizada a imagen y procesar con Tesseract
-                const imagenDataUrl = canvas.toDataURL('image/png');
-                divResultado.innerText = `Procesando OCR en página ${i} de ${pdf.numPages}...`;
-
-                const worker = await Tesseract.createWorker('spa'); // Idioma español
-                const resultadoOcr = await worker.recognize(imagenDataUrl);
-                await worker.terminate();
-
-                textoExtraido += `--- Página ${i} (OCR) ---\n` + resultadoOcr.data.text + '\n\n';
+                const contenido = await pagina.getTextContent();
+                const lineas = contenido.items.map(item => item.str).filter(str => str.trim().length > 0);
+                if (lineas.length > 0) {
+                    textoDigital += `--- Página ${i} ---\n` + lineas.join(' ') + '\n\n';
+                }
             }
+
+            const urlSupabase = 'https://lmmoqcpptyzgscnjwvgk.supabase.co/functions/v1/llama-function';
+            const supabaseAnonKey = 'sb_publishable_xRnGuxmB5oen-G7LDlI6JQ_SUEvLDMr';
+            let payload = {};
+
+            // 2. Si el PDF tiene texto seleccionable, se envía texto
+            if (textoDigital.trim().length > 100) {
+                divResultado.innerText = 'Documento digital detectado. Analizando texto...';
+                payload = {
+                    tipo: 'texto',
+                    prompt: `Analiza, revisa y valida el siguiente contenido extraído de un documento:\n\n${textoDigital.substring(0, 12000)}`
+                };
+            } else {
+                // 3. Si es un PDF escaneado (como set.pdf), se convierten las páginas a imágenes Base64
+                divResultado.innerText = `PDF escaneado detectado (${pdf.numPages} pág). Generando imágenes de alta resolución...`;
+                const imagenesBase64 = [];
+
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const pagina = await pdf.getPage(i);
+                    // Escala 2.0 para garantizar máxima nitidez visual
+                    const viewport = pagina.getViewport({ scale: 2.0 }); 
+
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+
+                    await pagina.render({ canvasContext: context, viewport: viewport }).promise;
+                    
+                    // Extraer string base64 sin la cabecera data:image/png;base64,
+                    const base64Data = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+                    imagenesBase64.push(base64Data);
+                }
+
+                divResultado.innerText = 'Enviando imágenes a la IA con Visión Multimodal...';
+                payload = {
+                    tipo: 'imagen',
+                    prompt: 'Analiza detalladamente estas imágenes de un expediente aduanero (DUS, AWB, Factura, Guía). Extrae y valida todos los datos clave (RUTs, valores FOB, bultos, fechas, números de declaración, etc.).',
+                    imagenes: imagenesBase64
+                };
+            }
+
+            // 4. Enviar a Supabase Edge Function
+            const respuesta = await fetch(urlSupabase, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${supabaseAnonKey}`,
+                    'apikey': supabaseAnonKey
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const datos = await respuesta.json();
+
+            if (!respuesta.ok) {
+                const mensajeError = typeof datos.error === 'object' ? JSON.stringify(datos.error, null, 2) : (datos.error || 'Error HTTP ' + respuesta.status);
+                throw new Error(mensajeError);
+            }
+
+            if (datos.reply) {
+                divResultado.innerText = datos.reply;
+            } else {
+                divResultado.innerText = 'Respuesta recibida:\n' + JSON.stringify(datos, null, 2);
+            }
+
+        } catch (error) {
+            console.error('Detalle del error:', error);
+            divResultado.innerText = '❌ Error al procesar: ' + error.message;
+        } finally {
+            boton.disabled = false;
+            boton.style.opacity = '1';
         }
-
-        if (!textoExtraido.trim()) {
-            throw new Error('No se pudo extraer texto ni aplicar OCR al documento.');
-        }
-
-        // Truncado preventivo a 12,000 caracteres para no saturar los límites de la Edge Function
-        const textoSeguro = textoExtraido.length > 12000 
-            ? textoExtraido.substring(0, 12000) + '\n\n[Texto truncado por longitud...]'
-            : textoExtraido;
-
-        divResultado.innerText = 'Consultando a la IA en Supabase...';
-
-        // 3. Enviar petición a la Edge Function de Supabase
-        const urlSupabase = 'https://lmmoqcpptyzgscnjwvgk.supabase.co/functions/v1/llama-function';
-        const supabaseAnonKey = 'sb_publishable_xRnGuxmB5oen-G7LDlI6JQ_SUEvLDMr'; 
-        
-        const respuesta = await fetch(urlSupabase, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${supabaseAnonKey}`,
-                'apikey': supabaseAnonKey
-            },
-            body: JSON.stringify({ 
-                prompt: `Analiza, revisa y valida el siguiente contenido extraído de un documento:\n\n${textoSeguro}` 
-            })
-        });
-
-        const datos = await respuesta.json();
-
-        if (!respuesta.ok) {
-            const mensajeError = typeof datos.error === 'object' ? JSON.stringify(datos.error, null, 2) : (datos.error || 'Error HTTP ' + respuesta.status);
-            throw new Error(mensajeError);
-        }
-
-        if (datos.reply) {
-            divResultado.innerText = datos.reply;
-        } else {
-            divResultado.innerText = 'Respuesta recibida:\n' + JSON.stringify(datos, null, 2);
-        }
-
-    } catch (error) {
-        console.error('Detalle del error:', error);
-        divResultado.innerText = '❌ Error al procesar: ' + error.message;
-    } finally {
-        boton.disabled = false;
-        boton.style.opacity = '1';
     }
-}
+</script>
+<!--
 
-
-
-
-            </script>
 
 
               
