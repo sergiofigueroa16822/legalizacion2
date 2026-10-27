@@ -257,138 +257,135 @@
     <h3 style="margin-top: 0; color: #0f172a; font-size: 18px; margin-bottom: 6px;">📋 Prevalidador Aduanero de Exportaciones (DUS)</h3>
     <p style="color: #64748b; font-size: 13px; margin-bottom: 14px;">Adjunta los documentos de la carpeta (DUS, Factura de Exportación, BL/AWB, CRT, Packing List, Certificate of Origin, etc.).</p>
 
-    <!-- Selector múltiple de archivos -->
     <input type="file" id="archivoPdfWidget" accept=".pdf,.png,.jpg,.jpeg,.webp" multiple style="width: 100%; margin-bottom: 12px; font-size: 13px;">
 
-    <!-- Botón de acción -->
-    <button id="btnAnalizarPdf" type="button" style="width: 100%; padding: 11px; background: #0284c7; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s;">
+    <button id="btnAnalizarPdf" type="button" onclick="procesarArchivosAduana()" style="width: 100%; padding: 11px; background: #0284c7; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s;">
         Auditar Carpetas y Cruzar Información
     </button>
 
-    <!-- Área de resultados -->
     <div id="resultadoPdfWidget" style="margin-top: 15px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 14px; border-radius: 6px; font-size: 13px; color: #1e293b; white-space: pre-wrap; max-height: 400px; overflow-y: auto;">Esperando archivos para auditar...</div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
 <script>
-(function () {
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
     // ===== CONFIGURACIÓN =====
-    const URL_SUPABASE = 'https://lmmoqcpptyzgscnjwvgk.supabase.co/functions/v1/llama-function';
-    const SUPABASE_KEY = 'sb_publishable_xRnGuxmB5oen-G7LDlI6JQ_SUEvLDMr';
-    const MAX_IMAGENES = 5;            // límite de Groq por consulta
-    const MAX_LADO_PX = 1600;          // lado máximo de cada imagen enviada
-    const CALIDAD_JPEG = 0.75;
-    const MAX_CHARS_TEXTO = 24000;     // evita superar límites de tokens por minuto
-    const TIMEOUT_MS = 120000;
+    var URL_SUPABASE = 'https://lmmoqcpptyzgscnjwvgk.supabase.co/functions/v1/llama-function';
+    var SUPABASE_KEY = 'sb_publishable_xRnGuxmB5oen-G7LDlI6JQ_SUEvLDMr';
+    var MAX_IMAGENES = 5;           // límite de Groq por consulta
+    var MAX_LADO_PX = 1600;         // lado máximo de cada imagen enviada
+    var CALIDAD_JPEG = 0.75;
+    var MAX_CHARS_TEXTO = 24000;    // evita superar límites de tokens
+    var TIMEOUT_MS = 120000;
 
-    const input = document.getElementById('archivoPdfWidget');
-    const divResultado = document.getElementById('resultadoPdfWidget');
-    const boton = document.getElementById('btnAnalizarPdf');
-
-    boton.addEventListener('click', procesarArchivosAduana);
-
-    function mostrar(msg) {
-        divResultado.textContent = msg;
+    function mostrarResultado(msg) {
+        document.getElementById('resultadoPdfWidget').textContent = msg;
     }
 
-    // Dibuja cualquier fuente (canvas o imagen) en un canvas reducido y devuelve JPEG base64 puro
-    function canvasAJpegBase64(fuente, ancho, alto) {
-        const escala = Math.min(1, MAX_LADO_PX / Math.max(ancho, alto));
-        const canvas = document.createElement('canvas');
+    // Convierte una imagen a JPEG reducido (base64 puro, sin prefijo)
+    function imagenAJpegBase64(img) {
+        var ancho = img.naturalWidth;
+        var alto = img.naturalHeight;
+        var escala = Math.min(1, MAX_LADO_PX / Math.max(ancho, alto));
+        var canvas = document.createElement('canvas');
         canvas.width = Math.round(ancho * escala);
         canvas.height = Math.round(alto * escala);
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#ffffff';              // fondo blanco (PNG transparentes)
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(fuente, 0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         return canvas.toDataURL('image/jpeg', CALIDAD_JPEG).split(',')[1];
     }
 
     function cargarImagen(file) {
-        return new Promise((resolve, reject) => {
-            const url = URL.createObjectURL(file);
-            const img = new Image();
-            img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
-            img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('No se pudo leer la imagen ' + file.name)); };
+        return new Promise(function (resolve, reject) {
+            var url = URL.createObjectURL(file);
+            var img = new Image();
+            img.onload = function () { URL.revokeObjectURL(url); resolve(img); };
+            img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('No se pudo leer la imagen ' + file.name)); };
             img.src = url;
         });
     }
 
     async function procesarArchivosAduana() {
+        var input = document.getElementById('archivoPdfWidget');
+        var boton = document.getElementById('btnAnalizarPdf');
+
         if (!input.files || input.files.length === 0) {
             alert('Por favor selecciona al menos un archivo (DUS, Factura, B/L, etc.).');
             return;
         }
 
-        const archivos = Array.from(input.files);
+        var archivos = Array.from(input.files);
         boton.disabled = true;
         boton.style.opacity = '0.6';
-        mostrar(`Iniciando auditoría de ${archivos.length} archivo(s)...`);
+        mostrarResultado('Iniciando auditoría de ' + archivos.length + ' archivo(s)...');
 
         try {
-            let expedienteTexto = '';
-            const imagenes = [];
+            var expedienteTexto = '';
+            var imagenes = [];
 
-            for (let i = 0; i < archivos.length; i++) {
-                const archivo = archivos[i];
-                mostrar(`Procesando archivo ${i + 1} de ${archivos.length}: ${archivo.name}...`);
+            for (var i = 0; i < archivos.length; i++) {
+                var archivo = archivos[i];
+                mostrarResultado('Procesando archivo ' + (i + 1) + ' de ' + archivos.length + ': ' + archivo.name + '...');
 
-                const esPdf = archivo.type === 'application/pdf' || /\.pdf$/i.test(archivo.name);
+                var esPdf = archivo.type === 'application/pdf' || /\.pdf$/i.test(archivo.name);
 
                 if (esPdf) {
-                    const arrayBuffer = await archivo.arrayBuffer();
-                    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                    var arrayBuffer = await archivo.arrayBuffer();
+                    var pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
-                    let textoDigitalPdf = '';
-                    for (let p = 1; p <= pdf.numPages; p++) {
-                        const pagina = await pdf.getPage(p);
-                        const contenido = await pagina.getTextContent();
-                        const lineas = contenido.items.map(item => item.str).filter(s => s.trim().length > 0);
+                    var textoDigitalPdf = '';
+                    for (var p = 1; p <= pdf.numPages; p++) {
+                        var pagina = await pdf.getPage(p);
+                        var contenido = await pagina.getTextContent();
+                        var lineas = contenido.items
+                            .map(function (item) { return item.str; })
+                            .filter(function (s) { return s.trim().length > 0; });
                         if (lineas.length > 0) textoDigitalPdf += lineas.join(' ') + '\n';
                     }
 
                     if (textoDigitalPdf.trim().length > 80) {
                         // PDF con texto digital
-                        expedienteTexto += `\n=== DOCUMENTO PDF (${archivo.name}) ===\n${textoDigitalPdf}\n`;
+                        expedienteTexto += '\n=== DOCUMENTO PDF (' + archivo.name + ') ===\n' + textoDigitalPdf + '\n';
                     } else {
                         // PDF escaneado: cada página pasa a imagen
                         if (imagenes.length + pdf.numPages > MAX_IMAGENES) {
                             throw new Error(
-                                `El PDF escaneado "${archivo.name}" tiene ${pdf.numPages} página(s) y el total de imágenes superaría el máximo de ${MAX_IMAGENES} por consulta. ` +
-                                `Envía menos páginas o usa PDFs con texto digital.`
+                                'El PDF escaneado "' + archivo.name + '" tiene ' + pdf.numPages +
+                                ' página(s) y el total de imágenes superaría el máximo de ' + MAX_IMAGENES +
+                                ' por consulta. Envía menos páginas o usa PDFs con texto digital.'
                             );
                         }
-                        for (let p = 1; p <= pdf.numPages; p++) {
-                            const pagina = await pdf.getPage(p);
-                            const base = pagina.getViewport({ scale: 1 });
-                            const escala = Math.min(2, MAX_LADO_PX / Math.max(base.width, base.height));
-                            const viewport = pagina.getViewport({ scale: escala });
-                            const canvas = document.createElement('canvas');
+                        for (var q = 1; q <= pdf.numPages; q++) {
+                            var pag = await pdf.getPage(q);
+                            var base = pag.getViewport({ scale: 1 });
+                            var escala = Math.min(2, MAX_LADO_PX / Math.max(base.width, base.height));
+                            var viewport = pag.getViewport({ scale: escala });
+                            var canvas = document.createElement('canvas');
                             canvas.width = Math.round(viewport.width);
                             canvas.height = Math.round(viewport.height);
-                            const ctx = canvas.getContext('2d');
+                            var ctx = canvas.getContext('2d');
                             ctx.fillStyle = '#ffffff';
                             ctx.fillRect(0, 0, canvas.width, canvas.height);
-                            await pagina.render({ canvasContext: ctx, viewport }).promise;
-                            const b64 = canvas.toDataURL('image/jpeg', CALIDAD_JPEG).split(',')[1];
-                            imagenes.push({ nombre: `${archivo.name} (Pág ${p})`, base64: b64 });
+                            await pag.render({ canvasContext: ctx, viewport: viewport }).promise;
+                            var b64 = canvas.toDataURL('image/jpeg', CALIDAD_JPEG).split(',')[1];
+                            imagenes.push({ nombre: archivo.name + ' (Pág ' + q + ')', base64: b64 });
                         }
                     }
-                } else if (archivo.type.startsWith('image/')) {
+                } else if (archivo.type.indexOf('image/') === 0) {
                     if (imagenes.length + 1 > MAX_IMAGENES) {
-                        throw new Error(`Máximo ${MAX_IMAGENES} imágenes/páginas escaneadas por consulta.`);
+                        throw new Error('Máximo ' + MAX_IMAGENES + ' imágenes/páginas escaneadas por consulta.');
                     }
-                    const img = await cargarImagen(archivo);
-                    const b64 = canvasAJpegBase64(img, img.naturalWidth, img.naturalHeight);
-                    imagenes.push({ nombre: archivo.name, base64: b64 });
+                    var img = await cargarImagen(archivo);
+                    imagenes.push({ nombre: archivo.name, base64: imagenAJpegBase64(img) });
                 }
             }
 
-            // Limitar texto para no exceder los tokens permitidos
-            let avisoTruncado = '';
+            // Limitar texto para no exceder tokens
+            var avisoTruncado = '';
             if (expedienteTexto.length > MAX_CHARS_TEXTO) {
                 expedienteTexto = expedienteTexto.slice(0, MAX_CHARS_TEXTO);
                 avisoTruncado = '\n\n⚠️ El texto del expediente fue recortado por su extensión; la auditoría puede estar incompleta.';
@@ -398,21 +395,21 @@
                 throw new Error('No se pudo extraer contenido de los archivos seleccionados.');
             }
 
-            mostrar('Enviando legajo a la IA para validación aduanera cruzada...');
+            mostrarResultado('Enviando legajo a la IA para validación aduanera cruzada...');
 
-            const controller = new AbortController();
-            const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+            var controller = new AbortController();
+            var timer = setTimeout(function () { controller.abort(); }, TIMEOUT_MS);
 
-            let respuesta;
+            var respuesta;
             try {
                 respuesta = await fetch(URL_SUPABASE, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${SUPABASE_KEY}`,
+                        'Authorization': 'Bearer ' + SUPABASE_KEY,
                         'apikey': SUPABASE_KEY
                     },
-                    body: JSON.stringify({ texto_expediente: expedienteTexto, imagenes }),
+                    body: JSON.stringify({ texto_expediente: expedienteTexto, imagenes: imagenes }),
                     signal: controller.signal
                 });
             } finally {
@@ -420,37 +417,34 @@
             }
 
             // Leer como texto primero: el error puede no venir en JSON (ej. 401 del gateway)
-            const textoRespuesta = await respuesta.text();
-            let datos;
+            var textoRespuesta = await respuesta.text();
+            var datos;
             try {
                 datos = JSON.parse(textoRespuesta);
-            } catch (_) {
+            } catch (e) {
                 datos = { error: textoRespuesta };
             }
 
             if (!respuesta.ok) {
-                let detalle = datos.error ?? datos.message ?? textoRespuesta;
+                var detalle = datos.error || datos.message || textoRespuesta;
                 if (typeof detalle === 'object') detalle = JSON.stringify(detalle, null, 2);
-                throw new Error(`HTTP ${respuesta.status}: ${detalle || 'sin detalle'}`);
+                throw new Error('HTTP ' + respuesta.status + ': ' + (detalle || 'sin detalle'));
             }
 
-            mostrar((datos.reply || JSON.stringify(datos, null, 2)) + avisoTruncado);
+            mostrarResultado((datos.reply || JSON.stringify(datos, null, 2)) + avisoTruncado);
 
         } catch (error) {
             console.error('Error durante el análisis:', error);
-            const msg = error.name === 'AbortError'
+            var msg = error.name === 'AbortError'
                 ? 'La consulta tardó demasiado y fue cancelada. Intenta con menos páginas.'
                 : error.message;
-            mostrar('❌ Error al procesar expedientes: ' + msg);
+            mostrarResultado('❌ Error al procesar expedientes: ' + msg);
         } finally {
             boton.disabled = false;
             boton.style.opacity = '1';
         }
     }
-})();
 </script>
-
-
   <!-- --------------------------------------------------------------------------------------- -->
 
 
