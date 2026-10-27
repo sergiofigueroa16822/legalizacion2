@@ -252,7 +252,6 @@
 
  <!-- ------------------------------------------------------------------------------------
 <marquee>TRABAJANDO EN RESOLVER EL ANALISIS POR IA</marquee>
-
 <!-- Widget Contenedor del Validador -->
 <div id="validador-pdf-widget" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; max-width: 450px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); font-family: system-ui, -apple-system, sans-serif;">
     <h3 style="margin-top: 0; color: #1e293b; font-size: 18px; margin-bottom: 8px;">Validador de Documentos con IA</h3>
@@ -269,9 +268,6 @@
     <!-- Área de resultados -->
     <div id="resultadoPdfWidget" style="margin-top: 15px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 6px; font-size: 13px; color: #334155; white-space: pre-wrap; max-height: 250px; overflow-y: auto;">Esperando archivo...</div>
 </div>
-
-              }
-
 
 <!-- Librería PDF.js para renderizar el documento en el navegador -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -290,7 +286,7 @@
         }
 
         const archivo = input.files[0];
-        divResultado.innerText = 'Cargando y evaluando PDF...';
+        divResultado.innerText = 'Cargando y evaluando documento...';
         boton.disabled = true;
         boton.style.opacity = '0.6';
 
@@ -313,7 +309,7 @@
             const supabaseAnonKey = 'sb_publishable_xRnGuxmB5oen-G7LDlI6JQ_SUEvLDMr';
             let payload = {};
 
-            // 2. Si el PDF tiene texto seleccionable, se envía texto
+            // 2. Si el PDF trae texto digital enriquecido, se procesa por texto
             if (textoDigital.trim().length > 100) {
                 divResultado.innerText = 'Documento digital detectado. Analizando texto...';
                 payload = {
@@ -321,14 +317,13 @@
                     prompt: `Analiza, revisa y valida el siguiente contenido extraído de un documento:\n\n${textoDigital.substring(0, 12000)}`
                 };
             } else {
-                // 3. Si es un PDF escaneado (como set.pdf), se convierten las páginas a imágenes Base64
-                divResultado.innerText = `PDF escaneado detectado (${pdf.numPages} pág). Generando imágenes de alta resolución...`;
+                // 3. Si es un PDF escaneado (como set.pdf), se convierte cada página a imagen Base64 de alta resolución
+                divResultado.innerText = `PDF escaneado detectado (${pdf.numPages} pág). Renderizando páginas como imágenes...`;
                 const imagenesBase64 = [];
 
                 for (let i = 1; i <= pdf.numPages; i++) {
                     const pagina = await pdf.getPage(i);
-                    // Escala 2.0 para garantizar máxima nitidez visual
-                    const viewport = pagina.getViewport({ scale: 2.0 }); 
+                    const viewport = pagina.getViewport({ scale: 2.0 }); // Escala 2.0 para máxima nitidez en timbres y códigos
 
                     const canvas = document.createElement('canvas');
                     const context = canvas.getContext('2d');
@@ -337,7 +332,6 @@
 
                     await pagina.render({ canvasContext: context, viewport: viewport }).promise;
                     
-                    // Extraer string base64 sin la cabecera data:image/png;base64,
                     const base64Data = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
                     imagenesBase64.push(base64Data);
                 }
@@ -345,7 +339,7 @@
                 divResultado.innerText = 'Enviando imágenes a la IA con Visión Multimodal...';
                 payload = {
                     tipo: 'imagen',
-                    prompt: 'Analiza detalladamente estas imágenes de un expediente aduanero (DUS, AWB, Factura, Guía). Extrae y valida todos los datos clave (RUTs, valores FOB, bultos, fechas, números de declaración, etc.).',
+                    prompt: 'Analiza detalladamente este expediente aduanero escaneado (DUS, AWB, Factura, Guía de despacho, etc.). Extrae con precisión los RUTs, números de declaración, pesos, bultos y valores FOB.',
                     imagenes: imagenesBase64
                 };
             }
@@ -383,8 +377,6 @@
         }
     }
 </script>
-<!--
-
 
 
               
