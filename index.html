@@ -193,6 +193,125 @@
                     </select>
                 </div>
 
+
+
+
+
+
+
+
+
+
+
+
+<!-- Contenedor Principal de INCOTERMS DINAMICO PORLA CRESTA QUE ME COSTO  -->
+    <div class="max-w-md w-full bg-white rounded-xl shadow-lg border border-slate-200 p-6 space-y-4">
+        <div class="border-b border-slate-100 pb-3">
+            <h2 class="font-bold text-slate-900 text-sm uppercase tracking-wide flex items-center gap-2">
+                <i class="fa-solid fa-plane-departure text-aduana-600"></i> Validador DUS Aéreo - Incoterms
+            </h2>
+            <p class="text-xs text-slate-500">Selecciona un Incoterm para visualizar la transferencia de riesgo exacta.</p>
+        </div>
+
+        <!-- Selector de Incoterm -->
+        <div class="space-y-1">
+            <label class="block text-[11px] font-bold text-slate-700">Incoterm 2020 (Aéreo)</label>
+            <select id="sel-incoterm" onchange="actualizarBarraIncoterm()" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-bold text-aduana-900 bg-slate-50 focus:ring-2 focus:ring-aduana-600 outline-none">
+                <option value="EXW">EXW - Ex Works (En Fábrica)</option>
+                <option value="FCA" selected>FCA - Free Carrier (Libre Transportista)</option>
+                <option value="CPT">CPT - Carriage Paid To (Flete Pagado Hasta)</option>
+                <option value="CIP">CIP - Carriage & Insurance Paid To (Flete y Seguro Pagados)</option>
+                <option value="DAP">DAP - Delivered at Place (Entregado en Lugar)</option>
+                <option value="DPU">DPU - Delivered at Place Unloaded (Descargado en Destino)</option>
+                <option value="DDP">DDP - Delivered Duty Paid (Derechos Pagados)</option>
+            </select>
+        </div>
+
+        <!-- ================================================= -->
+        <!-- COMPONENTE: BARRA GRÁFICA DE RIESGO OPTIMIZADA      -->
+        <!-- ================================================= -->
+        <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3 shadow-sm">
+            <div class="flex justify-between items-center text-[11px]">
+                <span class="font-extrabold text-slate-800 flex items-center gap-1.5">
+                    <i class="fa-solid fa-scale-balanced text-aduana-600"></i> Distribución de Responsabilidad:
+                </span>
+                <span id="incoterm-risk-badge" class="font-mono font-extrabold text-[10px] px-2 py-0.5 rounded bg-aduana-100 text-aduana-800 border border-aduana-200">FCA</span>
+            </div>
+            
+            <!-- Leyenda de Responsabilidad -->
+            <div class="flex justify-between text-[10px] font-bold px-1">
+                <span class="text-aduana-700 flex items-center gap-1"><i class="fa-solid fa-user-tie text-[9px]"></i> Riesgo Vendedor</span>
+                <span class="text-slate-500 flex items-center gap-1">Riesgo Comprador <i class="fa-solid fa-user text-[9px]"></i></span>
+            </div>
+
+            <!-- Barra Visual Interactiva -->
+            <div class="relative py-3">
+                <!-- Línea de fondo (Comprador) -->
+                <div class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-2.5 bg-slate-200 rounded-full overflow-hidden shadow-inner">
+                    <!-- Barra de responsabilidad del Vendedor -->
+                    <div id="risk-bar-seller" class="h-full bg-aduana-600 transition-all duration-500 rounded-l-full" style="width: 30%;"></div>
+                </div>
+
+                <!-- Hitos Clave de la Cadena Logística Aérea -->
+                <div class="relative flex justify-between text-[9px] font-bold text-slate-600">
+                    <div class="text-center">
+                        <div class="w-4 h-4 mx-auto rounded-full bg-white border-2 border-aduana-600 flex items-center justify-center text-[8px] text-aduana-600 shadow-sm mb-1">1</div>
+                        <span>Fábrica Origen</span>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-4 h-4 mx-auto rounded-full bg-white border-2 border-slate-400 flex items-center justify-center text-[8px] text-slate-500 shadow-sm mb-1">2</div>
+                        <span>Terminal Aérea</span>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-4 h-4 mx-auto rounded-full bg-white border-2 border-slate-400 flex items-center justify-center text-[8px] text-slate-500 shadow-sm mb-1">3</div>
+                        <span>Vuelo Internacional</span>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-4 h-4 mx-auto rounded-full bg-white border-2 border-slate-400 flex items-center justify-center text-[8px] text-slate-500 shadow-sm mb-1">4</div>
+                        <span>Destino Final</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Caja de desglose claro -->
+            <div class="bg-white p-2.5 rounded-lg border border-slate-200 text-[11px] space-y-1">
+                <div class="font-bold text-slate-800 flex items-center gap-1 text-[10px] uppercase tracking-wider text-aduana-700">
+                    <i class="fa-solid fa-circle-info"></i> Resumen de la Regla:
+                </div>
+                <p id="risk-desc-text" class="text-slate-600 leading-tight">
+                    <strong>FCA (Libre Transportista):</strong> El vendedor gestiona la exportación local y entrega en la terminal o depósito acordado. En ese punto exacto, el riesgo pasa al comprador.
+                </p>
+            </div>
+        </div>
+
+  <!-- FIN INCOTERMS DINAMICO -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+              
                 <!-- Incoterm Aéreo -->
                 <div class="space-y-1">
                     <label class="block text-[11px] font-bold text-slate-700">Incoterm 2020 (Exclusivo Aéreo/Multimodal)</label>
@@ -1094,7 +1213,60 @@ function actualizarBarraIncoterm() {
 
 
     </script>
+<!-- Script de control -->
+    <script>
+        function actualizarBarraIncoterm() {
+            const incoterm = document.getElementById('sel-incoterm').value;
+            const barSeller = document.getElementById('risk-bar-seller');
+            const badge = document.getElementById('incoterm-risk-badge');
+            const descText = document.getElementById('risk-desc-text');
+            
+            let porcentaje = '30%';
+            let descripcion = '';
+            
+            switch (incoterm) {
+                case 'EXW':
+                    porcentaje = '5%'; 
+                    descripcion = '<strong>EXW (En Fábrica):</strong> El vendedor solo empaqueta. El comprador asume el 100% de costos, trámites de exportación y riesgos desde la puerta de origen.';
+                    break;
+                case 'FCA':
+                    porcentaje = '30%'; 
+                    descripcion = '<strong>FCA (Libre Transportista):</strong> El vendedor gestiona la exportación local y entrega en la terminal o depósito acordado. En ese punto exacto, el riesgo pasa al comprador.';
+                    break;
+                case 'CPT':
+                    porcentaje = '75%'; 
+                    descripcion = '<strong>CPT (Flete Pagado Hasta):</strong> El vendedor paga el avión hasta el aeropuerto de destino, pero <em>el riesgo se transfiere al comprador</em> apenas entrega la carga a la aerolínea en origen.';
+                    break;
+                case 'CIP':
+                    porcentaje = '75%'; 
+                    descripcion = '<strong>CIP (Flete y Seguro Pagados):</strong> Igual que CPT, pero el vendedor además está obligado a contratar un seguro a nombre del comprador durante el vuelo.';
+                    break;
+                case 'DAP':
+                    porcentaje = '90%'; 
+                    descripcion = '<strong>DAP (Entregado en Lugar):</strong> El vendedor asume costos y riesgos de todo el trayecto hasta el país de destino (excepto la descarga final y aranceles de importación).';
+                    break;
+                case 'DPU':
+                    porcentaje = '95%'; 
+                    descripcion = '<strong>DPU (Entregado y Descargado):</strong> El vendedor asume todo el transporte y además debe realizar la descarga segura de la mercancía en el destino final.';
+                    break;
+                case 'DDP':
+                    porcentaje = '100%'; 
+                    descripcion = '<strong>DDP (Derechos Pagados):</strong> El vendedor asume el 100% de la responsabilidad: costos, riesgos, trámites aduaneros de salida y de importación en destino.';
+                    break;
+                default:
+                    porcentaje = '30%';
+                    descripcion = 'Seleccione un Incoterm válido.';
+            }
+            
+            if (barSeller) barSeller.style.width = porcentaje;
+            if (badge) badge.textContent = incoterm;
+            if (descText) descText.innerHTML = descripcion;
+        }
 
+        window.onload = function() {
+            actualizarBarraIncoterm();
+        };
+    </script>
   
   <!-- ========================================== -->
   <!-- CARGA DE SCRIPTS Y LIBRERÍAS AL FINAL      -->
