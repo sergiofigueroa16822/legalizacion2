@@ -211,52 +211,7 @@
 
 
 
-<!-- Barra Gráfica de Transferencia de Riesgo (Incoterms Aéreos) -->
-<div class="mt-3 p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
-    <div class="flex justify-between items-center text-[11px]">
-        <span class="font-bold text-slate-700 flex items-center gap-1">
-            <i class="fa-solid fa-route text-aduana-600"></i> Transferencia de Riesgo:
-        </span>
-        <span id="incoterm-risk-badge" class="font-mono font-bold text-[10px] px-1.5 py-0.5 rounded bg-aduana-100 text-aduana-800">FCA</span>
-    </div>
-    
-    <!-- Barra Visual -->
-    <div class="relative py-2">
-        <!-- Línea de fondo -->
-        <div class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-2 bg-slate-200 rounded-full overflow-hidden">
-            <!-- Barra de responsabilidad del Vendedor -->
-            <div id="risk-bar-seller" class="h-full bg-aduana-600 transition-all duration-300 rounded-l-full" style="width: 30%;"></div>
-        </div>
 
-        <!-- Hitos de la cadena logística aérea -->
-        <div class="relative flex justify-between text-[9px] font-semibold text-slate-500">
-            <div class="text-center">
-                <div class="w-3 h-3 mx-auto rounded-full bg-white border-2 border-slate-400 mb-1"></div>
-                <span>Fábrica</span>
-            </div>
-            <div class="text-center">
-                <div class="w-3 h-3 mx-auto rounded-full bg-white border-2 border-slate-400 mb-1"></div>
-                <span>Aeropuerto Salida</span>
-            </div>
-            <div class="text-center">
-                <div class="w-3 h-3 mx-auto rounded-full bg-white border-2 border-slate-400 mb-1"></div>
-                <span>Vuelo Aéreo</span>
-            </div>
-            <div class="text-center">
-                <div class="w-3 h-3 mx-auto rounded-full bg-white border-2 border-slate-400 mb-1"></div>
-                <span>Destino Final</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Descripción corta dinámica -->
-    <p id="risk-desc-text" class="text-[10px] text-slate-600 italic text-center pt-0.5">
-        FCA: El riesgo pasa al comprador al entregar la carga al transportista convenido.
-    </p>
-</div>
-
-
-   <!-- FIN BARRA INCOTERMS -->
 
 
 
@@ -1135,41 +1090,6 @@ function actualizarBarraIncoterm() {
             });
         };
 
-
-
-
-
-
-
-
-
-
-
-      document.addEventListener('DOMContentLoaded', () => {
-  const loginForm = document.getElementById('login-form');
-
-  if (loginForm) {
-    loginForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-
-      const email = document.getElementById('login-email').value;
-      const pass = document.getElementById('login-password').value;
-
-      if (email && pass) {
-        // Ocultar login y desplegar la app
-        document.getElementById('login-view').classList.add('hidden');
-        document.getElementById('app-view').classList.remove('hidden');
-        document.getElementById('app-view').classList.add('flex');
-      }
-    });
-  }
-});
-
-function handleLogout() {
-  document.getElementById('app-view').classList.add('hidden');
-  document.getElementById('app-view').classList.remove('flex');
-  document.getElementById('login-view').classList.remove('hidden');
-}
 
 
 
