@@ -1090,7 +1090,48 @@ function handleLogout() {
   document.getElementById('login-view').classList.remove('hidden');
 }
 
-
+function actualizarBarraIncoterm() {
+    const incoterm = document.getElementById('sel-incoterm').value;
+    const barSeller = document.getElementById('risk-bar-seller');
+    const badge = document.getElementById('incoterm-risk-badge');
+    const descText = document.getElementById('risk-desc-text');
+    
+    // Definir el porcentaje de cobertura del vendedor y la explicación según el incoterm aéreo
+    let porcentaje = '25%';
+    let descripcion = '';
+    
+    switch (incoterm) {
+        case 'EXW':
+            porcentaje = '10%'; // Casi todo corre por cuenta del comprador desde fábrica
+            descripcion = 'EXW: El comprador asume todo el riesgo y costo desde la salida en fábrica.';
+            break;
+        case 'FCA':
+            porcentaje = '30%'; // Vendedor entrega al transportista / terminal terrestre/aérea
+            descripcion = 'FCA: El riesgo pasa al comprador al entregar la carga al transportista convenido.';
+            break;
+        case 'CPT':
+        case 'CIP':
+            porcentaje = '75%'; // El vendedor paga flete (o flete+seguro), pero el riesgo pasa al entregar al transportista principal
+            descripcion = `${incoterm}: Vendedor paga transporte principal, pero el riesgo se transfiere al entregar al primer porteador.`;
+            break;
+        case 'DAP':
+        case 'DPU':
+            porcentaje = '90%'; // Vendedor asume riesgo hasta el país de destino (antes de aduana import)
+            descripcion = `${incoterm}: El vendedor asume el riesgo hasta poner la mercancía en el destino acordado.`;
+            break;
+        case 'DDP':
+            porcentaje = '100%'; // Vendedor asume todo hasta la puerta del comprador
+            descripcion = 'DDP: El vendedor asume todos los riesgos, costos, aranceles e impuestos de importación en destino.';
+            break;
+        default:
+            porcentaje = '30%';
+            descripcion = 'Seleccione un Incoterm válido.';
+    }
+    
+    barSeller.style.width = porcentaje;
+    badge.textContent = incoterm;
+    descText.textContent = descripcion;
+}
 
     </script>
 
