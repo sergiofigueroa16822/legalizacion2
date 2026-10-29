@@ -230,7 +230,7 @@
 
 
               
-                <!-- Incoterm Aéreo -->
+                <!-- Incoterm Aéreo --
                 <div class="space-y-1">
                     <label class="block text-[11px] font-bold text-slate-700">Incoterm 2020 (Exclusivo Aéreo/Multimodal)</label>
                     <select id="sel-incoterm" onchange="evaluarReglasAereas()" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs font-bold text-aduana-900 bg-slate-50 focus:ring-2 focus:ring-aduana-600">
@@ -244,6 +244,7 @@
                     </select>
                 </div>
 
+-->
 
 
 
@@ -257,8 +258,56 @@
 
 
 
+<!-- Incoterm Aéreo y Barra Gráfica Integrada en 2 Columnas Armónicas -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-stretch">
+    
+    <!-- Columna Izquierda: Selector de Incoterm -->
+    <div class="space-y-1 flex flex-col justify-between bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+        <div>
+            <label class="block text-[11px] font-bold text-slate-700 mb-1">Incoterm 2020 (Aéreo)</label>
+            <select id="sel-incoterm" onchange="actualizarBarraIncoterm(); evaluarReglasAereas();" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs font-bold text-aduana-900 bg-white focus:ring-2 focus:ring-aduana-600 outline-none">
+                <option value="EXW">EXW - Ex Works (En Fábrica)</option>
+                <option value="FCA" selected>FCA - Free Carrier (Libre Transportista)</option>
+                <option value="CPT">CPT - Carriage Paid To (Flete Pagado Hasta)</option>
+                <option value="CIP">CIP - Carriage & Insurance Paid To (Flete y Seguro)</option>
+                <option value="DAP">DAP - Delivered at Place (Entregado en Lugar)</option>
+                <option value="DPU">DPU - Delivered at Place Unloaded (Descargado)</option>
+                <option value="DDP">DDP - Delivered Duty Paid (Derechos Pagados)</option>
+            </select>
+        </div>
+        <p class="text-[9px] text-slate-500 pt-1">Define la responsabilidad y el riesgo de la carga aérea.</p>
+    </div>
 
+    <!-- Columna Derecha: Barra Gráfica de Transferencia de Riesgo -->
+    <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-lg flex flex-col justify-between space-y-2">
+        <div class="flex justify-between items-center text-[10px]">
+            <span class="font-bold text-slate-700 flex items-center gap-1">
+                <i class="fa-solid fa-scale-balanced text-aduana-600"></i> Riesgo:
+            </span>
+            <span id="incoterm-risk-badge" class="font-mono font-extrabold text-[9px] px-1.5 py-0.2 rounded bg-aduana-100 text-aduana-800 border border-aduana-200">FCA</span>
+        </div>
+        
+        <!-- Barra Visual -->
+        <div class="relative py-1">
+            <div class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-2 bg-slate-200 rounded-full overflow-hidden shadow-inner">
+                <div id="risk-bar-seller" class="h-full bg-aduana-600 transition-all duration-500 rounded-l-full" style="width: 30%;"></div>
+            </div>
 
+            <div class="relative flex justify-between text-[8px] font-bold text-slate-500">
+                <span title="Fábrica Origen">1.Fábrica</span>
+                <span title="Terminal Salida">2.Terminal</span>
+                <span title="Vuelo Internacional">3.Vuelo</span>
+                <span title="Destino Final">4.Destino</span>
+            </div>
+        </div>
+
+        <!-- Descripción corta alineada -->
+        <p id="risk-desc-text" class="text-[9px] text-slate-600 leading-tight italic bg-white p-1.5 rounded border border-slate-200">
+            FCA: El riesgo pasa al comprador al entregar la carga al transportista en origen.
+        </p>
+    </div>
+
+</div>
 
 
 
@@ -1129,8 +1178,55 @@ function actualizarBarraIncoterm() {
 
 
     </script>
-
-  
+    <script>
+function actualizarBarraIncoterm() {
+    const incoterm = document.getElementById('sel-incoterm').value;
+    const barSeller = document.getElementById('risk-bar-seller');
+    const badge = document.getElementById('incoterm-risk-badge');
+    const descText = document.getElementById('risk-desc-text');
+    
+    let porcentaje = '30%';
+    let descripcion = '';
+    
+    switch (incoterm) {
+        case 'EXW':
+            porcentaje = '5%'; 
+            descripcion = '<strong>EXW (En Fábrica):</strong> El vendedor solo empaqueta. El comprador asume el 100% de costos, trámites de exportación y riesgos desde la puerta de origen.';
+            break;
+        case 'FCA':
+            porcentaje = '30%'; 
+            descripcion = '<strong>FCA (Libre Transportista):</strong> El vendedor gestiona la exportación local y entrega en la terminal o depósito acordado. En ese punto exacto, el riesgo pasa al comprador.';
+            break;
+        case 'CPT':
+            porcentaje = '75%'; 
+            descripcion = '<strong>CPT (Flete Pagado Hasta):</strong> El vendedor paga el avión hasta el aeropuerto de destino, pero <em>el riesgo se transfiere al comprador</em> apenas entrega la carga a la aerolínea en origen.';
+            break;
+        case 'CIP':
+            porcentaje = '75%'; 
+            descripcion = '<strong>CIP (Flete y Seguro Pagados):</strong> Igual que CPT, pero el vendedor además está obligado a contratar un seguro a nombre del comprador durante el vuelo.';
+            break;
+        case 'DAP':
+            porcentaje = '90%'; 
+            descripcion = '<strong>DAP (Entregado en Lugar):</strong> El vendedor asume costos y riesgos de todo el trayecto hasta el país de destino (excepto la descarga final y aranceles de importación).';
+            break;
+        case 'DPU':
+            porcentaje = '95%'; 
+            descripcion = '<strong>DPU (Entregado y Descargado):</strong> El vendedor asume todo el transporte y además debe realizar la descarga segura de la mercancía en el destino final.';
+            break;
+        case 'DDP':
+            porcentaje = '100%'; 
+            descripcion = '<strong>DDP (Derechos Pagados):</strong> El vendedor asume el 100% de la responsabilidad: costos, riesgos, trámites aduaneros de salida y de importación en destino.';
+            break;
+        default:
+            porcentaje = '30%';
+            descripcion = 'Seleccione un Incoterm válido.';
+    }
+    
+    if (barSeller) barSeller.style.width = porcentaje;
+    if (badge) badge.textContent = incoterm;
+    if (descText) descText.innerHTML = descripcion;
+}
+    </script>
   <!-- ========================================== -->
   <!-- CARGA DE SCRIPTS Y LIBRERÍAS AL FINAL      -->
   <!-- ========================================== -->
