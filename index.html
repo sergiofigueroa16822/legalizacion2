@@ -669,15 +669,21 @@
                     resAwbText.textContent = `Venta ${incoterm} permite tarifa pactada u omitir flete en origen.`;
                 }
 
-                if (seguroObligatorio) {
-                    resSegStatus.innerHTML = `<i class="fa-solid fa-shield-halved text-red-600"></i> PÓLIZA OBLIGATORIA`;
-                    resSegText.textContent = "Cláusula CIP requiere adjuntar póliza o certificado de cobertura formal.";
+   if (incoterm === "EXW") {
+                    resSegStatus.innerHTML = `<i class="fa-solid fa-calculator text-amber-600"></i> GASTOS HASTA FOB (4,75%)`;
+                    resSegText.textContent = "Venta EXW: declarar gastos reales al aeropuerto o aplicar 4,75% teórico para conformar FOB.";
+                } else if (seguroObligatorio) {
+                    resSegStatus.innerHTML = `<i class="fa-solid fa-shield-halved text-red-600"></i> PÓLIZA OBLIGATORIA (CIP)`;
+                    resSegText.textContent = "Cláusula CIP exige póliza formal; su prima debe deducirse para calcular el FOB neto.";
                 } else if (seguroContratado) {
                     resSegStatus.innerHTML = `<i class="fa-solid fa-shield-check text-emerald-600"></i> PÓLIZA ADJUNTA`;
-                    resSegText.textContent = "Póliza real contratada en Chile para respaldo de valor.";
+                    resSegText.textContent = "Prima real respaldada (deducible si está incluida en el precio facturado).";
+                } else if (["CPT", "DAP", "DPU", "DDP"].includes(incoterm)) {
+                    resSegStatus.innerHTML = `<i class="fa-solid fa-scale-unbalanced text-aduana-600"></i> DEDUCCIÓN A FOB`;
+                    resSegText.textContent = `Venta ${incoterm}: deducir flete internacional (y gastos destino) para declarar FOB neto.`;
                 } else {
-                    resSegStatus.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-600"></i> SEGURO TEÓRICO (2%)`;
-                    resSegText.textContent = "Aduana aplicará 2% teórico sobre el FOB a falta de prima real.";
+                    resSegStatus.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600"></i> BASE FOB DIRECTA`;
+                    resSegText.textContent = "Cláusula FCA equivale directamente al valor FOB aduanero; no requiere ajustes.";
                 }
             }
 
