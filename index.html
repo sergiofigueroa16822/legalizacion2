@@ -141,7 +141,7 @@
                         <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                             <i class="fa-solid fa-magnifying-glass text-xs"></i>
                         </span>
-                        <input type="text" id="hs-search-input" onkeyup="filterTariffCodes()" placeholder="Buscar por código (ej. 0101.21.00 u 01012100) o descripción..." 
+                        <input type="text" id="hs-search-input" onkeyup="filterTariffCodes()" placeholder="Buscar por código (ej. 8537.10.00 u 85371000) o descripción..." 
                                class="w-full pl-9 pr-8 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:ring-2 focus:ring-aduana-600 focus:border-aduana-600 bg-slate-50">
                         <button onclick="clearHsSearch()" class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600">
                             <i class="fa-solid fa-xmark text-xs"></i>
@@ -187,25 +187,26 @@
                         <option value="DEF" selected>Exportación Definitiva (Código 10)</option>
                         <option value="TEMP_SALIDA">Salida Temporal Carga Comercial (Código 20)</option>
                         <option value="TEMP_PERFECC">Salida Temporal p/ Perfeccionamiento Pasivo (Código 21)</option>
-                        <option value="TEMP_PASAJERO">Salida Temporal de Pasajeros - DST (Ferias / Reparación)</option>
+                        <option value="TEMP_PASAJERO">DUS Pasajeros / Equipaje (Propios Medios - Agencia)</option>
                         <option value="REEXP">Reexportación de Mercancías (Código 30)</option>
                         <option value="RANCHO">Rancho / Provisiones de A bordo (Código 40)</option>
                     </select>
                 </div>
 
-                <!-- BLOQUE EXCLUSIVO: SALIDA TEMPORAL DE PASAJEROS (Oculto por defecto) -->
+                <!-- BLOQUE EXCLUSIVO: DUS PASAJEROS (Oculto por defecto) -->
                 <div id="pasajero-params-box" class="hidden p-3 bg-indigo-50/80 border border-indigo-200 rounded-xl space-y-3">
                     <div class="flex items-center gap-1.5 text-xs font-extrabold text-indigo-900 border-b border-indigo-200 pb-1.5">
                         <i class="fa-solid fa-person-walking-luggage text-indigo-600"></i>
-                        <span>Parámetros Salida Temporal Pasajero (DST)</span>
+                        <span>Parámetros DUS de Pasajeros (Agencia de Aduana)</span>
                     </div>
 
                     <div class="space-y-1">
-                        <label class="block text-[11px] font-bold text-slate-700">Motivo de la Salida Temporal</label>
+                        <label class="block text-[11px] font-bold text-slate-700">Motivo / Destinación del Viaje</label>
                         <select id="sel-motivo-pasajero" onchange="evaluarReglasAereas()" class="w-full px-2.5 py-1.5 border border-indigo-300 rounded-lg text-xs font-semibold text-slate-800 bg-white">
+                            <option value="EXPORTACION_PROFORMA">Exportación Normal / Sin Valor Comercial (Proforma)</option>
                             <option value="REPARACION">Reparación, Garantía o Mantención Técnica</option>
                             <option value="FERIA">Ferias, Exposiciones, Congresos o Eventos</option>
-                            <option value="MUESTRAS">Muestras Comerciales sin Valor Comercial</option>
+                            <option value="MUESTRAS">Muestras Comerciales / Repuestos Técnicos</option>
                             <option value="EQUIPO_PROF">Equipos Profesionales, Prensa, Audiovisual o Deporte</option>
                         </select>
                     </div>
@@ -213,9 +214,16 @@
                     <div class="space-y-1">
                         <label class="block text-[11px] font-bold text-slate-700">Modalidad de Transporte</label>
                         <select id="sel-modalidad-pasajero" onchange="evaluarReglasAereas()" class="w-full px-2.5 py-1.5 border border-indigo-300 rounded-lg text-xs font-semibold text-slate-800 bg-white">
-                            <option value="ACOMPANADO">Equipaje Acompañado (En mano o bodega del mismo vuelo)</option>
+                            <option value="ACOMPANADO">Transportada por Propios Medios (Equipaje Pasajero)</option>
                             <option value="NO_ACOMPANADO">Equipaje No Acompañado (Despachado con Guía Aérea)</option>
                         </select>
+                    </div>
+
+                    <div class="pt-1">
+                        <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-700">
+                            <input type="checkbox" id="chk-seguro-pasajero" onchange="evaluarReglasAereas()" class="rounded text-indigo-600">
+                            <span class="text-[11px] font-medium">¿Cuenta con póliza de seguro efectiva contratada?</span>
+                        </label>
                     </div>
                 </div>
 
@@ -358,7 +366,7 @@
                             DUS EXPORTACIÓN DEFINITIVA AÉREA
                         </h3>
                         <span id="badge-mandato" class="text-[10px] font-bold px-2 py-0.5 rounded bg-red-600 text-white">
-                            Agente Obligatorio (> USD 3.000)
+                            Mandato Obligatorio (Agencia de Aduana)
                         </span>
                     </div>
                     <p id="status-summary" class="text-xs text-slate-700 leading-relaxed">
@@ -399,7 +407,7 @@
                 </div>
 
                 <div class="p-3 rounded-xl border border-slate-200 bg-white space-y-1 shadow-sm print-card">
-                    <span class="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block">2. Valoración AWB (Flete)</span>
+                    <span class="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block">2. Documento Transporte</span>
                     <div id="res-awb-status" class="font-bold text-xs text-aduana-800 flex items-center gap-1">
                         <i class="fa-solid fa-file-invoice text-aduana-600"></i> AWB VALORADA
                     </div>
@@ -409,7 +417,7 @@
                 </div>
 
                 <div class="p-3 rounded-xl border border-slate-200 bg-white space-y-1 shadow-sm print-card">
-                    <span class="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block">3. Consideraciones</span>
+                    <span class="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block">3. Valoración / Seguro</span>
                     <div id="res-seg-status" class="font-bold text-xs text-slate-900 flex items-center gap-1">
                         <i class="fa-solid fa-shield-halved text-amber-500"></i> CONDICIONAL
                     </div>
@@ -593,10 +601,12 @@
             const seguroContratado = document.getElementById('chk-seguro-contratado').checked;
 
             const esPasajero = (regimen === "TEMP_PASAJERO");
-            const motivoPasajero = document.getElementById('sel-motivo-pasajero')?.value || "REPARACION";
+            const motivoPasajero = document.getElementById('sel-motivo-pasajero')?.value || "EXPORTACION_PROFORMA";
             const modalidadPasajero = document.getElementById('sel-modalidad-pasajero')?.value || "ACOMPANADO";
+            const seguroPasajero = document.getElementById('chk-seguro-pasajero')?.checked || false;
 
-            const requiereAgente = esPasajero ? false : (fobUSD >= 3000);
+            // El mandato aduanero es SIEMPRE obligatorio al operar como Agencia de Aduana
+            const requiereMandato = true;
             const requiereAWBValorada = ["CPT", "CIP", "DAP", "DPU", "DDP"].includes(incoterm);
             const seguroObligatorio = (incoterm === "CIP");
 
@@ -609,25 +619,21 @@
                 "DEF": "DUS EXPORTACIÓN DEFINITIVA AÉREA (COD. 10)",
                 "TEMP_SALIDA": "SALIDA TEMPORAL DE MERCANCÍAS (COD. 20)",
                 "TEMP_PERFECC": "SALIDA TEMPORAL P/ PERFECCIONAMIENTO (COD. 21)",
-                "TEMP_PASAJERO": "SALIDA TEMPORAL DE PASAJEROS - DST (CNA CAP. III / IV)",
+                "TEMP_PASAJERO": "DUS DE PASAJEROS / PROPIOS MEDIOS (TRÁMITE AGENCIA)",
                 "REEXP": "REEXPORTACIÓN DE MERCANCÍAS (COD. 30)",
                 "RANCHO": "RANCHO DE NAVES / AERONAVES (COD. 40)"
             };
 
             statusTitle.textContent = regimenNames[regimen] || "DUS AÉREA CHILE";
 
+            // Badge Mandato siempre obligatorio
+            badgeMandato.textContent = "Mandato Obligatorio (Agencia de Aduana)";
+            badgeMandato.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-red-600 text-white";
+
             if (esPasajero) {
-                badgeMandato.textContent = "Trámite Directo Pasajero (Sin Agente)";
-                badgeMandato.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-600 text-white";
-                if (statusSummary) statusSummary.textContent = "Tramitación presencial ante el Control de Aduanas en terminal de pasajeros antes del embarque mediante Declaración de Salida Temporal (DST).";
-            } else if (requiereAgente) {
-                badgeMandato.textContent = "Agente Aduana Obligatorio (≥ USD 3.000)";
-                badgeMandato.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-red-600 text-white";
-                if (statusSummary) statusSummary.textContent = "Evaluación para salida de carga por vía aérea con respaldo documental de transporte y certificados sectoriales exigibles.";
+                if (statusSummary) statusSummary.textContent = "Legalización formal de DUS para mercancía transportada por los propios medios del pasajero (equipaje acompañado o no acompañado) tramitada por Agencia de Aduana con ingreso a Zona Primaria.";
             } else {
-                badgeMandato.textContent = "Tramitación Directa / Simplificada (< USD 3.000)";
-                badgeMandato.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-600 text-white";
-                if (statusSummary) statusSummary.textContent = "Evaluación para salida de carga por vía aérea con respaldo documental de transporte y certificados sectoriales exigibles.";
+                if (statusSummary) statusSummary.textContent = "Evaluación para salida de carga por vía aérea con respaldo documental de transporte, mandato aduanero y certificados sectoriales exigibles.";
             }
 
             // 2. Tarjetas de Evaluación Rápida
@@ -640,18 +646,23 @@
 
             if (esPasajero) {
                 resGdStatus.innerHTML = `<i class="fa-solid fa-circle-minus text-slate-400"></i> NO APLICA`;
-                resGdText.textContent = "No requiere Guía de Despacho SII ni ingreso a Zona Primaria de carga.";
+                resGdText.textContent = "No requiere Guía de Despacho SII; la especie viaja junto al pasajero con visación en Zona Primaria.";
 
                 if (modalidadPasajero === "ACOMPANADO") {
-                    resAwbStatus.innerHTML = `<i class="fa-solid fa-ticket text-indigo-600"></i> PASAJE / BOARDING`;
-                    resAwbText.textContent = "Se respalda con boleto aéreo del pasajero y tag de equipaje.";
+                    resAwbStatus.innerHTML = `<i class="fa-solid fa-ticket text-indigo-600"></i> RESERVA + MANIFIESTO`;
+                    resAwbText.textContent = "Respaldado con ticket/reserva aérea del pasajero y manifiesto de vuelo embarcado conforme.";
                 } else {
                     resAwbStatus.innerHTML = `<i class="fa-solid fa-file-lines text-aduana-600"></i> AWB EQUIPAJE`;
-                    resAwbText.textContent = "Equipaje no acompañado requiere Guía Aérea consignada al pasajero.";
+                    resAwbText.textContent = "Equipaje no acompañado requiere Guía Aérea consignada al pasajero + manifiesto.";
                 }
 
-                resSegStatus.innerHTML = `<i class="fa-solid fa-user-shield text-indigo-600"></i> SIN GARANTÍA`;
-                resSegText.textContent = "La salida temporal de pasajeros no exige póliza CIF comercial.";
+                if (seguroPasajero) {
+                    resSegStatus.innerHTML = `<i class="fa-solid fa-shield-check text-emerald-600"></i> PÓLIZA ADJUNTA`;
+                    resSegText.textContent = "Se respalda con certificado de póliza de seguro contratada.";
+                } else {
+                    resSegStatus.innerHTML = `<i class="fa-solid fa-file-contract text-amber-600"></i> DJ SEGURO (2% FOB)`;
+                    resSegText.textContent = "Sin seguro contratado: exige Declaración Jurada Simple autorizando 2% teórico (Res. 1300/06).";
+                }
             } else {
                 if (trasladaCamion) {
                     resGdStatus.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600"></i> OBLIGATORIA`;
@@ -669,7 +680,7 @@
                     resAwbText.textContent = `Venta ${incoterm} permite tarifa pactada u omitir flete en origen.`;
                 }
 
-   if (incoterm === "EXW") {
+                if (incoterm === "EXW") {
                     resSegStatus.innerHTML = `<i class="fa-solid fa-calculator text-amber-600"></i> GASTOS HASTA FOB (4,75%)`;
                     resSegText.textContent = "Venta EXW: declarar gastos reales al aeropuerto o aplicar 4,75% teórico para conformar FOB.";
                 } else if (seguroObligatorio) {
@@ -692,67 +703,110 @@
 
             if (esPasajero) {
                 checklist.push({
-                    nombre: "Declaración de Salida Temporal de Pasajeros (Formulario DST)",
-                    desc: "Formulario presentado en triplicado ante Aduana en el control de salida de pasajeros antes del embarque, detallando marca, modelo, N° de serie y valor.",
+                    nombre: "DUS - Primer Mensaje y Legalización (Transportada por Propios Medios)",
+                    desc: "Documento Único de Salida consignando en observaciones el nombre del pasajero, mandato y transporte por propios medios.",
                     badge: "Obligatorio Aduana",
                     badgeClass: "bg-red-100 text-red-800",
-                    icon: "fa-passport"
+                    icon: "fa-file-signature"
                 });
 
                 checklist.push({
-                    nombre: modalidadPasajero === "ACOMPANADO" ? "Pasaje Aéreo / Boarding Pass y Tag de Equipaje" : "Pasaje Aéreo + Guía Aérea (AWB) Equipaje No Acompañado",
-                    desc: modalidadPasajero === "ACOMPANADO" ? "Acredita la salida efectiva del viajero titular junto con las especies declaradas." : "La AWB debe venir consignada al propio pasajero dentro de los plazos legales.",
-                    badge: "Transporte Pasajero",
-                    badgeClass: "bg-indigo-100 text-indigo-800",
-                    icon: "fa-plane-departure"
+                    nombre: "Consulta de Ingreso a Zona Primaria (IZP)",
+                    desc: "Comprobante de ingreso y autorización de salida en terminal aéreo (ej. Aerosan / Aduana) visado por el fiscalizador.",
+                    badge: "Obligatorio ZP",
+                    badgeClass: "bg-red-100 text-red-800",
+                    icon: "fa-warehouse"
                 });
 
-                if (motivoPasajero === "REPARACION") {
+                checklist.push({
+                    nombre: modalidadPasajero === "ACOMPANADO" ? "Reserva / Pasaje Aéreo del Pasajero" : "Reserva / Pasaje Aéreo + Guía Aérea (AWB) Equipaje",
+                    desc: modalidadPasajero === "ACOMPANADO" ? "Ticket electrónico e itinerario de vuelo que acredita el viaje del pasajero titular que porta los bultos." : "Ticket del pasajero junto a la AWB de equipaje no acompañado.",
+                    badge: "Transporte Pasajero",
+                    badgeClass: "bg-indigo-100 text-indigo-800",
+                    icon: "fa-ticket"
+                });
+
+                checklist.push({
+                    nombre: "Manifiesto de Vuelo / Consulta Guías Aéreas por Manifiesto",
+                    desc: "Comprobante del sistema de manifiestos de Aduana con timbre de 'Embarcado Conforme', N° de vuelo, fecha y peso.",
+                    badge: "Obligatorio Embarque",
+                    badgeClass: "bg-red-100 text-red-800",
+                    icon: "fa-plane-arrival"
+                });
+
+                if (motivoPasajero === "EXPORTACION_PROFORMA") {
                     checklist.push({
-                        nombre: "Respaldo de Origen + Orden de Servicio Técnico / Garantía",
-                        desc: "Factura de compra nacional o DIN de importación previa + correo u orden RMA del servicio técnico extranjero.",
+                        nombre: "Factura Proforma / Declaración de Valor",
+                        desc: "Documento comercial o proforma detallando descripción, modelo, número de serie, origen y valor referencial FOB.",
+                        badge: "Obligatorio Valor",
+                        badgeClass: "bg-red-100 text-red-800",
+                        icon: "fa-file-invoice-dollar"
+                    });
+                } else if (motivoPasajero === "REPARACION") {
+                    checklist.push({
+                        nombre: "Factura Proforma + Respaldo de Origen / Orden Servicio Técnico",
+                        desc: "Proforma valorada + DIN de importación previa o factura local y orden RMA del servicio técnico extranjero.",
                         badge: "Motivo: Reparación",
                         badgeClass: "bg-amber-100 text-amber-900",
                         icon: "fa-screwdriver-wrench"
                     });
                 } else if (motivoPasajero === "FERIA") {
                     checklist.push({
-                        nombre: "Invitación / Inscripción Oficial a Feria o Evento + Listado Valorado",
-                        desc: "Acredita participación en exposición o congreso internacional y detalla bultos/equipos que retornarán al país.",
+                        nombre: "Factura Proforma + Invitación / Inscripción Oficial a Feria",
+                        desc: "Acredita participación en exposición o congreso internacional y detalla equipos que retornarán al país.",
                         badge: "Motivo: Ferias",
                         badgeClass: "bg-amber-100 text-amber-900",
                         icon: "fa-tent"
                     });
                 } else if (motivoPasajero === "MUESTRAS") {
                     checklist.push({
-                        nombre: "Factura Proforma / Declaración Jurada de Muestras",
-                        desc: "Detalle de muestrario comercial sin carácter de venta definitiva, con valores referenciales para control de reingreso.",
+                        nombre: "Factura Proforma / Declaración de Muestras sin Valor Comercial",
+                        desc: "Detalle de muestrario o repuestos técnicos con valores referenciales para control aduanero.",
                         badge: "Motivo: Muestras",
                         badgeClass: "bg-amber-100 text-amber-900",
                         icon: "fa-tags"
                     });
                 } else if (motivoPasajero === "EQUIPO_PROF") {
                     checklist.push({
-                        nombre: "Inventario Técnico con Números de Serie + Acreditación",
-                        desc: "Listado individualizado (cámaras, instrumentos, herramientas, equipos deportivos) y carta de empresa o credencial.",
+                        nombre: "Factura Proforma / Inventario Técnico con Números de Serie",
+                        desc: "Listado individualizado (cámaras, instrumentos, herramientas, equipos) y acreditación del pasajero.",
                         badge: "Uso Profesional",
                         badgeClass: "bg-amber-100 text-amber-900",
                         icon: "fa-camera-retro"
                     });
                 }
 
+                if (seguroPasajero) {
+                    checklist.push({
+                        nombre: "Póliza / Certificado de Seguro de Transporte",
+                        desc: "Respaldo de la prima efectiva contratada para la mercancía transportada.",
+                        badge: "Adjunto",
+                        badgeClass: "bg-slate-200 text-slate-800",
+                        icon: "fa-shield-halved"
+                    });
+                } else {
+                    checklist.push({
+                        nombre: "Declaración Jurada Simple de Seguro (2% Teórico sobre FOB)",
+                        desc: "Declaración firmada por el representante legal autorizando al Agente de Aduanas a aplicar el 2% sobre FOB (Cap. II Num. 2.7 letra A Res. 1300/06).",
+                        badge: "Obligatorio (Sin Póliza)",
+                        badgeClass: "bg-amber-100 text-amber-900",
+                        icon: "fa-file-contract"
+                    });
+                }
+
+                // MANDATO OBLIGATORIO SIEMPRE
                 checklist.push({
-                    nombre: "Documento de Identidad / Pasaporte Vigente y Poder Simple (si aplica)",
-                    desc: "Si el pasajero viaja en representación de una empresa dueña de los equipos, adjuntar carta poder simple o autorización.",
-                    badge: "Identificación",
-                    badgeClass: "bg-slate-200 text-slate-800",
-                    icon: "fa-id-card"
+                    nombre: "Mandato Aduanero Vigente (Poder Notarial o Endoso)",
+                    desc: "Mandato otorgado al Agente de Aduanas conforme al Art. 197 de la Ordenanza de Aduanas y Res. Ex. N° 2.299/2021.",
+                    badge: "Mandato Obligatorio",
+                    badgeClass: "bg-red-100 text-red-800 font-bold",
+                    icon: "fa-user-check"
                 });
 
                 if (currentTariff && currentTariff.obligatorio) {
                     checklist.push({
                         nombre: `${currentTariff.vobo_nombre || 'Autorización Sectorial'} [Partida ${currentTariff.code}]`,
-                        desc: `Incluso en régimen de pasajeros, mercancías reguladas exigen V°B° de ${currentTariff.organismo}.`,
+                        desc: `Mercancía regulada exige V°B° de ${currentTariff.organismo} previo al embarque.`,
                         badge: `Visto Bueno ${currentTariff.organismo || 'Sectorial'}`,
                         badgeClass: "bg-amber-100 text-amber-900 font-bold border border-amber-300",
                         icon: "fa-stamp"
@@ -874,12 +928,13 @@
                     });
                 }
 
-                if (requiereAgente) {
+                // MANDATO OBLIGATORIO SIEMPRE
+                if (requiereMandato) {
                     checklist.push({
-                        nombre: "Mandato Aduanero (Endoso AWB o Poder Notarial Especial)",
-                        desc: "Autorización al Agente de Aduanas conforme al Art. 197 de la Ordenanza de Aduanas (fob ≥ USD 3.000).",
+                        nombre: "Mandato Aduanero Vigente (Poder Notarial o Endoso AWB)",
+                        desc: "Autorización obligatoria al Agente de Aduanas conforme al Art. 197 de la Ordenanza de Aduanas y Res. Ex. N° 2.299/2021.",
                         badge: "Mandato Obligatorio",
-                        badgeClass: "bg-red-100 text-red-800",
+                        badgeClass: "bg-red-100 text-red-800 font-bold",
                         icon: "fa-user-check"
                     });
                 }
@@ -908,11 +963,13 @@
             const normativeList = document.getElementById('normative-list');
             normativeList.innerHTML = "";
 
+            normativeList.innerHTML += `<li><strong>Mandato Aduanero Obligatorio:</strong> Toda destinación tramitada por Agencia de Aduana requiere mandato constituido mediante poder notarial (Res. Ex. 2.299/2021) o endoso del documento de transporte (Art. 197 Ordenanza de Aduanas).</li>`;
+
             if (esPasajero) {
-                normativeList.innerHTML += `<li><strong>Plazo de Retorno (DST Pasajeros):</strong> El plazo general de vigencia de la Salida Temporal de Pasajeros es de hasta <strong>180 días</strong> contados desde la fecha de visación en el control fronterizo/aeropuerto (prorrogable previa solicitud fundada).</li>`;
-                normativeList.innerHTML += `<li><strong>Reingreso al País (Cancelación):</strong> Al retornar a Chile, el pasajero debe presentar el ejemplar visado de la DST en Aduana para verificar números de serie y cancelar el régimen sin pago de derechos.</li>`;
+                normativeList.innerHTML += `<li><strong>Tramitación DUS Pasajeros (Propios Medios):</strong> Requiere ingreso y visación presencial en Zona Primaria del aeropuerto (IZP), cierre de manifiesto de vuelo ("Embarcado Conforme") y legalización dentro de los 25 días hábiles siguientes al primer mensaje.</li>`;
+                normativeList.innerHTML += `<li><strong>Seguro Teórico (Res. 1300/06):</strong> Si no existe póliza contratada, se debe adjuntar Declaración Jurada Simple autorizando al agente a aplicar el 2% sobre el valor FOB.</li>`;
                 if (motivoPasajero === "REPARACION") {
-                    normativeList.innerHTML += `<li><strong>Tributación en Reparaciones:</strong> Si la reparación en el exterior fue gratuita por garantía, reingresa libre de gravámenes. Si tuvo costo, al reingresar tributará derechos e IVA solo sobre el valor de la reparación y repuestos incorporados (Art. 116 Ordenanza de Aduanas).</li>`;
+                    normativeList.innerHTML += `<li><strong>Tributación en Reparaciones:</strong> Si la reparación en el exterior fue gratuita por garantía, reingresa libre de gravámenes. Si tuvo costo, tributará derechos e IVA solo sobre el valor de la reparación y repuestos incorporados (Art. 116 Ordenanza de Aduanas).</li>`;
                 }
             } else {
                 normativeList.innerHTML += `<li><strong>DUS Legalización:</strong> Debe tramitarse en un plazo de hasta 25 días hábiles contados desde la fecha de autorización del primer mensaje.</li>`;
