@@ -336,7 +336,7 @@
                     </div>
                 </div>
 
-                <!-- CAMPOS COHERENTES: Modalidad de Venta y Forma de Pago Dinámicas -->
+                <!-- CAMPOS COHERENTES: Modalidad de Venta y Forma de Pago Dinámicas con Bloqueo de Pasajeros -->
                 <div class="pt-3 border-t border-slate-100 space-y-3">
                     <div class="space-y-1">
                         <label class="block text-[11px] font-bold text-slate-700">Modalidad de Venta / Cláusula Comercial</label>
@@ -511,11 +511,38 @@
             }
         }
 
-        // FUNCIÓN CLAVE: Sincroniza Formas de Pago y Restricciones según Modalidad de Venta
+        // FUNCIÓN CLAVE: Sincroniza Formas de Pago y Restricciones según Modalidad de Venta y Régimen
         function actualizarFormasPagoCompatible() {
-            const modalidad = document.getElementById('sel-modalidad-venta').value;
+            const regimen = document.getElementById('sel-regimen').value;
+            const selModalidad = document.getElementById('sel-modalidad-venta');
             const selPago = document.getElementById('sel-forma-pago');
             
+            // SI ES RÉGIMEN DE PASAJEROS, SE BLOQUEAN LAS OPCIONES A "LIBRE" Y "SIN PAGO"
+            if (regimen === "TEMP_PASAJERO") {
+                selModalidad.innerHTML = `
+                    <option value="LIBRE" selected>Libre / Sin Valor Comercial (Proforma / Pasajero)</option>
+                `;
+                selModalidad.disabled = true;
+
+                selPago.innerHTML = `
+                    <option value="SIN_PAGO" selected>Sin Pago / Exportación Temporal o Proforma (No Comercial)</option>
+                `;
+                selPago.disabled = true;
+                return;
+            } else {
+                if (selModalidad.disabled) {
+                    selModalidad.innerHTML = `
+                        <option value="FIRME" selected>A Firme (Venta Definitiva)</option>
+                        <option value="CONDICION">Bajo Condición / Sujeta a Fijación de Precio</option>
+                        <option value="CONSIGNACION">A Consignación</option>
+                        <option value="LIBRE">Libre / Sin Valor Comercial (Muestras / Proforma)</option>
+                    `;
+                    selModalidad.disabled = false;
+                    selPago.disabled = false;
+                }
+            }
+
+            const modalidad = selModalidad.value;
             selPago.innerHTML = "";
 
             if (modalidad === "FIRME") {
@@ -646,15 +673,13 @@
                 pasajeroBox.classList.remove('hidden');
                 if (cargaBox) cargaBox.classList.add('hidden');
                 if (factoresBox) factoresBox.classList.add('hidden');
-
-                // Auto-ajustar modalidad de venta a LIBRE si es pasajero / proforma
-                document.getElementById('sel-modalidad-venta').value = 'LIBRE';
-                actualizarFormasPagoCompatible();
             } else {
                 pasajeroBox.classList.add('hidden');
                 if (cargaBox) cargaBox.classList.remove('hidden');
                 if (factoresBox) factoresBox.classList.remove('hidden');
             }
+
+            actualizarFormasPagoCompatible();
         }
 
         function evaluarReglasAereas() {
@@ -697,7 +722,7 @@
             badgeMandato.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-red-600 text-white";
 
             if (esPasajero) {
-                if (statusSummary) statusSummary.textContent = `Legalización formal de DUS para pasajeros (${modalidadVenta}, pago: ${formaPago}) tramitada por Agencia de Aduana con ingreso a Zona Primaria.`;
+                if (statusSummary) statusSummary.textContent = `Legalización formal de DUS para pasajeros (Sin Valor Comercial / Sin Pago) tramitada por Agencia de Aduana con ingreso a Zona Primaria.`;
             } else {
                 if (statusSummary) statusSummary.textContent = `Evaluación para salida de carga por vía aérea (${modalidadVenta}, pago: ${formaPago}) con respaldo documental y mandato aduanero.`;
             }
@@ -764,7 +789,7 @@
                 }
             }
 
-            // 3. Construcción del Checklist Coherente con Factura vs Proforma
+            // 3. Construcción del Checklist Coherente
             const checklist = [];
 
             if (esPasajero) {
@@ -800,32 +825,13 @@
                     icon: "fa-plane-arrival"
                 });
 
-                // LÓGICA COHERENTE DE DOCUMENTO COMERCIAL SEGÚN MODALIDAD
-                if (modalidadVenta === "LIBRE") {
-                    checklist.push({
-                        nombre: "Factura Proforma / Declaración Jurada de Valor (Sin Valor Comercial)",
-                        desc: "Documento proforma detallando descripción, modelo, número de serie y valor referencial FOB (Exento de E-Factura SII)[cite: 10].",
-                        badge: "Obligatorio Proforma",
-                        badgeClass: "bg-aduana-100 text-aduana-900",
-                        icon: "fa-file-lines"
-                    });
-                } else if (modalidadVenta === "CONDICION" || modalidadVenta === "CONSIGNACION") {
-                    checklist.push({
-                        nombre: "Factura Comercial Provisional / Contrato Consignación",
-                        desc: "Documento que respalda la operación sujeta a fijación de precio o venta posterior.",
-                        badge: "Documento Comercial",
-                        badgeClass: "bg-amber-100 text-amber-900",
-                        icon: "fa-file-invoice"
-                    });
-                } else {
-                    checklist.push({
-                        nombre: "Factura Comercial de Exportación (E-Factura SII)",
-                        desc: "Factura electrónica definitiva de exportación (A firme / Título oneroso).",
-                        badge: "Obligatorio SII",
-                        badgeClass: "bg-red-100 text-red-800",
-                        icon: "fa-file-invoice-dollar"
-                    });
-                }
+                checklist.push({
+                    nombre: "Factura Proforma / Declaración Jurada de Valor (Sin Valor Comercial)",
+                    desc: "Documento proforma detallando descripción, modelo, número de serie y valor referencial FOB (Exento de E-Factura SII)[cite: 10].",
+                    badge: "Obligatorio Proforma",
+                    badgeClass: "bg-aduana-100 text-aduana-900",
+                    icon: "fa-file-lines"
+                });
 
                 if (motivoPasajero === "REPARACION") {
                     checklist.push({
@@ -914,7 +920,6 @@
                     icon: "fa-plane-arrival"
                 });
 
-                // LÓGICA COHERENTE DE FACTURA VS PROFORMA EN CARGA COMERCIAL
                 if (modalidadVenta === "LIBRE") {
                     checklist.push({
                         nombre: "Factura Proforma / Declaración de Valor (Sin Valor Comercial)",
@@ -1027,15 +1032,20 @@
                 `;
             });
 
-            // 4. Consideraciones Normativas Dinámicas con mención correcta de IVA (Tasa 0%)
+            // 4. Consideraciones Normativas Dinámicas
             const normativeList = document.getElementById('normative-list');
             normativeList.innerHTML = "";
 
-            normativeList.innerHTML += `<li><strong>Modalidad Comercial y Pago:</strong> Operación declarada bajo la modalidad <strong>${modalidadVenta}</strong> y forma de pago <strong>${formaPago}</strong>.</li>`;
-            normativeList.innerHTML += `<li><strong>Tributación (IVA Tasa 0%):</strong> Las exportaciones chilenas se encuentran afectas a la tasa 0% de IVA (Art. 36 DL 825); no generan pago de impuestos de salida en aduana.</li>`;
-            normativeList.innerHTML += `<li><strong>Mandato Aduanero Obligatorio:</strong> Toda destinación tramitada por Agencia de Aduana requiere mandato constituido mediante poder notarial (Res. Ex. 2.299/2021) o endoso del documento de transporte (Art. 197 Ordenanza de Aduanas)[cite: 8].</li>`;
+            if (esPasajero) {
+                normativeList.innerHTML += `<li><strong>Operación No Comercial (Pasajero):</strong> Régimen de salida temporal / pasajero configurado con modalidad Libre y Forma de Pago Sin Pago (exento de flujos financieros comerciales).</li>`;
+            } else {
+                normativeList.innerHTML += `<li><strong>Modalidad Comercial y Pago:</strong> Operación declarada bajo la modalidad <strong>${modalidadVenta}</strong> y forma de pago <strong>${formaPago}</strong>.</li>`;
+            }
 
-            if (modalidadVenta === "LIBRE") {
+            normativeList.innerHTML += `<li><strong>Tributación (IVA Tasa 0%):</strong> Las exportaciones chilenas se encuentran afectas a la tasa 0% de IVA (Art. 36 DL 825); no generan pago de impuestos de salida en aduana.</li>`;
+            normativeList.innerHTML += `<li><strong>Mandato Aduanero Obligatorio:</strong> Toda destinación tramitada por Agencia de Aduana requiere mandato constituido mediante poder notarial (Res. Ex. 2.299/2021) o endoso del transporte (Art. 197 Ordenanza de Aduanas)[cite: 8].</li>`;
+
+            if (modalidadVenta === "LIBRE" || esPasajero) {
                 normativeList.innerHTML += `<li><strong>Documentación Sin Valor Comercial:</strong> Al ser una operación Libre / Proforma, el SII no exige Factura Electrónica de Exportación, respaldándose exclusivamente con Factura Proforma o Declaración Jurada de Valor[cite: 10].</li>`;
             }
 
