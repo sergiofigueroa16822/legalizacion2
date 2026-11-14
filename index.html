@@ -183,7 +183,7 @@
                 <!-- Regimen / Destinación Aduanera -->
                 <div class="space-y-1">
                     <label class="block text-[11px] font-bold text-slate-700">Régimen / Destinación Aduanera</label>
-                    <select id="sel-regimen" onchange="toggleModoPasajero(); evaluarReglasAereas();" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-aduana-600 bg-slate-50">
+                    <select id="sel-regimen" onchange="toggleModoEspecial(); evaluarReglasAereas();" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-aduana-600 bg-slate-50">
                         <option value="DEF" selected>Exportación Definitiva (Código 10)</option>
                         <option value="TEMP_SALIDA">Salida Temporal Carga Comercial (Código 20)</option>
                         <option value="TEMP_PERFECC">Salida Temporal p/ Perfeccionamiento Pasivo (Código 21)</option>
@@ -336,7 +336,7 @@
                     </div>
                 </div>
 
-                <!-- CAMPOS COHERENTES: Modalidad de Venta y Forma de Pago Dinámicas con Bloqueo de Pasajeros -->
+                <!-- CAMPOS COHERENTES: Modalidad de Venta y Forma de Pago Dinámicas con Bloqueo Especial (Pasajeros / Rancho) -->
                 <div class="pt-3 border-t border-slate-100 space-y-3">
                     <div class="space-y-1">
                         <label class="block text-[11px] font-bold text-slate-700">Modalidad de Venta / Cláusula Comercial</label>
@@ -511,13 +511,13 @@
             }
         }
 
-        // FUNCIÓN CLAVE: Sincroniza Formas de Pago y Restricciones según Modalidad de Venta y Régimen
+        // FUNCIÓN CLAVE: Sincroniza Formas de Pago y Restricciones según Régimen (Pasajeros o Rancho)
         function actualizarFormasPagoCompatible() {
             const regimen = document.getElementById('sel-regimen').value;
             const selModalidad = document.getElementById('sel-modalidad-venta');
             const selPago = document.getElementById('sel-forma-pago');
             
-            // SI ES RÉGIMEN DE PASAJEROS, SE BLOQUEAN LAS OPCIONES A "LIBRE" Y "SIN PAGO"
+            // SI ES RÉGIMEN DE PASAJEROS O RANCHO, SE BLOQUEAN LAS OPCIONES A VALORES NO COMERCIALES / SIN PAGO
             if (regimen === "TEMP_PASAJERO") {
                 selModalidad.innerHTML = `
                     <option value="LIBRE" selected>Libre / Sin Valor Comercial (Proforma / Pasajero)</option>
@@ -526,6 +526,17 @@
 
                 selPago.innerHTML = `
                     <option value="SIN_PAGO" selected>Sin Pago / Exportación Temporal o Proforma (No Comercial)</option>
+                `;
+                selPago.disabled = true;
+                return;
+            } else if (regimen === "RANCHO") {
+                selModalidad.innerHTML = `
+                    <option value="LIBRE" selected>Libre / Suministro de A Bordo (Rancho)</option>
+                `;
+                selModalidad.disabled = true;
+
+                selPago.innerHTML = `
+                    <option value="SIN_PAGO" selected>Sin Pago / Suministro de A Bordo (Aprovisionamiento)</option>
                 `;
                 selPago.disabled = true;
                 return;
@@ -663,7 +674,7 @@
             }
         }
 
-        function toggleModoPasajero() {
+        function toggleModoEspecial() {
             const regimen = document.getElementById('sel-regimen').value;
             const pasajeroBox = document.getElementById('pasajero-params-box');
             const cargaBox = document.getElementById('carga-comercial-box');
@@ -694,6 +705,7 @@
             const formaPago = document.getElementById('sel-forma-pago').value;
 
             const esPasajero = (regimen === "TEMP_PASAJERO");
+            const esRancho = (regimen === "RANCHO");
             const motivoPasajero = document.getElementById('sel-motivo-pasajero')?.value || "EXPORTACION_PROFORMA";
             const modalidadPasajero = document.getElementById('sel-modalidad-pasajero')?.value || "ACOMPANADO";
             const seguroPasajero = document.getElementById('chk-seguro-pasajero')?.checked || false;
@@ -713,7 +725,7 @@
                 "TEMP_PERFECC": "SALIDA TEMPORAL P/ PERFECCIONAMIENTO (COD. 21)",
                 "TEMP_PASAJERO": "DUS DE PASAJEROS / PROPIOS MEDIOS (TRÁMITE AGENCIA)",
                 "REEXP": "REEXPORTACIÓN DE MERCANCÍAS (COD. 30)",
-                "RANCHO": "RANCHO DE NAVES / AERONAVES (COD. 40)"
+                "RANCHO": "RANCHO / PROVISIONES DE A BORDO (COD. 40)"
             };
 
             statusTitle.textContent = regimenNames[regimen] || "DUS AÉREA CHILE";
@@ -723,6 +735,8 @@
 
             if (esPasajero) {
                 if (statusSummary) statusSummary.textContent = `Legalización formal de DUS para pasajeros (Sin Valor Comercial / Sin Pago) tramitada por Agencia de Aduana con ingreso a Zona Primaria.`;
+            } else if (esRancho) {
+                if (statusSummary) statusSummary.textContent = `Legalización DUS de Rancho / Suministro de A Bordo (Aprovisionamiento sin pago comercial).`;
             } else {
                 if (statusSummary) statusSummary.textContent = `Evaluación para salida de carga por vía aérea (${modalidadVenta}, pago: ${formaPago}) con respaldo documental y mandato aduanero.`;
             }
@@ -754,6 +768,15 @@
                     resSegStatus.innerHTML = `<i class="fa-solid fa-file-contract text-amber-600"></i> DJ SEGURO (2% FOB)`;
                     resSegText.textContent = "Sin seguro contratado: exige Declaración Jurada Simple autorizando 2% teórico (Res. 1300/06)[cite: 4].";
                 }
+            } else if (esRancho) {
+                resGdStatus.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-500"></i> OBLIGATORIA`;
+                resGdText.textContent = "Guía de despacho interna para traslado de provisiones hacia la aeronave.";
+
+                resAwbStatus.innerHTML = `<i class="fa-solid fa-file-invoice text-aduana-600"></i> AWB / MANIFIESTO`;
+                resAwbText.textContent = "Documento de entrega de provisiones a bordo de la aeronave.";
+
+                resSegStatus.innerHTML = `<i class="fa-solid fa-circle-minus text-slate-400"></i> EXENTO / INTERNO`;
+                resSegText.textContent = "Suministro de rancho sin exigencias de seguro comercial externo.";
             } else {
                 if (trasladaCamion) {
                     resGdStatus.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600"></i> OBLIGATORIA`;
@@ -895,6 +918,48 @@
                     });
                 }
 
+            } else if (esRancho) {
+                checklist.push({
+                    nombre: "DUS de Rancho / Suministro de A Bordo (Código 40)",
+                    desc: "Documento Único de Salida destinado a proveer víveres, combustible o materiales para la aeronave.",
+                    badge: "Obligatorio Rancho",
+                    badgeClass: "bg-aduana-100 text-aduana-900",
+                    icon: "fa-utensils"
+                });
+
+                checklist.push({
+                    nombre: "Solicitud de Abastecimiento / Orden de Rancho visada por la Compañía Aérea",
+                    desc: "Detalle de las provisiones entregadas a bordo para el consumo de la tripulación y pasajeros.",
+                    badge: "Obligatorio Aprovisionamiento",
+                    badgeClass: "bg-red-100 text-red-800",
+                    icon: "fa-file-lines"
+                });
+
+                checklist.push({
+                    nombre: "Guía de Despacho Interna o Factura Proforma de Suministro",
+                    desc: "Respalda la entrega de los víveres/repuestos (Exento de E-Factura de exportación comercial formal al ser rancho)[cite: 10].",
+                    badge: "Respaldo Interno",
+                    badgeClass: "bg-slate-200 text-slate-800",
+                    icon: "fa-file-invoice"
+                });
+
+                checklist.push({
+                    nombre: "Mandato Aduanero Vigente (Poder Notarial o Endoso)",
+                    desc: "Mandato otorgado al Agente de Aduanas conforme al Art. 197 de la Ordenanza de Aduanas y Res. Ex. N° 2.299/2021[cite: 8].",
+                    badge: "Mandato Obligatorio",
+                    badgeClass: "bg-red-100 text-red-800 font-bold",
+                    icon: "fa-user-check"
+                });
+
+                if (currentTariff && currentTariff.obligatorio) {
+                    checklist.push({
+                        nombre: `${currentTariff.vobo_nombre || 'Autorización Sectorial (SAG / Seremi)'} [Partida ${currentTariff.code}]`,
+                        desc: `Suministros alimentarios o regulados exigen V°B° de ${currentTariff.organismo}.`,
+                        badge: `Visto Bueno ${currentTariff.organismo || 'Sectorial'}`,
+                        badgeClass: "bg-amber-100 text-amber-900 font-bold border border-amber-300",
+                        icon: "fa-stamp"
+                    });
+                }
             } else {
                 checklist.push({
                     nombre: "DUS - Primer Mensaje (Aceptada a Trámite)",
@@ -1037,7 +1102,9 @@
             normativeList.innerHTML = "";
 
             if (esPasajero) {
-                normativeList.innerHTML += `<li><strong>Operación No Comercial (Pasajero):</strong> Régimen de salida temporal / pasajero configurado con modalidad Libre y Forma de Pago Sin Pago (exento de flujos financieros comerciales).</li>`;
+                normativeList.innerHTML += `<li><strong>Operación No Comercial (Pasajero):</strong> Régimen de salida temporal / pasajero configurado con modalidad Libre y Forma de Pago Sin Pago.</li>`;
+            } else if (esRancho) {
+                normativeList.innerHTML += `<li><strong>Operación de Rancho (Suministro de A Bordo):</strong> Destinación aduanera de aprovisionamiento configurada sin pagos comerciales directos de exportación.</li>`;
             } else {
                 normativeList.innerHTML += `<li><strong>Modalidad Comercial y Pago:</strong> Operación declarada bajo la modalidad <strong>${modalidadVenta}</strong> y forma de pago <strong>${formaPago}</strong>.</li>`;
             }
@@ -1045,14 +1112,13 @@
             normativeList.innerHTML += `<li><strong>Tributación (IVA Tasa 0%):</strong> Las exportaciones chilenas se encuentran afectas a la tasa 0% de IVA (Art. 36 DL 825); no generan pago de impuestos de salida en aduana.</li>`;
             normativeList.innerHTML += `<li><strong>Mandato Aduanero Obligatorio:</strong> Toda destinación tramitada por Agencia de Aduana requiere mandato constituido mediante poder notarial (Res. Ex. 2.299/2021) o endoso del transporte (Art. 197 Ordenanza de Aduanas)[cite: 8].</li>`;
 
-            if (modalidadVenta === "LIBRE" || esPasajero) {
-                normativeList.innerHTML += `<li><strong>Documentación Sin Valor Comercial:</strong> Al ser una operación Libre / Proforma, el SII no exige Factura Electrónica de Exportación, respaldándose exclusivamente con Factura Proforma o Declaración Jurada de Valor[cite: 10].</li>`;
+            if (modalidadVenta === "LIBRE" || esPasajero || esRancho) {
+                normativeList.innerHTML += `<li><strong>Documentación Sin Valor Comercial:</strong> Al ser una operación Libre / Proforma / Rancho, el SII no exige Factura Electrónica de Exportación comercial tradicional[cite: 10].</li>`;
             }
 
             if (esPasajero) {
                 normativeList.innerHTML += `<li><strong>Tramitación DUS Pasajeros (Propios Medios):</strong> Requiere ingreso y visación presencial en Zona Primaria del aeropuerto (IZP), cierre de manifiesto de vuelo ("Embarcado Conforme")[cite: 2] y legalización dentro de los 25 días hábiles siguientes al primer mensaje.</li>`;
-                normativeList.innerHTML += `<li><strong>Seguro Teórico (Res. 1300/06):</strong> Si no existe póliza contratada, se debe adjuntar Declaración Jurada Simple autorizando al agente a aplicar el 2% sobre el valor FOB[cite: 4].</li>`;
-            } else {
+            } else if (!esRancho) {
                 normativeList.innerHTML += `<li><strong>DUS Legalización:</strong> Debe tramitarse en un plazo de hasta 25 días hábiles contados desde la fecha de autorización del primer mensaje.</li>`;
             }
 
