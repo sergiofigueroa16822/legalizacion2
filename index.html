@@ -511,7 +511,7 @@
             }
         }
 
-        // FUNCIÓN CLAVE: Sincroniza Formas de Pago compatibles según la Modalidad de Venta
+        // FUNCIÓN CLAVE: Sincroniza Formas de Pago y Restricciones según Modalidad de Venta
         function actualizarFormasPagoCompatible() {
             const modalidad = document.getElementById('sel-modalidad-venta').value;
             const selPago = document.getElementById('sel-forma-pago');
@@ -526,8 +526,8 @@
                 `;
             } else if (modalidad === "CONDICION") {
                 selPago.innerHTML = `
-                    <option value="COBRANZA" selected>Cobranza Documentaria (Sujeto a Liquidación)</option>
-                    <option value="CREDITO">Carta de Crédito Documentaria</option>
+                    <option value="COBRANZA" selected>Cobranza Documentaria (Sujeto a Fijación de Precio)</option>
+                    <option value="CREDITO">Carta de Crédito Documentaria Condicionada</option>
                 `;
             } else if (modalidad === "CONSIGNACION") {
                 selPago.innerHTML = `
@@ -536,7 +536,7 @@
                 `;
             } else if (modalidad === "LIBRE") {
                 selPago.innerHTML = `
-                    <option value="SIN_PAGO" selected>Sin Pago / Exportación Temporal o Proforma</option>
+                    <option value="SIN_PAGO" selected>Sin Pago / Exportación Temporal o Proforma (Sin Factura SII)</option>
                 `;
             }
         }
@@ -647,7 +647,7 @@
                 if (cargaBox) cargaBox.classList.add('hidden');
                 if (factoresBox) factoresBox.classList.add('hidden');
 
-                // Auto-ajustar modalidad de venta a LIBRE si es pasajero temporal de muestras/proforma
+                // Auto-ajustar modalidad de venta a LIBRE si es pasajero / proforma
                 document.getElementById('sel-modalidad-venta').value = 'LIBRE';
                 actualizarFormasPagoCompatible();
             } else {
@@ -727,7 +727,7 @@
                     resSegText.textContent = "Se respalda con certificado de póliza de seguro contratada.";
                 } else {
                     resSegStatus.innerHTML = `<i class="fa-solid fa-file-contract text-amber-600"></i> DJ SEGURO (2% FOB)`;
-                    resSegText.textContent = "Sin seguro contratado: exige Declaración Jurada Simple autorizando 2% teórico (Res. 1300/06).";
+                    resSegText.textContent = "Sin seguro contratado: exige Declaración Jurada Simple autorizando 2% teórico (Res. 1300/06)[cite: 4].";
                 }
             } else {
                 if (trasladaCamion) {
@@ -764,7 +764,7 @@
                 }
             }
 
-            // 3. Construcción del Checklist
+            // 3. Construcción del Checklist Coherente con Factura vs Proforma
             const checklist = [];
 
             if (esPasajero) {
@@ -800,42 +800,53 @@
                     icon: "fa-plane-arrival"
                 });
 
-                if (motivoPasajero === "EXPORTACION_PROFORMA") {
+                // LÓGICA COHERENTE DE DOCUMENTO COMERCIAL SEGÚN MODALIDAD
+                if (modalidadVenta === "LIBRE") {
                     checklist.push({
-                        nombre: "Factura Proforma / Declaración de Valor",
-                        desc: "Documento comercial o proforma detallando descripción, modelo, número de serie, origen y valor referencial FOB.",
-                        badge: "Obligatorio Valor",
+                        nombre: "Factura Proforma / Declaración Jurada de Valor (Sin Valor Comercial)",
+                        desc: "Documento proforma detallando descripción, modelo, número de serie y valor referencial FOB (Exento de E-Factura SII)[cite: 10].",
+                        badge: "Obligatorio Proforma",
+                        badgeClass: "bg-aduana-100 text-aduana-900",
+                        icon: "fa-file-lines"
+                    });
+                } else if (modalidadVenta === "CONDICION" || modalidadVenta === "CONSIGNACION") {
+                    checklist.push({
+                        nombre: "Factura Comercial Provisional / Contrato Consignación",
+                        desc: "Documento que respalda la operación sujeta a fijación de precio o venta posterior.",
+                        badge: "Documento Comercial",
+                        badgeClass: "bg-amber-100 text-amber-900",
+                        icon: "fa-file-invoice"
+                    });
+                } else {
+                    checklist.push({
+                        nombre: "Factura Comercial de Exportación (E-Factura SII)",
+                        desc: "Factura electrónica definitiva de exportación (A firme / Título oneroso).",
+                        badge: "Obligatorio SII",
                         badgeClass: "bg-red-100 text-red-800",
                         icon: "fa-file-invoice-dollar"
                     });
-                } else if (motivoPasajero === "REPARACION") {
+                }
+
+                if (motivoPasajero === "REPARACION") {
                     checklist.push({
-                        nombre: "Factura Proforma + Respaldo de Origen / Orden Servicio Técnico",
-                        desc: "Proforma valorada + DIN de importación previa o factura local y orden RMA del servicio técnico extranjero.",
+                        nombre: "Respaldo de Origen / Orden de Servicio Técnico o Garantía (RMA)",
+                        desc: "DIN de importación previa o factura local + correo u orden de trabajo del taller extranjero.",
                         badge: "Motivo: Reparación",
                         badgeClass: "bg-amber-100 text-amber-900",
                         icon: "fa-screwdriver-wrench"
                     });
                 } else if (motivoPasajero === "FERIA") {
                     checklist.push({
-                        nombre: "Factura Proforma + Invitación / Inscripción Oficial a Feria",
-                        desc: "Acredita participación en exposición o congreso internacional y detalla equipos que retornarán al país.",
+                        nombre: "Invitación / Inscripción Oficial a Feria o Exposición",
+                        desc: "Acredita participación en evento internacional y retorno posterior de los equipos.",
                         badge: "Motivo: Ferias",
                         badgeClass: "bg-amber-100 text-amber-900",
                         icon: "fa-tent"
                     });
-                } else if (motivoPasajero === "MUESTRAS") {
-                    checklist.push({
-                        nombre: "Factura Proforma / Declaración de Muestras sin Valor Comercial",
-                        desc: "Detalle de muestrario o repuestos técnicos con valores referenciales para control aduanero.",
-                        badge: "Motivo: Muestras",
-                        badgeClass: "bg-amber-100 text-amber-900",
-                        icon: "fa-tags"
-                    });
                 } else if (motivoPasajero === "EQUIPO_PROF") {
                     checklist.push({
-                        nombre: "Factura Proforma / Inventario Técnico con Números de Serie",
-                        desc: "Listado individualizado (cámaras, instrumentos, herramientas, equipos) y acreditación del pasajero.",
+                        nombre: "Inventario Técnico Detallado con Números de Serie",
+                        desc: "Listado individualizado de instrumentos, herramientas o equipos profesionales.",
                         badge: "Uso Profesional",
                         badgeClass: "bg-amber-100 text-amber-900",
                         icon: "fa-camera-retro"
@@ -853,7 +864,7 @@
                 } else {
                     checklist.push({
                         nombre: "Declaración Jurada Simple de Seguro (2% Teórico sobre FOB)",
-                        desc: "Declaración firmada por el representante legal autorizando al Agente de Aduanas a aplicar el 2% sobre FOB (Cap. II Num. 2.7 letra A Res. 1300/06).",
+                        desc: "Declaración firmada por el representante legal autorizando al Agente de Aduanas a aplicar el 2% sobre FOB (Cap. II Num. 2.7 letra A Res. 1300/06)[cite: 4].",
                         badge: "Obligatorio (Sin Póliza)",
                         badgeClass: "bg-amber-100 text-amber-900",
                         icon: "fa-file-contract"
@@ -862,7 +873,7 @@
 
                 checklist.push({
                     nombre: "Mandato Aduanero Vigente (Poder Notarial o Endoso)",
-                    desc: "Mandato otorgado al Agente de Aduanas conforme al Art. 197 de la Ordenanza de Aduanas y Res. Ex. N° 2.299/2021.",
+                    desc: "Mandato otorgado al Agente de Aduanas conforme al Art. 197 de la Ordenanza de Aduanas y Res. Ex. N° 2.299/2021[cite: 8].",
                     badge: "Mandato Obligatorio",
                     badgeClass: "bg-red-100 text-red-800 font-bold",
                     icon: "fa-user-check"
@@ -903,37 +914,30 @@
                     icon: "fa-plane-arrival"
                 });
 
-                if (regimen === "DEF") {
+                // LÓGICA COHERENTE DE FACTURA VS PROFORMA EN CARGA COMERCIAL
+                if (modalidadVenta === "LIBRE") {
                     checklist.push({
-                        nombre: "Factura Comercial de Exportación (E-Factura SII)",
-                        desc: `Factura electrónica definitiva de exportación (${modalidadVenta}, pago: ${formaPago}) con expresión de Incoterm aéreo y valor FOB USD.`,
-                        badge: "Obligatorio",
-                        badgeClass: "bg-red-100 text-red-800",
-                        icon: "fa-file-invoice-dollar"
+                        nombre: "Factura Proforma / Declaración de Valor (Sin Valor Comercial)",
+                        desc: "Documento proforma sin carácter de venta definitiva (Exento de E-Factura SII)[cite: 10].",
+                        badge: "Obligatorio Proforma",
+                        badgeClass: "bg-aduana-100 text-aduana-900",
+                        icon: "fa-file-lines"
                     });
-                } else if (regimen === "TEMP_SALIDA" || regimen === "TEMP_PERFECC") {
+                } else if (modalidadVenta === "CONDICION" || modalidadVenta === "CONSIGNACION") {
                     checklist.push({
-                        nombre: "Factura Proforma / Declaración de Valor para Salida Temporal",
-                        desc: "Documento que consigna el valor comercial de las mercancías que retornarán al país.",
-                        badge: "Requerido por Régimen",
+                        nombre: "Factura Comercial Provisional / Documento de Consignación",
+                        desc: `Respalda operación comercial bajo modalidad ${modalidadVenta}.`,
+                        badge: "Comercial Condicionada",
                         badgeClass: "bg-amber-100 text-amber-800",
                         icon: "fa-file-lines"
                     });
-                } else if (regimen === "REEXP") {
+                } else {
                     checklist.push({
-                        nombre: "Factura de Reexportación + DUS de Ingreso Temporal Previa",
-                        desc: "Respalda la reaparición o salida de mercancías anteriormente bajo admisión temporal.",
-                        badge: "Requerido por Régimen",
-                        badgeClass: "bg-amber-100 text-amber-800",
-                        icon: "fa-right-left"
-                    });
-                } else if (regimen === "RANCHO") {
-                    checklist.push({
-                        nombre: "Solicitud / Vale de Recepción de Provisiones de A bordo",
-                        desc: "Comprobante de entrega con firma conforme del Comandante o Encargado de la Aeronave.",
-                        badge: "Rancho / Provisiones",
-                        badgeClass: "bg-purple-100 text-purple-800",
-                        icon: "fa-boxes-packing"
+                        nombre: "Factura Comercial de Exportación (E-Factura SII)",
+                        desc: "Factura electrónica definitiva de exportación con expresión de Incoterm aéreo y valor FOB USD.",
+                        badge: "Obligatorio SII",
+                        badgeClass: "bg-red-100 text-red-800",
+                        icon: "fa-file-invoice-dollar"
                     });
                 }
 
@@ -996,7 +1000,7 @@
                 if (requiereMandato) {
                     checklist.push({
                         nombre: "Mandato Aduanero Vigente (Poder Notarial o Endoso AWB)",
-                        desc: "Autorización obligatoria al Agente de Aduanas conforme al Art. 197 de la Ordenanza de Aduanas y Res. Ex. N° 2.299/2021.",
+                        desc: "Autorización obligatoria al Agente de Aduanas conforme al Art. 197 de la Ordenanza de Aduanas y Res. Ex. N° 2.299/2021[cite: 8].",
                         badge: "Mandato Obligatorio",
                         badgeClass: "bg-red-100 text-red-800 font-bold",
                         icon: "fa-user-check"
@@ -1023,16 +1027,21 @@
                 `;
             });
 
-            // 4. Consideraciones Normativas Dinámicas
+            // 4. Consideraciones Normativas Dinámicas con mención correcta de IVA (Tasa 0%)
             const normativeList = document.getElementById('normative-list');
             normativeList.innerHTML = "";
 
-            normativeList.innerHTML += `<li><strong>Modalidad Comercial y Pago:</strong> Operación declarada bajo la modalidad <strong>${modalidadVenta}</strong> y forma de pago compatible <strong>${formaPago}</strong>.</li>`;
-            normativeList.innerHTML += `<li><strong>Mandato Aduanero Obligatorio:</strong> Toda destinación tramitada por Agencia de Aduana requiere mandato constituido mediante poder notarial (Res. Ex. 2.299/2021) o endoso del documento de transporte (Art. 197 Ordenanza de Aduanas).</li>`;
+            normativeList.innerHTML += `<li><strong>Modalidad Comercial y Pago:</strong> Operación declarada bajo la modalidad <strong>${modalidadVenta}</strong> y forma de pago <strong>${formaPago}</strong>.</li>`;
+            normativeList.innerHTML += `<li><strong>Tributación (IVA Tasa 0%):</strong> Las exportaciones chilenas se encuentran afectas a la tasa 0% de IVA (Art. 36 DL 825); no generan pago de impuestos de salida en aduana.</li>`;
+            normativeList.innerHTML += `<li><strong>Mandato Aduanero Obligatorio:</strong> Toda destinación tramitada por Agencia de Aduana requiere mandato constituido mediante poder notarial (Res. Ex. 2.299/2021) o endoso del documento de transporte (Art. 197 Ordenanza de Aduanas)[cite: 8].</li>`;
+
+            if (modalidadVenta === "LIBRE") {
+                normativeList.innerHTML += `<li><strong>Documentación Sin Valor Comercial:</strong> Al ser una operación Libre / Proforma, el SII no exige Factura Electrónica de Exportación, respaldándose exclusivamente con Factura Proforma o Declaración Jurada de Valor[cite: 10].</li>`;
+            }
 
             if (esPasajero) {
-                normativeList.innerHTML += `<li><strong>Tramitación DUS Pasajeros (Propios Medios):</strong> Requiere ingreso y visación presencial en Zona Primaria del aeropuerto (IZP), cierre de manifiesto de vuelo ("Embarcado Conforme") y legalización dentro de los 25 días hábiles siguientes al primer mensaje.</li>`;
-                normativeList.innerHTML += `<li><strong>Seguro Teórico (Res. 1300/06):</strong> Si no existe póliza contratada, se debe adjuntar Declaración Jurada Simple autorizando al agente a aplicar el 2% sobre el valor FOB.</li>`;
+                normativeList.innerHTML += `<li><strong>Tramitación DUS Pasajeros (Propios Medios):</strong> Requiere ingreso y visación presencial en Zona Primaria del aeropuerto (IZP), cierre de manifiesto de vuelo ("Embarcado Conforme")[cite: 2] y legalización dentro de los 25 días hábiles siguientes al primer mensaje.</li>`;
+                normativeList.innerHTML += `<li><strong>Seguro Teórico (Res. 1300/06):</strong> Si no existe póliza contratada, se debe adjuntar Declaración Jurada Simple autorizando al agente a aplicar el 2% sobre el valor FOB[cite: 4].</li>`;
             } else {
                 normativeList.innerHTML += `<li><strong>DUS Legalización:</strong> Debe tramitarse en un plazo de hasta 25 días hábiles contados desde la fecha de autorización del primer mensaje.</li>`;
             }
