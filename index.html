@@ -230,7 +230,7 @@
                 <!-- Bloque de Carga Comercial (Incoterm, Riesgo, etc.) -->
                 <div id="carga-comercial-box" class="space-y-4">
                     <!-- Incoterm Aéreo -->
-                    <div class="space-y-1">
+                    <div id="incoterm-container" class="space-y-1">
                         <label class="block text-[11px] font-bold text-slate-700">Incoterm 2020 (Exclusivo Aéreo/Multimodal)</label>
                         <select id="sel-incoterm" onchange="actualizarBarraIncoterm(); evaluarReglasAereas();" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs font-bold text-aduana-900 bg-slate-50 focus:ring-2 focus:ring-aduana-600">
                             <option value="EXW">EXW - Ex Works (En Fábrica)</option>
@@ -244,7 +244,7 @@
                     </div>
 
                     <!-- BARRA GRÁFICA DE TRANSFERENCIA DE RIESGO -->
-                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 shadow-sm">
+                    <div id="risk-graph-box" class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 shadow-sm">
                         <div class="flex justify-between items-center text-xs">
                             <span class="font-extrabold text-slate-800 flex items-center gap-1.5">
                                 <i class="fa-solid fa-scale-balanced text-aduana-600"></i> Distribución de Responsabilidad y Riesgo:
@@ -336,7 +336,7 @@
                     </div>
                 </div>
 
-                <!-- CAMPOS COHERENTES: Modalidad de Venta y Forma de Pago Dinámicas con Bloqueo Especial (Pasajeros / Rancho) -->
+                <!-- CAMPOS COHERENTES: Modalidad de Venta y Forma de Pago Dinámicas con Bloqueo Especial -->
                 <div class="pt-3 border-t border-slate-100 space-y-3">
                     <div class="space-y-1">
                         <label class="block text-[11px] font-bold text-slate-700">Modalidad de Venta / Cláusula Comercial</label>
@@ -511,13 +511,19 @@
             }
         }
 
-        // FUNCIÓN CLAVE: Sincroniza Formas de Pago y Restricciones según Régimen (Pasajeros o Rancho)
+        // FUNCIÓN CLAVE: Sincroniza Formas de Pago, Incoterms y Restricciones según el Régimen
         function actualizarFormasPagoCompatible() {
             const regimen = document.getElementById('sel-regimen').value;
             const selModalidad = document.getElementById('sel-modalidad-venta');
             const selPago = document.getElementById('sel-forma-pago');
+            const incotermContainer = document.getElementById('incoterm-container');
+            const riskGraphBox = document.getElementById('risk-graph-box');
             
-            // SI ES RÉGIMEN DE PASAJEROS O RANCHO, SE BLOQUEAN LAS OPCIONES A VALORES NO COMERCIALES / SIN PAGO
+            // RESET VISIBILIDAD DE INCOTERMS Y RIESGOS
+            if (incotermContainer) incotermContainer.style.display = "block";
+            if (riskGraphBox) riskGraphBox.style.display = "block";
+
+            // SI ES RÉGIMEN DE PASAJEROS
             if (regimen === "TEMP_PASAJERO") {
                 selModalidad.innerHTML = `
                     <option value="LIBRE" selected>Libre / Sin Valor Comercial (Proforma / Pasajero)</option>
@@ -529,7 +535,12 @@
                 `;
                 selPago.disabled = true;
                 return;
-            } else if (regimen === "RANCHO") {
+            } 
+            // SI ES RÉGIMEN DE RANCHO (SE OCULTAN INCOTERMS PORQUE NO APLICAN)
+            else if (regimen === "RANCHO") {
+                if (incotermContainer) incotermContainer.style.display = "none";
+                if (riskGraphBox) riskGraphBox.style.display = "none";
+
                 selModalidad.innerHTML = `
                     <option value="LIBRE" selected>Libre / Suministro de A Bordo (Rancho)</option>
                 `;
@@ -540,7 +551,9 @@
                 `;
                 selPago.disabled = true;
                 return;
-            } else {
+            } 
+            // RÉGIMEN COMERCIAL GENERAL O TEMPORAL DE CARGA
+            else {
                 if (selModalidad.disabled) {
                     selModalidad.innerHTML = `
                         <option value="FIRME" selected>A Firme (Venta Definitiva)</option>
@@ -711,8 +724,8 @@
             const seguroPasajero = document.getElementById('chk-seguro-pasajero')?.checked || false;
 
             const requiereMandato = true;
-            const requiereAWBValorada = ["CPT", "CIP", "DAP", "DPU", "DDP"].includes(incoterm);
-            const seguroObligatorio = (incoterm === "CIP");
+            const requiereAWBValorada = !esRancho && ["CPT", "CIP", "DAP", "DPU", "DDP"].includes(incoterm);
+            const seguroObligatorio = !esRancho && (incoterm === "CIP");
 
             // 1. Banner Superior
             const badgeMandato = document.getElementById('badge-mandato');
@@ -736,7 +749,7 @@
             if (esPasajero) {
                 if (statusSummary) statusSummary.textContent = `Legalización formal de DUS para pasajeros (Sin Valor Comercial / Sin Pago) tramitada por Agencia de Aduana con ingreso a Zona Primaria.`;
             } else if (esRancho) {
-                if (statusSummary) statusSummary.textContent = `Legalización DUS de Rancho / Suministro de A Bordo (Aprovisionamiento sin pago comercial).`;
+                if (statusSummary) statusSummary.textContent = `Legalización DUS de Rancho / Suministro de A Bordo (Aprovisionamiento sin pago comercial ni reglas Incoterm).`;
             } else {
                 if (statusSummary) statusSummary.textContent = `Evaluación para salida de carga por vía aérea (${modalidadVenta}, pago: ${formaPago}) con respaldo documental y mandato aduanero.`;
             }
@@ -1104,9 +1117,9 @@
             if (esPasajero) {
                 normativeList.innerHTML += `<li><strong>Operación No Comercial (Pasajero):</strong> Régimen de salida temporal / pasajero configurado con modalidad Libre y Forma de Pago Sin Pago.</li>`;
             } else if (esRancho) {
-                normativeList.innerHTML += `<li><strong>Operación de Rancho (Suministro de A Bordo):</strong> Destinación aduanera de aprovisionamiento configurada sin pagos comerciales directos de exportación.</li>`;
+                normativeList.innerHTML += `<li><strong>Operación de Rancho (Suministro de A Bordo):</strong> Destinación aduanera de aprovisionamiento configurada sin pagos comerciales ni reglas Incoterm.</li>`;
             } else {
-                normativeList.innerHTML += `<li><strong>Modalidad Comercial y Pago:</strong> Operación declarada bajo la modalidad <strong>${modalidadVenta}</strong> y forma de pago <strong>${formaPago}</strong>.</li>`;
+                normativeList.innerHTML += `<li><strong>Modalidad Comercial y Pago:</strong> Operación declarada bajo la modalidad <strong>${modalidadVenta}</strong>, regla <strong>${incoterm}</strong> y forma de pago <strong>${formaPago}</strong>.</li>`;
             }
 
             normativeList.innerHTML += `<li><strong>Tributación (IVA Tasa 0%):</strong> Las exportaciones chilenas se encuentran afectas a la tasa 0% de IVA (Art. 36 DL 825); no generan pago de impuestos de salida en aduana.</li>`;
