@@ -19,7 +19,7 @@
       <span class="text-xl">⚖️</span>
       <div>
         <h1 class="text-sm font-bold tracking-tight">Auditor IA Pre-Legalización DUS (Compendio Aduanero Chile)</h1>
-        <p class="text-[11px] text-slate-300">Cruce documental: DUS • Zona Primaria • AWB/BL/CRT • Factura • Packing List</p>
+        <p class="text-[11px] text-slate-300">Vista previa en miniaturas • DUS • Zona Primaria • AWB/BL/CRT • Factura • Packing List</p>
       </div>
     </div>
     <button type="button" onclick="window.location.href='./index.html'" class="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-1 px-2.5 rounded text-xs transition cursor-pointer">
@@ -27,69 +27,82 @@
     </button>
   </header>
 
-  <!-- Contenedor Principal Compacto (2 Columnas) -->
+  <!-- Contenedor Principal Compacto -->
   <main class="max-w-7xl w-full mx-auto p-4 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
 
-    <!-- COLUMNA IZQUIERDA: Carga de Legajo, Consultas y Reglas (4 columnas) -->
-    <div class="lg:col-span-4 space-y-3">
+    <!-- COLUMNA IZQUIERDA: Carga con Miniaturas, Consultas y Reglas (5 columnas) -->
+    <div class="lg:col-span-5 space-y-3">
 
-      <!-- 1. Módulo Compacto de Carga de Documentos -->
+      <!-- 1. Módulo de Carga de Documentos con Miniaturas Visibles -->
       <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-sm space-y-2.5">
         <div class="flex justify-between items-center">
           <h2 class="font-bold text-slate-800 flex items-center gap-1.5">
-            <span>📂</span> Carpeta / Legajo de Exportación
+            <span>📂</span> Documentos y Miniaturas del Legajo
           </h2>
-          <span id="fileCountBadge" class="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-bold">0 archivos</span>
+          <span id="fileCountBadge" class="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-bold">0 páginas/archivos</span>
         </div>
 
-        <div id="dropZone" class="border border-dashed border-slate-300 hover:border-indigo-500 rounded-md p-3 text-center transition bg-slate-50/80">
+        <div id="dropZone" class="border border-dashed border-slate-300 hover:border-indigo-500 rounded-md p-2.5 text-center transition bg-slate-50/80">
           <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.png,.jpg,.jpeg,.webp" class="hidden">
-          <p class="text-[11px] text-slate-600 mb-1.5">Adjunta DUS, Captura Zona Primaria, AWB/BL, Factura y Packing List</p>
+          <p class="text-[11px] text-slate-600 mb-1.5">Carga tus PDF, imágenes, Excel o Word. Se mostrarán abajo en miniaturas:</p>
           <div class="flex justify-center gap-2">
             <button type="button" onclick="document.getElementById('fileInput').click()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-1 px-3 rounded text-[11px] transition cursor-pointer">
-              + Cargar Documentos
+              + Seleccionar Archivos
             </button>
             <button type="button" id="clearAllBtn" onclick="limpiarTodosArchivos()" class="hidden bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-semibold py-1 px-2.5 rounded text-[11px] transition cursor-pointer">
-              Vaciar
+              Vaciar Todo
             </button>
           </div>
         </div>
 
-        <!-- Lista de archivos con eliminación individual -->
-        <div id="fileList" class="max-h-36 overflow-y-auto space-y-1 pr-1"></div>
+        <!-- Barra de estado de conversión a miniaturas -->
+        <div id="renderProgress" class="hidden bg-indigo-50 border border-indigo-200 rounded p-2 text-center flex items-center justify-center gap-2">
+          <div class="animate-spin w-3.5 h-3.5 border-2 border-indigo-600 border-t-transparent rounded-full"></div>
+          <span class="text-[11px] font-medium text-indigo-800" id="renderProgressText">Generando miniaturas...</span>
+        </div>
+
+        <!-- Galería de Miniaturas Visibles en la Página -->
+        <div id="thumbnailsGrid" class="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-64 overflow-y-auto p-1 bg-slate-50 rounded border border-slate-200 hidden">
+          <!-- Aquí se dibujan las miniaturas de cada página PDF / imagen / archivo -->
+        </div>
+
+        <!-- Aviso de límite de imágenes para Groq/Llama -->
+        <div id="visionLimitNotice" class="hidden text-[10px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+          ⚠️ La IA admite hasta <strong>5 imágenes escaneadas</strong> simultáneas. Los PDF con texto digital no consumen cupo de imagen. Elimina páginas innecesarias si superas el límite.
+        </div>
 
         <button type="button" id="processBtn" onclick="auditarLegalizacion()" disabled class="w-full bg-sky-600 disabled:bg-slate-300 hover:bg-sky-700 text-white font-bold py-2 px-3 rounded text-xs transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer">
           <span>🔍</span>
-          <span>Auditar Legajo para Legalización</span>
+          <span>Auditar Miniaturas y Cruzar Datos DUS</span>
         </button>
 
-        <!-- Indicador de carga -->
+        <!-- Indicador de auditoría IA -->
         <div id="loadingIndicator" class="hidden bg-sky-50 border border-sky-200 rounded p-2 text-center flex items-center justify-center gap-2">
           <div class="animate-spin w-3.5 h-3.5 border-2 border-sky-600 border-t-transparent rounded-full"></div>
-          <span class="text-[11px] font-medium text-sky-900" id="loadingText">Auditando documentos...</span>
+          <span class="text-[11px] font-medium text-sky-900" id="loadingText">Auditando con IA Llama...</span>
         </div>
       </div>
 
-      <!-- 2. Módulo de Consultas Específicas sobre el Legajo -->
+      <!-- 2. Módulo de Consultas Específicas -->
       <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-sm space-y-2">
         <h2 class="font-bold text-slate-800 flex items-center gap-1.5">
-          <span>💬</span> Consultar Discrepancias o Datos
+          <span>💬</span> Consultar al Legajo Visible
         </h2>
 
         <div class="flex flex-wrap gap-1">
           <button type="button" onclick="hacerPreguntaRapida('¿Cuál es la diferencia exacta de peso entre Zona Primaria, AWB y DUS, y requiere SMDA?')" class="text-[10px] bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-600 px-2 py-0.5 rounded border border-slate-200 transition cursor-pointer">
-            ¿Diferencia peso / SMDA?
+            ¿Peso / SMDA (±10%)?
           </button>
-          <button type="button" onclick="hacerPreguntaRapida('Verifica si coincide el almacenista/bodega, bultos y número de guía aérea entre todos los documentos.')" class="text-[10px] bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-600 px-2 py-0.5 rounded border border-slate-200 transition cursor-pointer">
+          <button type="button" onclick="hacerPreguntaRapida('Verifica almacenista/bodega, bultos y número de guía entre todos los documentos.')" class="text-[10px] bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-600 px-2 py-0.5 rounded border border-slate-200 transition cursor-pointer">
             ¿Bodega, bultos y guía?
           </button>
-          <button type="button" onclick="hacerPreguntaRapida('Compara moneda, valores FOB y consignatario entre factura, guía y DUS.')" class="text-[10px] bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-600 px-2 py-0.5 rounded border border-slate-200 transition cursor-pointer">
-            ¿Moneda, FOB y partes?
+          <button type="button" onclick="hacerPreguntaRapida('¿Quién es el consignante, consignatario, país destino y tipo de moneda?')" class="text-[10px] bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-600 px-2 py-0.5 rounded border border-slate-200 transition cursor-pointer">
+            ¿Partes, destino y moneda?
           </button>
         </div>
 
-        <div id="chatHistory" class="h-36 overflow-y-auto bg-slate-50 border border-slate-200 rounded p-2 space-y-2 text-[11px]">
-          <div class="text-slate-400 italic">Carga el legajo y consulta cualquier detalle puntual antes de enviar a legalizar.</div>
+        <div id="chatHistory" class="h-32 overflow-y-auto bg-slate-50 border border-slate-200 rounded p-2 space-y-2 text-[11px]">
+          <div class="text-slate-400 italic">Carga tus documentos y consulta cualquier dato visible en las miniaturas.</div>
         </div>
 
         <div class="flex gap-1.5">
@@ -100,24 +113,24 @@
         </div>
       </div>
 
-      <!-- 3. Memoria y Criterios de Auditoría -->
+      <!-- 3. Memoria y Reglas de Auditoría -->
       <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-sm space-y-2">
         <div class="flex justify-between items-center">
           <h2 class="font-bold text-slate-800 flex items-center gap-1.5">
-            <span>🧠</span> Reglas de Auditoría Aprendidas
+            <span>🧠</span> Reglas Aprendidas
           </h2>
           <button type="button" onclick="guardarReglaAprendizaje()" class="text-[10px] bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-semibold px-2 py-0.5 rounded cursor-pointer">
             Guardar
           </button>
         </div>
-        <textarea id="reglasAprendidasInput" rows="2" placeholder="Ej: En embarques aéreos Ventisqueros verificar que almacenista sea A97 TEISA o A10 AEROSAN según guía. Tolerancia peso estricto +-10%." class="w-full bg-slate-50 border border-slate-300 rounded p-2 text-[11px] focus:outline-none focus:border-sky-500"></textarea>
-        <div id="estadoAprendizaje" class="text-[10px] text-emerald-600 hidden font-medium">✓ Criterio guardado en memoria.</div>
+        <textarea id="reglasAprendidasInput" rows="2" placeholder="Ej: Almacenista A97 TEISA o A10 AEROSAN debe coincidir con Zona Primaria. Tolerancia peso +-10%." class="w-full bg-slate-50 border border-slate-300 rounded p-2 text-[11px] focus:outline-none focus:border-sky-500"></textarea>
+        <div id="estadoAprendizaje" class="text-[10px] text-emerald-600 hidden font-medium">✓ Criterio guardado.</div>
       </div>
 
     </div>
 
-    <!-- COLUMNA DERECHA: Dictamen de Legalización y Matriz de Cruce (8 columnas) -->
-    <div class="lg:col-span-8 bg-white border border-slate-200 rounded-lg p-4 shadow-sm space-y-4">
+    <!-- COLUMNA DERECHA: Dictamen de Legalización y Matriz de Cruce (7 columnas) -->
+    <div class="lg:col-span-7 bg-white border border-slate-200 rounded-lg p-4 shadow-sm space-y-4">
       
       <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-200 pb-2.5">
         <div>
@@ -125,15 +138,15 @@
           <p id="avisoTruncadoText" class="text-[11px] text-amber-600 font-medium hidden"></p>
         </div>
         <button type="button" onclick="copiarDictamen()" class="bg-slate-800 hover:bg-slate-900 text-white text-[11px] font-semibold py-1 px-3 rounded cursor-pointer">
-          Copiar Informe de Auditoría
+          Copiar Informe
         </button>
       </div>
 
       <!-- Estado vacío inicial -->
       <div id="emptyStateAuditoria" class="py-16 text-center text-slate-400 space-y-2">
         <div class="text-3xl">🛡️</div>
-        <p class="text-xs font-medium text-slate-600">Sube los documentos de la carpeta (DUS, Zona Primaria, AWB/BL, Factura, Packing List)</p>
-        <p class="text-[11px] max-w-md mx-auto">La IA cruzará pesos ($\pm 10\%$ tolerancia SMDA), bultos, moneda, almacenista, consignante, consignatario y documentos de transporte según el Compendio de Normas Aduaneras.</p>
+        <p class="text-xs font-medium text-slate-600">Selecciona tus 4 PDF (DUS, Zona Primaria, AWB/BL, Factura/Packing)</p>
+        <p class="text-[11px] max-w-md mx-auto">Cada página se renderizará en miniaturas visibles a la izquierda para que la IA analice tanto el texto como las imágenes sin errores de carga.</p>
       </div>
 
       <!-- Resultados de Auditoría Estructurada -->
@@ -151,10 +164,10 @@
           </div>
         </div>
 
-        <!-- Alerta Específica de Control de Peso y Tolerancia +-10% (Zona Primaria vs DUS) -->
+        <!-- Control de Peso y Tolerancia +-10% -->
         <div class="border border-slate-200 rounded-md overflow-hidden">
           <div class="bg-slate-100 px-3 py-1.5 font-bold text-slate-700 border-b border-slate-200 flex justify-between items-center">
-            <span>1. Control de Pesos y Tolerancia Compendio Aduanero ($\pm 10\%$ Zona Primaria)</span>
+            <span>1. Control de Pesos y Tolerancia (±10% Zona Primaria)</span>
             <span id="pesoEstadoBadge" class="text-[10px] px-2 py-0.5 rounded font-bold"></span>
           </div>
           <div class="p-3 grid grid-cols-2 sm:grid-cols-4 gap-2.5 bg-slate-50/50">
@@ -188,25 +201,25 @@
           </div>
           <div class="border border-amber-200 bg-amber-50/40 rounded-md p-3">
             <h4 class="font-bold text-amber-800 mb-1.5 flex items-center gap-1">
-              <span>⚠️</span> Advertencias / Revisiones Preventivas
+              <span>⚠️</span> Advertencias / Revisiones
             </h4>
             <ul id="listaAdvertencias" class="list-disc pl-4 space-y-1 text-[11px] text-amber-900"></ul>
           </div>
         </div>
 
-        <!-- Matriz Comparativa de Cruce Documental -->
+        <!-- Matriz Comparativa -->
         <div class="border border-slate-200 rounded-md overflow-hidden">
           <div class="bg-slate-100 px-3 py-1.5 font-bold text-slate-700 border-b border-slate-200">
-            2. Matriz de Validación Cruzada (DUS vs. Zona Primaria vs. Transporte vs. Factura/Packing)
+            2. Matriz de Validación Cruzada
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-left text-[11px]">
               <thead class="bg-slate-50 text-slate-600 border-b border-slate-200">
                 <tr>
                   <th class="p-2">Campo Auditado</th>
-                  <th class="p-2">DUS (1° Mensaje)</th>
+                  <th class="p-2">DUS</th>
                   <th class="p-2">Zona Primaria</th>
-                  <th class="p-2">AWB / BL / Guía</th>
+                  <th class="p-2">AWB / BL</th>
                   <th class="p-2">Factura / Packing</th>
                   <th class="p-2 text-center">Estado</th>
                 </tr>
@@ -227,35 +240,43 @@
 
   </main>
 
+  <!-- Modal ligero para ampliar miniatura al hacer clic -->
+  <div id="previewModal" onclick="this.classList.add('hidden')" class="hidden fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4 cursor-pointer">
+    <div class="bg-white rounded-lg p-2 max-w-3xl max-h-[90vh] flex flex-col items-center" onclick="event.stopPropagation()">
+      <div class="w-full flex justify-between items-center pb-2 px-1 border-b border-slate-200 mb-2">
+        <span id="previewModalTitle" class="font-bold text-xs text-slate-800"></span>
+        <button type="button" onclick="document.getElementById('previewModal').classList.add('hidden')" class="text-rose-600 font-bold px-2 cursor-pointer">✕ Cerrar</button>
+      </div>
+      <img id="previewModalImg" src="" class="max-h-[80vh] object-contain rounded">
+    </div>
+  </div>
+
   <script>
-    // Configurar worker de PDF.js
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-    // ===== CONFIGURACIÓN SUPABASE & EDGE FUNCTION =====
+    // ===== CONFIGURACIÓN SUPABASE & OPTIMIZACIÓN DE IMÁGENES =====
     const URL_SUPABASE = 'https://lmmoqcpptyzgscnjwvgk.supabase.co/functions/v1/llama-function';
     const SUPABASE_KEY = 'sb_publishable_xRnGuxmB5oen-G7LDlI6JQ_SUEvLDMr';
-    const MAX_IMAGENES = 10;
-    const MAX_LADO_PX = 1600;
-    const CALIDAD_JPEG = 0.75;
-    const MAX_CHARS_TEXTO = 24000;
+    const MAX_IMAGENES_GROQ = 5;    // Límite seguro para modelos Llama Vision en Groq sin error 400/413
+    const MAX_LADO_PX = 1280;       // Resolución óptima legible sin saturar payload HTTP
+    const CALIDAD_JPEG = 0.68;      // Compresión balanceada para enviar múltiples páginas
+    const MAX_CHARS_TEXTO = 22000;
     const TIMEOUT_MS = 120000;
 
-    let archivosSeleccionados = [];
-    let textoLegajoConsolidado = '';
-    let imagenesLegajoConsolidado = [];
+    // Cada elemento en itemsLegajo representa una página o archivo ya procesado y visible como miniatura
+    // Estructura: { id, nombre, tipo: 'pdf_texto' | 'pdf_imagen' | 'imagen' | 'doc_texto', texto: string, base64: string | null, previewUrl: string | null }
+    let itemsLegajo = [];
     let ultimoDictamenJSON = null;
 
     const fileInput = document.getElementById('fileInput');
-    const fileList = document.getElementById('fileList');
+    const thumbnailsGrid = document.getElementById('thumbnailsGrid');
     const processBtn = document.getElementById('processBtn');
     const clearAllBtn = document.getElementById('clearAllBtn');
     const fileCountBadge = document.getElementById('fileCountBadge');
 
     window.addEventListener('DOMContentLoaded', () => {
       const guardadas = localStorage.getItem('dus_auditoria_reglas');
-      if (guardadas) {
-        document.getElementById('reglasAprendidasInput').value = guardadas;
-      }
+      if (guardadas) document.getElementById('reglasAprendidasInput').value = guardadas;
     });
 
     function guardarReglaAprendizaje() {
@@ -266,75 +287,127 @@
       setTimeout(() => estado.classList.add('hidden'), 3000);
     }
 
-    fileInput.addEventListener('change', (e) => {
-      const nuevos = Array.from(e.target.files);
-      nuevos.forEach(nuevo => {
-        const existe = archivosSeleccionados.some(f => f.name === nuevo.name && f.size === nuevo.size);
-        if (!existe) archivosSeleccionados.push(nuevo);
-      });
-      fileInput.value = '';
-      renderFileList();
+    // Al seleccionar archivos, los convierte INMEDIATAMENTE en miniaturas visibles en la página
+    fileInput.addEventListener('change', async (e) => {
+      const archivos = Array.from(e.target.files);
+      if (archivos.length === 0) return;
+
+      const renderProgress = document.getElementById('renderProgress');
+      const renderProgressText = document.getElementById('renderProgressText');
+      renderProgress.classList.remove('hidden');
+
+      try {
+        for (let i = 0; i < archivos.length; i++) {
+          const archivo = archivos[i];
+          renderProgressText.textContent = `Renderizando miniatura (${i + 1}/${archivos.length}): ${archivo.name}...`;
+          const ext = archivo.name.split('.').pop().toLowerCase();
+
+          if (ext === 'pdf' || archivo.type === 'application/pdf') {
+            const arrayBuffer = await archivo.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+            for (let p = 1; p <= pdf.numPages; p++) {
+              const pagina = await pdf.getPage(p);
+              
+              // 1. Extraer texto digital si existe
+              const contenido = await pagina.getTextContent();
+              const lineas = contenido.items.map(item => item.str).filter(s => s.trim().length > 0);
+              const textoPagina = lineas.join(' ').trim();
+
+              // 2. Renderizar SIEMPRE la miniatura visual en canvas para mostrarla en la página
+              const baseViewport = pagina.getViewport({ scale: 1 });
+              const escala = Math.min(1.8, MAX_LADO_PX / Math.max(baseViewport.width, baseViewport.height));
+              const viewport = pagina.getViewport({ scale: escala });
+              const canvas = document.createElement('canvas');
+              canvas.width = Math.round(viewport.width);
+              canvas.height = Math.round(viewport.height);
+              const ctx = canvas.getContext('2d');
+              ctx.fillStyle = '#ffffff';
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+              await pagina.render({ canvasContext: ctx, viewport: viewport }).promise;
+
+              const dataUrl = canvas.toDataURL('image/jpeg', CALIDAD_JPEG);
+              const b64Puro = dataUrl.split(',')[1];
+              const esDigital = textoPagina.length > 90;
+
+              itemsLegajo.push({
+                id: 'item-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+                nombre: `${archivo.name} (Pág ${p})`,
+                tipo: esDigital ? 'pdf_texto' : 'pdf_imagen',
+                texto: esDigital ? textoPagina : '',
+                base64: b64Puro,
+                previewUrl: dataUrl
+              });
+            }
+          } else if (archivo.type.startsWith('image/') || ['png', 'jpg', 'jpeg', 'webp'].includes(ext)) {
+            const dataUrl = await convertirImagenFileADataUrl(archivo);
+            itemsLegajo.push({
+              id: 'item-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+              nombre: archivo.name,
+              tipo: 'imagen',
+              texto: '',
+              base64: dataUrl.split(',')[1],
+              previewUrl: dataUrl
+            });
+          } else if (ext === 'xls' || ext === 'xlsx') {
+            const textoExcel = await leerExcel(archivo);
+            itemsLegajo.push({
+              id: 'item-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+              nombre: archivo.name,
+              tipo: 'doc_texto',
+              texto: textoExcel,
+              base64: null,
+              previewUrl: null
+            });
+          } else if (ext === 'docx') {
+            const textoWord = await leerWord(archivo);
+            itemsLegajo.push({
+              id: 'item-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+              nombre: archivo.name,
+              tipo: 'doc_texto',
+              texto: textoWord,
+              base64: null,
+              previewUrl: null
+            });
+          } else {
+            const textoPlano = await archivo.text();
+            itemsLegajo.push({
+              id: 'item-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+              nombre: archivo.name,
+              tipo: 'doc_texto',
+              texto: textoPlano,
+              base64: null,
+              previewUrl: null
+            });
+          }
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Error al leer archivo: ' + err.message);
+      } finally {
+        renderProgress.classList.add('hidden');
+        fileInput.value = '';
+        renderMiniaturas();
+      }
     });
 
-    function eliminarArchivo(index) {
-      archivosSeleccionados.splice(index, 1);
-      textoLegajoConsolidado = '';
-      imagenesLegajoConsolidado = [];
-      renderFileList();
-    }
-
-    function limpiarTodosArchivos() {
-      archivosSeleccionados = [];
-      textoLegajoConsolidado = '';
-      imagenesLegajoConsolidado = [];
-      renderFileList();
-    }
-
-    function renderFileList() {
-      fileList.innerHTML = '';
-      fileCountBadge.textContent = `${archivosSeleccionados.length} archivo${archivosSeleccionados.length === 1 ? '' : 's'}`;
-
-      if (archivosSeleccionados.length > 0) {
-        processBtn.disabled = false;
-        clearAllBtn.classList.remove('hidden');
-        archivosSeleccionados.forEach((file, idx) => {
-          const div = document.createElement('div');
-          div.className = 'text-[11px] bg-slate-50 border border-slate-200 px-2.5 py-1 rounded flex justify-between items-center text-slate-700';
-          div.innerHTML = `
-            <span class="truncate max-w-[210px]" title="${file.name}">📎 <strong>${file.name}</strong></span>
-            <div class="flex items-center gap-2 shrink-0">
-              <span class="text-slate-400 text-[10px]">${(file.size / 1024).toFixed(0)} KB</span>
-              <button type="button" onclick="eliminarArchivo(${idx})" title="Eliminar documento" class="text-rose-500 hover:text-rose-700 hover:bg-rose-50 font-bold px-1.5 py-0.5 rounded transition cursor-pointer">✕</button>
-            </div>
-          `;
-          fileList.appendChild(div);
-        });
-      } else {
-        processBtn.disabled = true;
-        clearAllBtn.classList.add('hidden');
-      }
-    }
-
-    function imagenAJpegBase64(img) {
-      const ancho = img.naturalWidth;
-      const alto = img.naturalHeight;
-      const escala = Math.min(1, MAX_LADO_PX / Math.max(ancho, alto));
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.round(ancho * escala);
-      canvas.height = Math.round(alto * escala);
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      return canvas.toDataURL('image/jpeg', CALIDAD_JPEG).split(',')[1];
-    }
-
-    function cargarImagen(file) {
+    function convertirImagenFileADataUrl(file) {
       return new Promise((resolve, reject) => {
         const url = URL.createObjectURL(file);
         const img = new Image();
-        img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
-        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('No se pudo leer la imagen ' + file.name)); };
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          const escala = Math.min(1, MAX_LADO_PX / Math.max(img.naturalWidth, img.naturalHeight));
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round(img.naturalWidth * escala);
+          canvas.height = Math.round(img.naturalHeight * escala);
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', CALIDAD_JPEG));
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('No se pudo cargar la imagen')); };
         img.src = url;
       });
     }
@@ -342,82 +415,107 @@
     async function leerExcel(file) {
       const arrayBuffer = await file.arrayBuffer();
       const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-      let textoCompleto = '';
-      workbook.SheetNames.forEach(sheetName => {
-        const sheet = workbook.Sheets[sheetName];
-        const csv = XLSX.utils.sheet_to_csv(sheet);
-        textoCompleto += `\n--- Hoja: ${sheetName} ---\n${csv}`;
+      let out = '';
+      workbook.SheetNames.forEach(name => {
+        out += `\n--- Hoja: ${name} ---\n${XLSX.utils.sheet_to_csv(workbook.Sheets[name])}`;
       });
-      return textoCompleto;
+      return out;
     }
 
     async function leerWord(file) {
       const arrayBuffer = await file.arrayBuffer();
-      const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
-      return result.value;
+      const res = await mammoth.extractRawText({ arrayBuffer });
+      return res.value;
     }
 
-    async function extraerContenidoArchivos(loadingTextEl) {
-      let texto = '';
-      let imgs = [];
+    function eliminarItem(index) {
+      itemsLegajo.splice(index, 1);
+      renderMiniaturas();
+    }
 
-      for (let i = 0; i < archivosSeleccionados.length; i++) {
-        const archivo = archivosSeleccionados[i];
-        if (loadingTextEl) loadingTextEl.textContent = `Leyendo (${i + 1}/${archivosSeleccionados.length}): ${archivo.name}...`;
-        const ext = archivo.name.split('.').pop().toLowerCase();
+    function limpiarTodosArchivos() {
+      itemsLegajo = [];
+      renderMiniaturas();
+    }
 
-        if (ext === 'pdf' || archivo.type === 'application/pdf') {
-          const arrayBuffer = await archivo.arrayBuffer();
-          const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-          let textoDigitalPdf = '';
+    function abrirModalPreview(index) {
+      const item = itemsLegajo[index];
+      if (!item || !item.previewUrl) return;
+      document.getElementById('previewModalTitle').textContent = item.nombre;
+      document.getElementById('previewModalImg').src = item.previewUrl;
+      document.getElementById('previewModal').classList.remove('hidden');
+    }
 
-          for (let p = 1; p <= pdf.numPages; p++) {
-            const pagina = await pdf.getPage(p);
-            const contenido = await pagina.getTextContent();
-            const lineas = contenido.items.map(item => item.str).filter(s => s.trim().length > 0);
-            if (lineas.length > 0) textoDigitalPdf += lineas.join(' ') + '\n';
-          }
+    // Dibuja todas las miniaturas en la galería visible
+    function renderMiniaturas() {
+      thumbnailsGrid.innerHTML = '';
+      fileCountBadge.textContent = `${itemsLegajo.length} pág/arch.`;
 
-          if (textoDigitalPdf.trim().length > 80) {
-            texto += `\n=== DOCUMENTO PDF (${archivo.name}) ===\n${textoDigitalPdf}\n`;
-          } else {
-            if (imgs.length + pdf.numPages > MAX_IMAGENES) {
-              throw new Error(`El PDF escaneado "${archivo.name}" supera el máximo de ${MAX_IMAGENES} páginas/imágenes.`);
-            }
-            for (let q = 1; q <= pdf.numPages; q++) {
-              const pag = await pdf.getPage(q);
-              const base = pag.getViewport({ scale: 1 });
-              const escala = Math.min(2, MAX_LADO_PX / Math.max(base.width, base.height));
-              const viewport = pag.getViewport({ scale: escala });
-              const canvas = document.createElement('canvas');
-              canvas.width = Math.round(viewport.width);
-              canvas.height = Math.round(viewport.height);
-              const ctx = canvas.getContext('2d');
-              ctx.fillStyle = '#ffffff';
-              ctx.fillRect(0, 0, canvas.width, canvas.height);
-              await pag.render({ canvasContext: ctx, viewport: viewport }).promise;
-              const b64 = canvas.toDataURL('image/jpeg', CALIDAD_JPEG).split(',')[1];
-              imgs.push({ nombre: `${archivo.name} (Pág ${q})`, base64: b64 });
-            }
-          }
-        } else if (archivo.type.startsWith('image/') || ['png', 'jpg', 'jpeg', 'webp'].includes(ext)) {
-          if (imgs.length + 1 > MAX_IMAGENES) {
-            throw new Error(`Máximo ${MAX_IMAGENES} imágenes por consulta.`);
-          }
-          const img = await cargarImagen(archivo);
-          imgs.push({ nombre: archivo.name, base64: imagenAJpegBase64(img) });
-        } else if (ext === 'xls' || ext === 'xlsx') {
-          texto += `\n=== PLANILLA EXCEL (${archivo.name}) ===\n${await leerExcel(archivo)}\n`;
-        } else if (ext === 'docx') {
-          texto += `\n=== DOCUMENTO WORD (${archivo.name}) ===\n${await leerWord(archivo)}\n`;
-        } else {
-          const plano = await archivo.text();
-          texto += `\n=== ARCHIVO (${archivo.name}) ===\n${plano}\n`;
-        }
+      const totalImagenesVisibles = itemsLegajo.filter(it => it.tipo === 'pdf_imagen' || it.tipo === 'imagen').length;
+      document.getElementById('visionLimitNotice').classList.toggle('hidden', totalImagenesVisibles <= MAX_IMAGENES_GROQ);
+
+      if (itemsLegajo.length === 0) {
+        thumbnailsGrid.classList.add('hidden');
+        clearAllBtn.classList.add('hidden');
+        processBtn.disabled = true;
+        return;
       }
 
-      textoLegajoConsolidado = texto;
-      imagenesLegajoConsolidado = imgs;
+      thumbnailsGrid.classList.remove('hidden');
+      clearAllBtn.classList.remove('hidden');
+      processBtn.disabled = false;
+
+      itemsLegajo.forEach((item, idx) => {
+        const card = document.createElement('div');
+        card.className = 'relative group bg-white border border-slate-200 rounded overflow-hidden shadow-2xs flex flex-col';
+
+        const badgeTipo = item.tipo === 'pdf_texto'
+          ? '<span class="bg-emerald-600 text-white text-[8px] px-1 rounded">TXT+IMG</span>'
+          : (item.tipo === 'doc_texto'
+            ? '<span class="bg-indigo-600 text-white text-[8px] px-1 rounded">DOC</span>'
+            : '<span class="bg-amber-600 text-white text-[8px] px-1 rounded">IMG IA</span>');
+
+        const visualHtml = item.previewUrl
+          ? `<img src="${item.previewUrl}" onclick="abrirModalPreview(${idx})" title="Clic para ampliar" class="w-full h-24 object-cover object-top cursor-zoom-in bg-slate-100">`
+          : `<div class="w-full h-24 flex flex-col items-center justify-center bg-slate-100 text-slate-500 p-1 text-center"><span class="text-xl">📊</span><span class="text-[9px] mt-1">Planilla/Doc</span></div>`;
+
+        card.innerHTML = `
+          <button type="button" onclick="eliminarItem(${idx})" title="Quitar página/archivo" class="absolute top-1 right-1 bg-rose-600 hover:bg-rose-700 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold shadow cursor-pointer z-10">✕</button>
+          <div class="absolute top-1 left-1 z-10">${badgeTipo}</div>
+          ${visualHtml}
+          <div class="p-1 bg-white border-t border-slate-100">
+            <p class="text-[9px] font-semibold text-slate-700 truncate" title="${item.nombre}">${item.nombre}</p>
+          </div>
+        `;
+        thumbnailsGrid.appendChild(card);
+      });
+    }
+
+    // Construye el payload optimizado a partir de las miniaturas visibles
+    function prepararPayloadDesdeMiniaturas() {
+      let textoConsolidado = '';
+      let imagenesParaEnviar = [];
+
+      itemsLegajo.forEach(item => {
+        if (item.tipo === 'pdf_texto' || item.tipo === 'doc_texto') {
+          textoConsolidado += `\n=== DOCUMENTO (${item.nombre}) ===\n${item.texto}\n`;
+        } else if (item.base64) {
+          // Es un PDF escaneado o imagen que requiere visión IA
+          if (imagenesParaEnviar.length < MAX_IMAGENES_GROQ) {
+            imagenesParaEnviar.push({ nombre: item.nombre, base64: item.base64 });
+          }
+        }
+      });
+
+      // Si hay menos de 5 imágenes escaneadas y hay PDFs digitales, también adjuntamos las primeras miniaturas de PDFs para respaldo visual
+      if (imagenesParaEnviar.length === 0) {
+        const conPreview = itemsLegajo.filter(it => it.base64).slice(0, 4);
+        conPreview.forEach(it => {
+          imagenesParaEnviar.push({ nombre: it.nombre, base64: it.base64 });
+        });
+      }
+
+      return { textoConsolidado, imagenesParaEnviar };
     }
 
     async function invocarLlamaSupabase(promptFinal, imagenes) {
@@ -461,7 +559,7 @@
 
     // Auditoría normativa según Compendio Aduanero de Chile
     async function auditarLegalizacion() {
-      if (archivosSeleccionados.length === 0) return;
+      if (itemsLegajo.length === 0) return;
 
       const loading = document.getElementById('loadingIndicator');
       const loadingText = document.getElementById('loadingText');
@@ -472,22 +570,23 @@
       processBtn.disabled = true;
 
       try {
-        await extraerContenidoArchivos(loadingText);
+        const { textoConsolidado, imagenesParaEnviar } = prepararPayloadDesdeMiniaturas();
+        loadingText.textContent = `Analizando ${itemsLegajo.length} documento(s) y ${imagenesParaEnviar.length} vista(s) con Llama...`;
 
         const reglasAprendidas = localStorage.getItem('dus_auditoria_reglas') || '';
         const bloqueReglas = reglasAprendidas ? `\nCRITERIOS ADICIONALES DEL DESPACHADOR:\n${reglasAprendidas}\n` : '';
 
         const promptAuditoria = `Eres un Auditor Senior de Comercio Exterior y Agente de Aduanas en Chile, experto en el Compendio de Normas Aduaneras (Capítulo IV - Salida de Mercancías y Legalización DUS 2° Mensaje).
 
-Tu misión es auditar de forma rigurosa los documentos adjuntos (DUS Aceptado a Trámite, Captura de Ingreso a Zona Primaria, Guía Aérea AWB / BL / CRT, Factura Comercial / Proforma y Lista de Empaque) para detectar CUALQUIER inconsistencia grave que impida legalizar la operación ante el Servicio Nacional de Aduanas.
+Audita los documentos adjuntos (DUS Aceptado a Trámite, Captura de Ingreso a Zona Primaria, Guía Aérea AWB / BL / CRT, Factura Comercial / Proforma y Lista de Empaque) para detectar inconsistencias graves que impidan legalizar la operación.
 
-REGLAS NORMATIVAS OBLIGATORIAS A VERIFICAR:
-1. CONTROL DE PESOS Y TOLERANCIA +-10% (SMDA): Compara el Peso Bruto declarado en el DUS contra el peso registrado en el Ingreso a Zona Primaria y el Documento de Transporte (AWB/BL). Calcula la diferencia porcentual respecto al peso de Zona Primaria. Si la diferencia supera el +-10%, debes marcar "requiere_smda": true y advertir explícitamente que NO se puede legalizar sin presentar previamente una SMDA (Solicitud de Modificación a Documento Aduanero) por diferencia de peso fuera de tolerancia normativa.
-2. CANTIDAD Y TIPO DE BULTOS: Verifica coincidencia exacta entre DUS, Zona Primaria, Guía de Transporte y Packing List. Cualquier diferencia en bultos impide legalizar o exige SMDA.
-3. MONEDA Y VALORES: Verifica que el tipo de moneda (ej. DOLAR USA / USD) y los valores FOB / Cláusula de venta coincidan entre Factura Comercial/Proforma y DUS.
-4. ALMACENISTA / BODEGA (CÓD. 58): Verifica que el código y nombre de almacén/bodega en Zona Primaria coincida con el declarado en el DUS (ej. A97 TEISA, A10 AEROSAN, etc.).
+REGLAS OBLIGATORIAS A VERIFICAR:
+1. CONTROL DE PESOS Y TOLERANCIA +-10% (SMDA): Compara el Peso Bruto declarado en el DUS contra el peso registrado en el Ingreso a Zona Primaria y el Documento de Transporte (AWB/BL). Calcula la diferencia porcentual respecto al peso de Zona Primaria. Si la diferencia supera el +-10%, marca "requiere_smda": true y advierte que NO se puede legalizar sin presentar previamente una SMDA por diferencia de peso fuera de tolerancia normativa.
+2. CANTIDAD Y TIPO DE BULTOS: Verifica coincidencia exacta entre DUS, Zona Primaria, Guía de Transporte y Packing List.
+3. MONEDA Y VALORES: Verifica que el tipo de moneda (ej. DOLAR USA / USD) y los valores FOB coincidan entre Factura y DUS.
+4. ALMACENISTA / BODEGA (CÓD. 58): Verifica que el código y nombre de almacén/bodega en Zona Primaria coincida con el declarado en el DUS (ej. A97 TEISA, A10 AEROSAN).
 5. CONSIGNANTE (EXPORTADOR) Y CONSIGNATARIO: Verifica RUT, razón social y país de destino entre DUS, Factura y Guía de Transporte.
-6. DOCUMENTO DE TRANSPORTE Y VISTOS BUENOS: Verifica que el N° de AWB/BL/CRT y resoluciones de V.B. (SERNAPESCA, SAG, etc.) coincidan.
+6. DOCUMENTO DE TRANSPORTE Y VISTOS BUENOS: Verifica N° de AWB/BL/CRT y resoluciones de V.B. (SERNAPESCA, SAG, etc.).
 ${bloqueReglas}
 Responde ÚNICAMENTE con un objeto JSON válido (sin markdown ni texto extra) con esta estructura exacta:
 {
@@ -507,85 +606,28 @@ Responde ÚNICAMENTE con un objeto JSON válido (sin markdown ni texto extra) co
     "Descripción clara de cada error grave que impide legalizar"
   ],
   "advertencias": [
-    "Observaciones menores o documentos faltantes en el legajo"
+    "Observaciones menores o documentos faltantes"
   ],
   "matriz_cruce": [
-    {
-      "campo": "Cantidad de Bultos",
-      "valor_dus": "",
-      "valor_zona_primaria": "",
-      "valor_transporte": "",
-      "valor_factura_packing": "",
-      "coincide": true
-    },
-    {
-      "campo": "Peso Bruto (KN)",
-      "valor_dus": "",
-      "valor_zona_primaria": "",
-      "valor_transporte": "",
-      "valor_factura_packing": "",
-      "coincide": true
-    },
-    {
-      "campo": "Tipo de Moneda",
-      "valor_dus": "",
-      "valor_zona_primaria": "N/A",
-      "valor_transporte": "",
-      "valor_factura_packing": "",
-      "coincide": true
-    },
-    {
-      "campo": "Valor FOB / Total",
-      "valor_dus": "",
-      "valor_zona_primaria": "N/A",
-      "valor_transporte": "",
-      "valor_factura_packing": "",
-      "coincide": true
-    },
-    {
-      "campo": "Almacén / Bodega (Cód. 58)",
-      "valor_dus": "",
-      "valor_zona_primaria": "",
-      "valor_transporte": "",
-      "valor_factura_packing": "N/A",
-      "coincide": true
-    },
-    {
-      "campo": "Exportador / Consignante",
-      "valor_dus": "",
-      "valor_zona_primaria": "",
-      "valor_transporte": "",
-      "valor_factura_packing": "",
-      "coincide": true
-    },
-    {
-      "campo": "Consignatario y Destino",
-      "valor_dus": "",
-      "valor_zona_primaria": "N/A",
-      "valor_transporte": "",
-      "valor_factura_packing": "",
-      "coincide": true
-    },
-    {
-      "campo": "N° Docto. Transporte (AWB/BL)",
-      "valor_dus": "",
-      "valor_zona_primaria": "",
-      "valor_transporte": "",
-      "valor_factura_packing": "",
-      "coincide": true
-    }
+    { "campo": "Cantidad de Bultos", "valor_dus": "", "valor_zona_primaria": "", "valor_transporte": "", "valor_factura_packing": "", "coincide": true },
+    { "campo": "Peso Bruto (KN)", "valor_dus": "", "valor_zona_primaria": "", "valor_transporte": "", "valor_factura_packing": "", "coincide": true },
+    { "campo": "Tipo de Moneda", "valor_dus": "", "valor_zona_primaria": "N/A", "valor_transporte": "", "valor_factura_packing": "", "coincide": true },
+    { "campo": "Valor FOB / Total", "valor_dus": "", "valor_zona_primaria": "N/A", "valor_transporte": "", "valor_factura_packing": "", "coincide": true },
+    { "campo": "Almacén / Bodega (Cód. 58)", "valor_dus": "", "valor_zona_primaria": "", "valor_transporte": "", "valor_factura_packing": "N/A", "coincide": true },
+    { "campo": "Exportador / Consignante", "valor_dus": "", "valor_zona_primaria": "", "valor_transporte": "", "valor_factura_packing": "", "coincide": true },
+    { "campo": "Consignatario y Destino", "valor_dus": "", "valor_zona_primaria": "N/A", "valor_transporte": "", "valor_factura_packing": "", "coincide": true },
+    { "campo": "N° Docto. Transporte (AWB/BL)", "valor_dus": "", "valor_zona_primaria": "", "valor_transporte": "", "valor_factura_packing": "", "coincide": true }
   ]
 }\n\nDOCUMENTOS DEL LEGAJO A AUDITAR:\n`;
 
-        let promptCompleto = promptAuditoria + textoLegajoConsolidado;
+        let promptCompleto = promptAuditoria + textoConsolidado;
         if (promptCompleto.length > MAX_CHARS_TEXTO) {
           promptCompleto = promptCompleto.slice(0, MAX_CHARS_TEXTO);
-          avisoEl.textContent = '⚠️ El texto consolidado superó el límite de caracteres y fue recortado parcialmente.';
+          avisoEl.textContent = '⚠️ Texto recortado parcialmente por extensión; las vistas en miniatura siguen activas.';
           avisoEl.classList.remove('hidden');
         }
 
-        loadingText.textContent = 'Aplicando reglas del Compendio Aduanero con Llama...';
-        const contenidoIA = await invocarLlamaSupabase(promptCompleto, imagenesLegajoConsolidado);
+        const contenidoIA = await invocarLlamaSupabase(promptCompleto, imagenesParaEnviar);
 
         let dictamen = null;
         if (typeof contenidoIA === 'string') {
@@ -626,7 +668,6 @@ Responde ÚNICAMENTE con un objeto JSON válido (sin markdown ni texto extra) co
       const resumen = document.getElementById('dictamenResumen');
       const badgeSMDA = document.getElementById('badgeSMDA');
 
-      // Estilo según estado
       banner.className = 'p-3.5 rounded-lg border flex items-start gap-3 ';
       if (d.estado_general === 'APROBADO_PARA_LEGALIZAR') {
         banner.className += 'bg-emerald-50 border-emerald-300 text-emerald-900';
@@ -643,7 +684,6 @@ Responde ÚNICAMENTE con un objeto JSON válido (sin markdown ni texto extra) co
       resumen.textContent = d.resumen_ejecutivo || '';
       badgeSMDA.classList.toggle('hidden', !d.requiere_smda);
 
-      // Control de Peso (+-10%)
       const cp = d.control_peso || {};
       document.getElementById('pesoDusVal').textContent = cp.peso_bruto_dus || 'No detectado';
       document.getElementById('pesoZpVal').textContent = cp.peso_zona_primaria || 'No detectado';
@@ -662,13 +702,10 @@ Responde ÚNICAMENTE con un objeto JSON válido (sin markdown ni texto extra) co
         document.getElementById('pesoVariacionVal').className = 'text-xs font-bold text-emerald-700';
       }
 
-      // Listas de errores y advertencias
       const ulGraves = document.getElementById('listaErroresGraves');
       ulGraves.innerHTML = '';
       if (d.inconsistencias_graves && d.inconsistencias_graves.length > 0) {
-        d.inconsistencias_graves.forEach(err => {
-          ulGraves.innerHTML += `<li>${err}</li>`;
-        });
+        d.inconsistencias_graves.forEach(err => { ulGraves.innerHTML += `<li>${err}</li>`; });
       } else {
         ulGraves.innerHTML = '<li class="text-emerald-700 list-none -ml-4">✓ No se detectaron inconsistencias bloqueantes.</li>';
       }
@@ -676,14 +713,11 @@ Responde ÚNICAMENTE con un objeto JSON válido (sin markdown ni texto extra) co
       const ulAdv = document.getElementById('listaAdvertencias');
       ulAdv.innerHTML = '';
       if (d.advertencias && d.advertencias.length > 0) {
-        d.advertencias.forEach(adv => {
-          ulAdv.innerHTML += `<li>${adv}</li>`;
-        });
+        d.advertencias.forEach(adv => { ulAdv.innerHTML += `<li>${adv}</li>`; });
       } else {
         ulAdv.innerHTML = '<li class="text-slate-500 list-none -ml-4">Sin advertencias adicionales.</li>';
       }
 
-      // Matriz de cruce
       const tbody = document.getElementById('matrizCruceBody');
       tbody.innerHTML = '';
       if (d.matriz_cruce && Array.isArray(d.matriz_cruce)) {
@@ -709,7 +743,6 @@ Responde ÚNICAMENTE con un objeto JSON válido (sin markdown ni texto extra) co
       document.getElementById('auditoriaContainer').classList.remove('hidden');
     }
 
-    // Consultas interactivas sobre el legajo
     function hacerPreguntaRapida(texto) {
       document.getElementById('questionInput').value = texto;
       enviarPregunta();
@@ -720,8 +753,8 @@ Responde ÚNICAMENTE con un objeto JSON válido (sin markdown ni texto extra) co
       const pregunta = input.value.trim();
       if (!pregunta) return;
 
-      if (archivosSeleccionados.length === 0) {
-        alert('Primero carga los documentos del legajo para poder consultar.');
+      if (itemsLegajo.length === 0) {
+        alert('Primero carga los documentos para poder consultar.');
         return;
       }
 
@@ -730,33 +763,27 @@ Responde ÚNICAMENTE con un objeto JSON válido (sin markdown ni texto extra) co
 
       if (chatHistory.querySelector('.italic')) chatHistory.innerHTML = '';
 
-      chatHistory.innerHTML += `
-        <div class="bg-sky-600 text-white p-2 rounded-lg ml-6">
-          <strong>Tú:</strong> ${pregunta}
-        </div>
-      `;
+      chatHistory.innerHTML += `<div class="bg-sky-600 text-white p-2 rounded-lg ml-6"><strong>Tú:</strong> ${pregunta}</div>`;
       input.value = '';
       askBtn.disabled = true;
       chatHistory.scrollTop = chatHistory.scrollHeight;
 
       const tempId = 'msg-' + Date.now();
-      chatHistory.innerHTML += `<div id="${tempId}" class="text-slate-400 italic p-1">Analizando bajo normativa aduanera...</div>`;
+      chatHistory.innerHTML += `<div id="${tempId}" class="text-slate-400 italic p-1">Revisando miniaturas y texto...</div>`;
 
       try {
-        if (!textoLegajoConsolidado && imagenesLegajoConsolidado.length === 0) {
-          await extraerContenidoArchivos(null);
-        }
-
+        const { textoConsolidado, imagenesParaEnviar } = prepararPayloadDesdeMiniaturas();
         const reglasAprendidas = localStorage.getItem('dus_auditoria_reglas') || '';
+
         const promptPregunta = `Eres un Auditor de Aduanas en Chile experto en Compendio de Normas Aduaneras (tolerancia peso +-10% respecto a Zona Primaria, SMDA, DUS 2° mensaje).
-Responde de manera directa, técnica y precisa a la pregunta del usuario basándote en los documentos cargados.
+Responde de manera directa y precisa basándote en los documentos cargados.
 ${reglasAprendidas ? 'REGLAS DEL DESPACHADOR:\n' + reglasAprendidas + '\n' : ''}
 PREGUNTA: ${pregunta}
 
 DOCUMENTOS DEL LEGAJO:
-${textoLegajoConsolidado.slice(0, MAX_CHARS_TEXTO - 1500)}`;
+${textoConsolidado.slice(0, MAX_CHARS_TEXTO - 1500)}`;
 
-        const respuestaIA = await invocarLlamaSupabase(promptPregunta, imagenesLegajoConsolidado);
+        const respuestaIA = await invocarLlamaSupabase(promptPregunta, imagenesParaEnviar);
         const textoFinal = typeof respuestaIA === 'string' ? respuestaIA : JSON.stringify(respuestaIA, null, 2);
 
         document.getElementById(tempId).outerHTML = `
@@ -765,11 +792,7 @@ ${textoLegajoConsolidado.slice(0, MAX_CHARS_TEXTO - 1500)}`;
           </div>
         `;
       } catch (err) {
-        document.getElementById(tempId).outerHTML = `
-          <div class="bg-rose-50 border border-rose-200 text-rose-700 p-2 rounded-lg">
-            Error: ${err.message}
-          </div>
-        `;
+        document.getElementById(tempId).outerHTML = `<div class="bg-rose-50 border border-rose-200 text-rose-700 p-2 rounded-lg">Error: ${err.message}</div>`;
       } finally {
         askBtn.disabled = false;
         chatHistory.scrollTop = chatHistory.scrollHeight;
@@ -781,7 +804,7 @@ ${textoLegajoConsolidado.slice(0, MAX_CHARS_TEXTO - 1500)}`;
       const d = ultimoDictamenJSON;
       if (!d.estado_general) {
         navigator.clipboard.writeText(JSON.stringify(d, null, 2));
-        alert('Informe copiado al portapapeles.');
+        alert('Informe copiado.');
         return;
       }
       let texto = `=== DICTAMEN PRE-LEGALIZACIÓN DUS ===\n`;
@@ -800,7 +823,7 @@ ${textoLegajoConsolidado.slice(0, MAX_CHARS_TEXTO - 1500)}`;
         texto += `--- ADVERTENCIAS ---\n- ${d.advertencias.join('\n- ')}\n`;
       }
       navigator.clipboard.writeText(texto);
-      alert('Dictamen técnico de legalización copiado al portapapeles.');
+      alert('Dictamen técnico copiado al portapapeles.');
     }
   </script>
   <!--todos los derechos reservados para sergio figueroa quien puede administrar, ceder areenday y vender el aplicativo-->
