@@ -24,7 +24,7 @@
       <span class="text-2xl">⚖️</span>
       <div>
         <h1 class="text-base md:text-lg font-bold text-slate-900">Auditor IA Pre-Legalización DUS (Compendio Aduanero Chile)</h1>
-        <p class="text-xs text-slate-500">Vista previa en miniaturas • Extracción Texto Ordenado + OCR Local • DUS • Zona Primaria • AWB/BL/CRT • Factura</p>
+        <p class="text-xs text-slate-500">Conectado a Supabase Llama • Extracción Texto Ordenado + OCR Local • DUS • Zona Primaria • AWB/BL/CRT • Factura</p>
       </div>
     </div>
     <div class="flex items-center gap-3">
@@ -32,9 +32,9 @@
       <span id="tokenMeter" class="hidden sm:inline-block text-xs font-semibold px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
         Consumo est.: 0 / 7.000 tokens
       </span>
-      <button onclick="configurarApiKey()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-3 py-1.5 rounded-lg border border-slate-300 transition">
-        🔑 API Key
-      </button>
+      <span class="hidden md:inline-block text-[11px] font-semibold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+        🟢 Supabase Llama Activo
+      </span>
       <a href="index.html" class="text-xs bg-slate-800 hover:bg-slate-900 text-white font-medium px-3.5 py-1.5 rounded-lg transition">
         ← Volver
       </a>
@@ -239,12 +239,10 @@
 
   <script>
     // ==========================================
-    // CONFIGURACIÓN DE ENDPOINT / API KEY GROQ
+    // CONFIGURACIÓN DE TU EDGE FUNCTION EN SUPABASE
     // ==========================================
-    // Si usas Supabase Edge Function, pon su URL aquí y deja GROQ_API_KEY vacío.
-    // Si llamas directo a Groq desde el navegador, guarda tu gsk_... con el botón "API Key".
-    const SUPABASE_EDGE_URL = ''; // Ej: 'https://tu-proyecto.supabase.co/functions/v1/auditar-dus'
-    const GROQ_MODEL = 'llama-3.3-70b-versatile'; // Modelo puro texto: alta precisión y mayor límite TPM
+    const URL_SUPABASE = 'https://lmmoqcpptyzgscnjwvgk.supabase.co/functions/v1/llama-function';
+    const SUPABASE_KEY = 'sb_publishable_xRnGuxmB5oen-G7LDlI6JQ_SUEvLDMr';
 
     let docsLegajo = []; // { id, name, page, mode, thumbUrl, texto }
     let ultimoDictamenJSON = null;
@@ -256,15 +254,6 @@
       localStorage.setItem('dus_reglas_aprendidas', reglasInput.value);
       alert('✅ Reglas guardadas en la memoria del navegador.');
     });
-
-    function configurarApiKey() {
-      const actual = localStorage.getItem('groq_api_key') || '';
-      const nueva = prompt('Ingresa tu API Key de Groq (gsk_...):', actual);
-      if (nueva !== null) {
-        localStorage.setItem('groq_api_key', nueva.trim());
-        alert('API Key guardada correctamente.');
-      }
-    }
 
     // ==========================================
     // 1. PROCESAMIENTO DE ARCHIVOS (TEXTO ORDENADO + OCR LOCAL)
@@ -307,7 +296,7 @@
       for (let p = 1; p <= pdf.numPages; p++) {
         const page = await pdf.getPage(p);
         
-        // 1. Generar miniatura visual para el usuario (NO se envía a Groq)
+        // 1. Generar miniatura visual para el usuario (0 tokens enviados)
         const viewport = page.getViewport({ scale: 1.2 });
         const canvas = document.createElement('canvas');
         canvas.width = viewport.width;
@@ -421,9 +410,7 @@
       return c.toDataURL();
     }
 
-    // Construir el expediente unificado en texto puro (compactado para no exceder tokens)
     function generarExpedienteConsolidado() {
-      // Límite seguro: ~18.000 caracteres (~4.500 tokens) repartidos equitativamente entre los documentos
       const maxCharsPorDoc = Math.max(1500, Math.floor(18000 / Math.max(1, docsLegajo.length)));
       return docsLegajo.map((d, i) => {
         const recorte = d.texto.substring(0, maxCharsPorDoc);
@@ -447,7 +434,7 @@
       }
 
       const expediente = generarExpedienteConsolidado();
-      const tokensEst = Math.ceil(expediente.length / 3.8) + 600; // +600 del system prompt
+      const tokensEst = Math.ceil(expediente.length / 3.8) + 600;
       tokenMeter.textContent = `Consumo est.: ~${tokensEst} / 7.000 tokens`;
       tokenMeter.className = tokensEst > 6200
         ? 'hidden sm:inline-block text-xs font-semibold px-3 py-1.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200'
@@ -488,44 +475,37 @@
     }
 
     // ==========================================
-    // 2. LLAMADA A GROQ (SOLO TEXTO PURO)
+    // 2. LLAMADA A TU EDGE FUNCTION DE SUPABASE (SOLO TEXTO PURO)
     // ==========================================
-    async function llamarGroq(messages, exigirJSON = false) {
-      const apiKey = localStorage.getItem('groq_api_key');
-      const endpoint = SUPABASE_EDGE_URL || 'https://api.groq.com/openai/v1/chat/completions';
-
-      if (!SUPABASE_EDGE_URL && !apiKey) {
-        configurarApiKey();
-        throw new Error('Debes ingresar tu API Key de Groq para continuar.');
-      }
-
-      const headers = { 'Content-Type': 'application/json' };
-      if (!SUPABASE_EDGE_URL) {
-        headers['Authorization'] = `Bearer ${apiKey}`;
-      }
-
-      const payload = {
-        model: GROQ_MODEL,
-        temperature: 0.1,
-        messages
-      };
-
-      if (exigirJSON) {
-        payload.response_format = { type: 'json_object' };
-      }
-
-      const res = await fetch(endpoint, {
+    async function llamarSupabaseLlama(promptCompleto) {
+      const res = await fetch(URL_SUPABASE, {
         method: 'POST',
-        headers,
-        body: JSON.stringify(payload)
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'apikey': SUPABASE_KEY
+        },
+        body: JSON.stringify({
+          texto_expediente: promptCompleto,
+          imagenes: [] // Enviamos arreglo vacío porque ya extrajimos todo el texto localmente (0 tokens de imagen)
+        })
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error?.message || `HTTP ${res.status}`);
+      const textoRespuesta = await res.text();
+      let data;
+      try {
+        data = JSON.parse(textoRespuesta);
+      } catch (e) {
+        data = { reply: textoRespuesta };
       }
 
-      return data.choices[0].message.content;
+      if (!res.ok) {
+        let detalle = data.error || data.message || textoRespuesta;
+        if (typeof detalle === 'object') detalle = JSON.stringify(detalle);
+        throw new Error(`HTTP ${res.status}: ${detalle}`);
+      }
+
+      return data.reply || data;
     }
 
     // ==========================================
@@ -534,20 +514,20 @@
     document.getElementById('btnAuditar').addEventListener('click', async () => {
       const btn = document.getElementById('btnAuditar');
       btn.disabled = true;
-      btn.innerHTML = '<span class="animate-spin">⏳</span> Cruzando datos del expediente en texto...';
+      btn.innerHTML = '<span class="animate-spin">⏳</span> Cruzando datos del expediente en Supabase...';
 
       const expedienteTexto = generarExpedienteConsolidado();
       const reglas = reglasInput.value.trim();
 
-      const systemPrompt = `Eres un Auditor Aduanero Senior en Chile especialista en el Compendio de Normas Aduaneras (Legalización de DUS - 2do Mensaje).
-Analiza el expediente consolidado en texto y devuelve EXCLUSIVAMENTE un objeto JSON válido con la siguiente estructura exacta:
+      const promptAuditoria = `Eres un Auditor Aduanero Senior en Chile especialista en el Compendio de Normas Aduaneras (Legalización de DUS - 2do Mensaje).
+Analiza el expediente consolidado en texto y devuelve EXCLUSIVAMENTE un objeto JSON válido (sin texto adicional ni bloques markdown) con la siguiente estructura exacta:
 {
   "veredicto_estado": "APROBADO" | "RECHAZO" | "OBSERVADO",
   "veredicto_titulo": "Título en mayúsculas del dictamen",
   "veredicto_resumen": "Párrafo técnico resumiendo la operación, mercancía, N° DUS y conclusión.",
   "pesos": {
     "estado_badge": "DENTRO DE RANGO (±10%)" | "FUERA DE RANGO (±10%) - PRESENTAR SMDA" | "NO VERIFICABLE",
-    "es_valido": true | false,
+    "es_valido": true,
     "peso_dus": "ej: 100,00 KN",
     "peso_zp": "ej: 102,00 KN o NO DISPONIBLE",
     "peso_guia": "ej: 102,00 KN o NO DISPONIBLE",
@@ -557,25 +537,36 @@ Analiza el expediente consolidado en texto y devuelve EXCLUSIVAMENTE un objeto J
   "inconsistencias_graves": ["Lista de errores críticos que impiden legalizar"],
   "advertencias": ["Lista de observaciones menores o documentos complementarios faltantes"],
   "matriz": [
-    { "campo": "Cantidad de Bultos", "dus": "...", "zp": "...", "guia": "...", "factura": "...", "estado": "OK" | "DISCREPANCIA" | "ADVERTENCIA" },
-    { "campo": "Peso Bruto (KN)", "dus": "...", "zp": "...", "guia": "...", "factura": "...", "estado": "OK" | "DISCREPANCIA" | "ADVERTENCIA" },
-    { "campo": "Tipo de Moneda", "dus": "...", "zp": "N/A", "guia": "N/A", "factura": "...", "estado": "OK" | "DISCREPANCIA" },
-    { "campo": "Valor FOB / Total", "dus": "...", "zp": "N/A", "guia": "N/A", "factura": "...", "estado": "OK" | "DISCREPANCIA" },
-    { "campo": "Almacén / Bodega (Cód. 58)", "dus": "...", "zp": "...", "guia": "N/A", "factura": "N/A", "estado": "OK" | "DISCREPANCIA" | "ADVERTENCIA" },
-    { "campo": "Exportador / Consignante", "dus": "...", "zp": "...", "guia": "...", "factura": "...", "estado": "OK" | "DISCREPANCIA" },
-    { "campo": "Consignatario y Destino", "dus": "...", "zp": "N/A", "guia": "...", "factura": "...", "estado": "OK" | "DISCREPANCIA" },
-    { "campo": "N° Docto. Transporte (AWB/BL)", "dus": "...", "zp": "...", "guia": "...", "factura": "N/A", "estado": "OK" | "DISCREPANCIA" }
+    { "campo": "Cantidad de Bultos", "dus": "...", "zp": "...", "guia": "...", "factura": "...", "estado": "OK" },
+    { "campo": "Peso Bruto (KN)", "dus": "...", "zp": "...", "guia": "...", "factura": "...", "estado": "OK" },
+    { "campo": "Tipo de Moneda", "dus": "...", "zp": "N/A", "guia": "N/A", "factura": "...", "estado": "OK" },
+    { "campo": "Valor FOB / Total", "dus": "...", "zp": "N/A", "guia": "N/A", "factura": "...", "estado": "OK" },
+    { "campo": "Almacén / Bodega (Cód. 58)", "dus": "...", "zp": "...", "guia": "N/A", "factura": "N/A", "estado": "OK" },
+    { "campo": "Exportador / Consignante", "dus": "...", "zp": "...", "guia": "...", "factura": "...", "estado": "OK" },
+    { "campo": "Consignatario y Destino", "dus": "...", "zp": "N/A", "guia": "...", "factura": "...", "estado": "OK" },
+    { "campo": "N° Docto. Transporte (AWB/BL)", "dus": "...", "zp": "...", "guia": "...", "factura": "N/A", "estado": "OK" }
   ]
 }
-Reglas operativas del usuario a aplicar estrictamente: ${reglas || 'Ninguna adicional.'}`;
+Reglas operativas del usuario a aplicar estrictamente: ${reglas || 'Ninguna adicional.'}
+
+EXPEDIENTE CONSOLIDADO A AUDITAR:
+${expedienteTexto}`;
 
       try {
-        const respuestaRaw = await llamarGroq([
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Audita este expediente consolidado:\n\n${expedienteTexto}` }
-        ], true);
+        const respuestaRaw = await llamarSupabaseLlama(promptAuditoria);
+        let dictamen = null;
 
-        const dictamen = JSON.parse(respuestaRaw);
+        if (typeof respuestaRaw === 'string') {
+          const match = respuestaRaw.match(/\{[\s\S]*\}/);
+          if (match) dictamen = JSON.parse(match[0]);
+        } else if (typeof respuestaRaw === 'object') {
+          dictamen = respuestaRaw;
+        }
+
+        if (!dictamen || !dictamen.veredicto_titulo) {
+          throw new Error('La IA no devolvió el formato JSON esperado. Respuesta: ' + String(respuestaRaw).slice(0, 200));
+        }
+
         ultimoDictamenJSON = dictamen;
         renderizarDictamen(dictamen);
       } catch (err) {
@@ -590,7 +581,6 @@ Reglas operativas del usuario a aplicar estrictamente: ${reglas || 'Ninguna adic
       document.getElementById('emptyReport').classList.add('hidden');
       document.getElementById('reportContainer').classList.remove('hidden');
 
-      // 1. Banner Veredicto
       const vBox = document.getElementById('verdictBox');
       const vIcon = document.getElementById('verdictIcon');
       const vTitle = document.getElementById('verdictTitle');
@@ -613,7 +603,6 @@ Reglas operativas del usuario a aplicar estrictamente: ${reglas || 'Ninguna adic
       vTitle.textContent = d.veredicto_titulo;
       vSummary.textContent = d.veredicto_resumen;
 
-      // 2. Pesos
       const badge = document.getElementById('weightBadge');
       badge.textContent = d.pesos.estado_badge;
       badge.className = d.pesos.es_valido
@@ -626,7 +615,6 @@ Reglas operativas del usuario a aplicar estrictamente: ${reglas || 'Ninguna adic
       document.getElementById('variacionPeso').textContent = d.pesos.variacion_pct;
       document.getElementById('weightNote').textContent = d.pesos.nota_peso;
 
-      // 3. Listas
       const gravesUl = document.getElementById('gravesList');
       gravesUl.innerHTML = (d.inconsistencias_graves?.length)
         ? d.inconsistencias_graves.map(item => `<li>${item}</li>`).join('')
@@ -637,7 +625,6 @@ Reglas operativas del usuario a aplicar estrictamente: ${reglas || 'Ninguna adic
         ? d.advertencias.map(item => `<li>${item}</li>`).join('')
         : '<li>Sin advertencias adicionales.</li>';
 
-      // 4. Matriz
       const tbody = document.getElementById('matrixBody');
       tbody.innerHTML = (d.matriz || []).map(row => {
         const badgeColor = row.estado === 'OK'
@@ -691,20 +678,18 @@ Reglas operativas del usuario a aplicar estrictamente: ${reglas || 'Ninguna adic
       input.value = '';
       chatBox.scrollTop = chatBox.scrollHeight;
 
-      // Contexto ultra-compacto: si ya existe dictamen JSON (~600 tokens) + extracto compacto
       const contextoBase = ultimoDictamenJSON
         ? `DICTAMEN PREVIO:\n${JSON.stringify(ultimoDictamenJSON)}\n\nEXTRACTO DOCUMENTOS:\n${generarExpedienteConsolidado().substring(0, 9000)}`
         : generarExpedienteConsolidado().substring(0, 12000);
 
       try {
-        const respuesta = await llamarGroq([
-          { role: 'system', content: 'Eres un asistente experto en aduanas de Chile. Responde de forma directa, precisa y breve basándote únicamente en los datos del expediente.' },
-          { role: 'user', content: `${contextoBase}\n\nPREGUNTA DEL OPERADOR: ${pregunta}` }
-        ], false);
+        const promptChat = `Eres un asistente experto en aduanas de Chile. Responde de forma directa, precisa y breve basándote únicamente en los datos del expediente.\n\n${contextoBase}\n\nPREGUNTA DEL OPERADOR: ${pregunta}`;
+        const respuesta = await llamarSupabaseLlama(promptChat);
+        const textoFinal = typeof respuesta === 'string' ? respuesta : JSON.stringify(respuesta);
 
         chatBox.innerHTML += `
           <div class="bg-white border border-slate-200 text-slate-800 rounded-lg px-3 py-2 mr-4 shadow-sm">
-            ${respuesta.replace(/\n/g, '<br>')}
+            ${textoFinal.replace(/\n/g, '<br>')}
           </div>
         `;
       } catch (err) {
