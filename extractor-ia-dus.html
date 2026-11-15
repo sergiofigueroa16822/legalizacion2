@@ -19,7 +19,7 @@
       <span class="text-xl">🤖</span>
       <div>
         <h1 class="text-sm font-bold text-slate-900">Extractor y Asistente IA para Confección de DUS</h1>
-        <p class="text-[11px] text-slate-500">Motor Llama • Carga multiformato, extracción estructurada, consultas y reglas aprendidas</p>
+        <p class="text-[11px] text-slate-500">Conectado a Supabase Llama • Carga multiformato, ficha ordenada, preguntas y aprendizaje</p>
       </div>
     </div>
     <button type="button" onclick="window.location.href='./index.html'" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-1 px-2.5 rounded text-xs transition cursor-pointer">
@@ -27,7 +27,7 @@
     </button>
   </header>
 
-  <!-- Contenedor Principal Compacto (2 Columnas en escritorio) -->
+  <!-- Contenedor Principal Compacto -->
   <main class="max-w-7xl w-full mx-auto p-4 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
 
     <!-- COLUMNA IZQUIERDA: Carga de Archivos, Preguntas y Aprendizaje (4 columnas) -->
@@ -211,7 +211,7 @@
     // Configurar worker de PDF.js
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-    // ===== CONFIGURACIÓN SUPABASE & LÍMITES =====
+    // ===== CONFIGURACIÓN SUPABASE & EDGE FUNCTION =====
     const URL_SUPABASE = 'https://lmmoqcpptyzgscnjwvgk.supabase.co/functions/v1/llama-function';
     const SUPABASE_KEY = 'sb_publishable_xRnGuxmB5oen-G7LDlI6JQ_SUEvLDMr';
     const MAX_IMAGENES = 10;
@@ -254,14 +254,14 @@
         const existe = archivosSeleccionados.some(f => f.name === nuevo.name && f.size === nuevo.size);
         if (!existe) archivosSeleccionados.push(nuevo);
       });
-      fileInput.value = ''; // Permite volver a seleccionar un archivo borrado
+      fileInput.value = '';
       renderFileList();
     });
 
     // Eliminar un archivo específico de forma manual
     function eliminarArchivo(index) {
       archivosSeleccionados.splice(index, 1);
-      textoLegajoConsolidado = ''; // Fuerza re-lectura limpia en la próxima acción
+      textoLegajoConsolidado = '';
       imagenesLegajoConsolidado = [];
       renderFileList();
     }
@@ -396,7 +396,6 @@
         } else if (ext === 'docx') {
           texto += `\n=== WORD (${archivo.name}) ===\n${await leerWord(archivo)}\n`;
         } else {
-          // TXT, CSV u otros archivos legibles como texto plano
           const plano = await archivo.text();
           texto += `\n=== ARCHIVO (${archivo.name}) ===\n${plano}\n`;
         }
@@ -406,7 +405,7 @@
       imagenesLegajoConsolidado = imgs;
     }
 
-    // Llamada genérica a tu Edge Function en Supabase
+    // Llamada directa a tu Edge Function en Supabase
     async function invocarLlamaSupabase(promptFinal, imagenes) {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
