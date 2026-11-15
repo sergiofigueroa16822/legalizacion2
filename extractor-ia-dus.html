@@ -11,93 +11,198 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col text-xs">
 
-  <!-- Barra Superior -->
-  <header class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shadow-sm">
-    <div class="flex items-center gap-3">
-      <span class="text-2xl">🤖</span>
+  <!-- Barra Superior Compacta -->
+  <header class="bg-white border-b border-slate-200 px-4 py-2.5 flex justify-between items-center shadow-sm">
+    <div class="flex items-center gap-2.5">
+      <span class="text-xl">🤖</span>
       <div>
-        <h1 class="text-lg font-bold text-slate-900">Extractor IA para Confección de DUS</h1>
-        <p class="text-xs text-slate-500">Motor Llama (Supabase) • Lee PDF (Digital/Escaneado), Imágenes, Excel y Word</p>
+        <h1 class="text-sm font-bold text-slate-900">Extractor y Asistente IA para Confección de DUS</h1>
+        <p class="text-[11px] text-slate-500">Motor Llama • Carga multiformato, extracción estructurada, consultas y reglas aprendidas</p>
       </div>
     </div>
-    <button type="button" onclick="window.location.href='./index.html'" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-1.5 px-3 rounded-lg text-xs transition cursor-pointer">
-      ← Volver al Checklist
+    <button type="button" onclick="window.location.href='./index.html'" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-1 px-2.5 rounded text-xs transition cursor-pointer">
+      ← Volver
     </button>
   </header>
 
-  <!-- Contenido Principal -->
-  <main class="max-w-5xl w-full mx-auto p-6 flex-1 space-y-6">
+  <!-- Contenedor Principal Compacto (2 Columnas en escritorio) -->
+  <main class="max-w-7xl w-full mx-auto p-4 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
 
-    <!-- Zona de Carga de Archivos -->
-    <div class="bg-white border-2 border-dashed border-slate-300 hover:border-indigo-500 rounded-xl p-8 text-center transition" id="dropZone">
-      <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.webp" class="hidden">
-      <div class="space-y-3">
-        <div class="text-4xl">📄📊📝🖼️</div>
-        <h2 class="text-base font-semibold text-slate-700">Arrastra tus documentos aquí o haz clic para seleccionar</h2>
-        <p class="text-xs text-slate-500">Soporta múltiples archivos simultáneos: <strong>PDF (digital o escaneado), Imágenes, Excel (.xls, .xlsx) y Word (.docx)</strong></p>
-        <button type="button" onclick="document.getElementById('fileInput').click()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg text-xs transition shadow-sm cursor-pointer">
-          Seleccionar Archivos
+    <!-- COLUMNA IZQUIERDA: Carga de Archivos, Preguntas y Aprendizaje (4 columnas) -->
+    <div class="lg:col-span-4 space-y-3">
+
+      <!-- 1. Módulo Compacto de Carga de Archivos -->
+      <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-sm space-y-2.5">
+        <div class="flex justify-between items-center">
+          <h2 class="font-bold text-slate-800 flex items-center gap-1.5">
+            <span>📂</span> Documentos del Legajo
+          </h2>
+          <span id="fileCountBadge" class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-semibold">0 archivos</span>
+        </div>
+
+        <div id="dropZone" class="border border-dashed border-slate-300 hover:border-indigo-500 rounded-md p-3 text-center transition bg-slate-50/70">
+          <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.png,.jpg,.jpeg,.webp" class="hidden">
+          <p class="text-[11px] text-slate-600 mb-1.5">PDF (digital/escaneado), Excel, Word, Imágenes o TXT</p>
+          <div class="flex justify-center gap-2">
+            <button type="button" onclick="document.getElementById('fileInput').click()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-1 px-3 rounded text-[11px] transition cursor-pointer">
+              + Agregar Archivos
+            </button>
+            <button type="button" id="clearAllBtn" onclick="limpiarTodosArchivos()" class="hidden bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-semibold py-1 px-2.5 rounded text-[11px] transition cursor-pointer">
+              Vaciar
+            </button>
+          </div>
+        </div>
+
+        <!-- Lista compacta con scroll y botón de borrar individual -->
+        <div id="fileList" class="max-h-36 overflow-y-auto space-y-1 pr-1"></div>
+
+        <button type="button" id="processBtn" onclick="procesarDocumentos()" disabled class="w-full bg-emerald-600 disabled:bg-slate-300 hover:bg-emerald-700 text-white font-semibold py-2 px-3 rounded text-xs transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer">
+          <span>⚡</span>
+          <span>Extraer Datos para DUS</span>
         </button>
+
+        <!-- Indicador de carga compacto -->
+        <div id="loadingIndicator" class="hidden bg-indigo-50 border border-indigo-100 rounded p-2 text-center flex items-center justify-center gap-2">
+          <div class="animate-spin w-3.5 h-3.5 border-2 border-indigo-600 border-t-transparent rounded-full"></div>
+          <span class="text-[11px] font-medium text-indigo-800" id="loadingText">Procesando...</span>
+        </div>
       </div>
-      <!-- Lista de archivos cargados -->
-      <div id="fileList" class="mt-4 text-left space-y-1"></div>
+
+      <!-- 2. Módulo de Consultas / Preguntas sobre los Documentos -->
+      <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-sm space-y-2">
+        <h2 class="font-bold text-slate-800 flex items-center gap-1.5">
+          <span>💬</span> Consultar al Legajo (Preguntas)
+        </h2>
+        <p class="text-[11px] text-slate-500">Pregunta cualquier dato específico de los archivos cargados.</p>
+
+        <!-- Preguntas rápidas -->
+        <div class="flex flex-wrap gap-1">
+          <button type="button" onclick="hacerPreguntaRapida('¿Quién es el consignatario y cuál es el país de destino?')" class="text-[10px] bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-600 px-2 py-0.5 rounded border border-slate-200 transition cursor-pointer">
+            ¿Consignatario y destino?
+          </button>
+          <button type="button" onclick="hacerPreguntaRapida('¿Cuál es el valor FOB total, peso bruto y cantidad de bultos?')" class="text-[10px] bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-600 px-2 py-0.5 rounded border border-slate-200 transition cursor-pointer">
+            ¿FOB, peso y bultos?
+          </button>
+          <button type="button" onclick="hacerPreguntaRapida('¿Qué vistos buenos, certificados o códigos de observación aplican?')" class="text-[10px] bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-600 px-2 py-0.5 rounded border border-slate-200 transition cursor-pointer">
+            ¿V.B. y observaciones?
+          </button>
+        </div>
+
+        <!-- Historial compacto de chat -->
+        <div id="chatHistory" class="h-40 overflow-y-auto bg-slate-50 border border-slate-200 rounded p-2 space-y-2 text-[11px]">
+          <div class="text-slate-400 italic">Carga documentos y realiza una pregunta (ej: "¿Quién es el consignatario?").</div>
+        </div>
+
+        <div class="flex gap-1.5">
+          <input type="text" id="questionInput" placeholder="Ej: ¿Cuál es el puerto de desembarque?" onkeypress="if(event.key==='Enter') enviarPregunta()" class="flex-1 bg-white border border-slate-300 rounded px-2.5 py-1.5 text-xs focus:outline-none focus:border-indigo-500">
+          <button type="button" id="askBtn" onclick="enviarPregunta()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-1.5 rounded text-xs transition cursor-pointer">
+            Preguntar
+          </button>
+        </div>
+      </div>
+
+      <!-- 3. Módulo de Aprendizaje / Reglas del Despachador -->
+      <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-sm space-y-2">
+        <div class="flex justify-between items-center">
+          <h2 class="font-bold text-slate-800 flex items-center gap-1.5">
+            <span>🧠</span> Memoria y Aprendizaje IA
+          </h2>
+          <button type="button" onclick="guardarReglaAprendizaje()" class="text-[10px] bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-semibold px-2 py-0.5 rounded cursor-pointer">
+            Guardar Regla
+          </button>
+        </div>
+        <p class="text-[11px] text-slate-500">Instrucciones permanentes que la IA aplicará en cada análisis:</p>
+        <textarea id="reglasAprendidasInput" rows="2" placeholder="Ej: Si el almacenista es TEISA usar cód 58 A97; si es AEROSAN usar cód 58 A10. Exportador Ventisqueros usa V.B. SERNAPESCA cód 01." class="w-full bg-slate-50 border border-slate-300 rounded p-2 text-[11px] focus:outline-none focus:border-indigo-500"></textarea>
+        <div id="estadoAprendizaje" class="text-[10px] text-emerald-600 hidden font-medium">✓ Regla guardada en memoria local.</div>
+      </div>
+
     </div>
 
-    <!-- Botón de Procesamiento -->
-    <div class="flex justify-end">
-      <button type="button" id="processBtn" onclick="procesarDocumentos()" disabled class="bg-emerald-600 disabled:bg-slate-300 hover:bg-emerald-700 text-white font-semibold py-2.5 px-6 rounded-lg text-sm transition shadow-sm flex items-center gap-2 cursor-pointer">
-        <span>⚡</span>
-        <span>Analizar con Llama y Extraer Datos DUS</span>
-      </button>
-    </div>
-
-    <!-- Indicador de Carga -->
-    <div id="loadingIndicator" class="hidden bg-white border border-slate-200 rounded-xl p-6 text-center space-y-2">
-      <div class="animate-spin inline-block w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full"></div>
-      <p class="text-sm font-medium text-slate-700" id="loadingText">Extrayendo contenido de los archivos...</p>
-    </div>
-
-    <!-- Resultados Extraídos (Formulario DUS) -->
-    <div id="resultsContainer" class="hidden bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-6">
-      <div class="flex justify-between items-center border-b border-slate-200 pb-4">
+    <!-- COLUMNA DERECHA: Ficha Ordenada para Llenado de DUS (8 columnas) -->
+    <div class="lg:col-span-8 bg-white border border-slate-200 rounded-lg p-4 shadow-sm space-y-4">
+      
+      <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-200 pb-2.5">
         <div>
-          <h3 class="text-base font-bold text-slate-800">Datos Extraídos para DUS (Aduanas Chile)</h3>
-          <p id="avisoTruncadoText" class="text-xs text-amber-600 font-medium hidden mt-1"></p>
+          <h2 class="text-sm font-bold text-slate-900">Ficha Ordenada para Confección de DUS (Aduanas Chile)</h2>
+          <p id="avisoTruncadoText" class="text-[11px] text-amber-600 font-medium hidden"></p>
         </div>
-        <button type="button" onclick="copiarJSON()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold py-1.5 px-3 rounded-lg cursor-pointer">
-          Copiar Datos (JSON)
-        </button>
-      </div>
-
-      <!-- Grilla de Campos DUS -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs" id="dusFieldsGrid"></div>
-
-      <!-- Detalle de Ítems / Mercancías -->
-      <div>
-        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Detalle de Ítems / Mercancías</h4>
-        <div class="overflow-x-auto border border-slate-200 rounded-lg">
-          <table class="w-full text-left text-xs">
-            <thead class="bg-slate-100 text-slate-600 border-b border-slate-200">
-              <tr>
-                <th class="p-2.5">Código Arancelario (HS)</th>
-                <th class="p-2.5">Descripción Mercancía</th>
-                <th class="p-2.5">Cantidad / Unidad</th>
-                <th class="p-2.5">Peso Neto / Bruto</th>
-                <th class="p-2.5">Valor FOB (USD)</th>
-              </tr>
-            </thead>
-            <tbody id="itemsTableBody" class="divide-y divide-slate-200"></tbody>
-          </table>
+        <div class="flex gap-2">
+          <button type="button" onclick="copiarResumenTexto()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-[11px] font-semibold py-1 px-2.5 rounded cursor-pointer">
+            Copiar Ficha Ordenada
+          </button>
+          <button type="button" onclick="copiarJSON()" class="bg-slate-800 hover:bg-slate-900 text-white text-[11px] font-semibold py-1 px-2.5 rounded cursor-pointer">
+            Copiar JSON
+          </button>
         </div>
       </div>
 
-      <!-- Respuesta en texto plano (fallback en caso de que la IA responda texto libre) -->
+      <!-- Estado vacío inicial -->
+      <div id="emptyStateDUS" class="py-16 text-center text-slate-400 space-y-2">
+        <div class="text-3xl">📋</div>
+        <p class="text-xs font-medium text-slate-500">Sube facturas, packing lists, BL/AWB o DUS anteriores y presiona <strong>"Extraer Datos para DUS"</strong>.</p>
+        <p class="text-[11px]">Aquí aparecerán todos los campos ordenados por sección listos para copiar o editar.</p>
+      </div>
+
+      <!-- Contenedor de Secciones DUS -->
+      <div id="dusStructuredContainer" class="hidden space-y-4">
+
+        <!-- Sección 1: Identificación y Partes -->
+        <div class="border border-slate-200 rounded-md overflow-hidden">
+          <div class="bg-slate-100 px-3 py-1.5 font-bold text-slate-700 border-b border-slate-200">
+            1. Identificación, Exportador y Consignatario
+          </div>
+          <div class="p-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5" id="secIdentificacion"></div>
+        </div>
+
+        <!-- Sección 2: Destino y Transporte -->
+        <div class="border border-slate-200 rounded-md overflow-hidden">
+          <div class="bg-slate-100 px-3 py-1.5 font-bold text-slate-700 border-b border-slate-200">
+            2. Destino, Puertos y Transporte
+          </div>
+          <div class="p-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5" id="secTransporte"></div>
+        </div>
+
+        <!-- Sección 3: Antecedentes Financieros, Bultos y Totales -->
+        <div class="border border-slate-200 rounded-md overflow-hidden">
+          <div class="bg-slate-100 px-3 py-1.5 font-bold text-slate-700 border-b border-slate-200">
+            3. Antecedentes Financieros, Bultos, V.B. y Observaciones
+          </div>
+          <div class="p-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5" id="secFinanciero"></div>
+        </div>
+
+        <!-- Sección 4: Descripción de Mercancías / Ítems -->
+        <div class="border border-slate-200 rounded-md overflow-hidden">
+          <div class="bg-slate-100 px-3 py-1.5 font-bold text-slate-700 border-b border-slate-200">
+            4. Descripción de Mercancías (Ítems DUS)
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-[11px]">
+              <thead class="bg-slate-50 text-slate-600 border-b border-slate-200">
+                <tr>
+                  <th class="p-2">Ítem</th>
+                  <th class="p-2">Arancel (HS)</th>
+                  <th class="p-2">Nombre y Atributos (1 al 6)</th>
+                  <th class="p-2">Cant. / U.Med</th>
+                  <th class="p-2">Peso Bruto</th>
+                  <th class="p-2">P.Unit FOB</th>
+                  <th class="p-2">Valor FOB</th>
+                  <th class="p-2">Obs. Ítem (Cód/Val)</th>
+                </tr>
+              </thead>
+              <tbody id="itemsTableBody" class="divide-y divide-slate-200"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Fallback texto libre -->
       <div id="rawFallbackContainer" class="hidden">
-        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Informe de Extracción IA</h4>
-        <div id="rawFallbackText" class="bg-slate-50 border border-slate-200 p-4 rounded-lg text-xs whitespace-pre-wrap text-slate-700"></div>
+        <div id="rawFallbackText" class="bg-slate-50 border border-slate-200 p-3 rounded text-xs whitespace-pre-wrap text-slate-700"></div>
       </div>
+
     </div>
 
   </main>
@@ -116,33 +221,84 @@
     const TIMEOUT_MS = 120000;
 
     let archivosSeleccionados = [];
+    let textoLegajoConsolidado = '';
+    let imagenesLegajoConsolidado = [];
     let ultimoResultadoJSON = null;
 
     const fileInput = document.getElementById('fileInput');
     const fileList = document.getElementById('fileList');
     const processBtn = document.getElementById('processBtn');
+    const clearAllBtn = document.getElementById('clearAllBtn');
+    const fileCountBadge = document.getElementById('fileCountBadge');
 
+    // Cargar reglas de aprendizaje guardadas al iniciar
+    window.addEventListener('DOMContentLoaded', () => {
+      const guardadas = localStorage.getItem('dus_ia_reglas_aprendidas');
+      if (guardadas) {
+        document.getElementById('reglasAprendidasInput').value = guardadas;
+      }
+    });
+
+    function guardarReglaAprendizaje() {
+      const texto = document.getElementById('reglasAprendidasInput').value.trim();
+      localStorage.setItem('dus_ia_reglas_aprendidas', texto);
+      const estado = document.getElementById('estadoAprendizaje');
+      estado.classList.remove('hidden');
+      setTimeout(() => estado.classList.add('hidden'), 3000);
+    }
+
+    // Agregar archivos sin sobrescribir los ya cargados
     fileInput.addEventListener('change', (e) => {
-      archivosSeleccionados = Array.from(e.target.files);
+      const nuevos = Array.from(e.target.files);
+      nuevos.forEach(nuevo => {
+        const existe = archivosSeleccionados.some(f => f.name === nuevo.name && f.size === nuevo.size);
+        if (!existe) archivosSeleccionados.push(nuevo);
+      });
+      fileInput.value = ''; // Permite volver a seleccionar un archivo borrado
       renderFileList();
     });
 
+    // Eliminar un archivo específico de forma manual
+    function eliminarArchivo(index) {
+      archivosSeleccionados.splice(index, 1);
+      textoLegajoConsolidado = ''; // Fuerza re-lectura limpia en la próxima acción
+      imagenesLegajoConsolidado = [];
+      renderFileList();
+    }
+
+    function limpiarTodosArchivos() {
+      archivosSeleccionados = [];
+      textoLegajoConsolidado = '';
+      imagenesLegajoConsolidado = [];
+      renderFileList();
+    }
+
     function renderFileList() {
       fileList.innerHTML = '';
+      fileCountBadge.textContent = `${archivosSeleccionados.length} archivo${archivosSeleccionados.length === 1 ? '' : 's'}`;
+
       if (archivosSeleccionados.length > 0) {
         processBtn.disabled = false;
-        archivosSeleccionados.forEach(file => {
+        clearAllBtn.classList.remove('hidden');
+        archivosSeleccionados.forEach((file, idx) => {
           const div = document.createElement('div');
-          div.className = 'text-xs bg-slate-100 px-3 py-1.5 rounded flex justify-between items-center text-slate-700';
-          div.innerHTML = `<span>📎 <strong>${file.name}</strong></span> <span class="text-slate-400">${(file.size / 1024).toFixed(1)} KB</span>`;
+          div.className = 'text-[11px] bg-slate-50 border border-slate-200 px-2.5 py-1 rounded flex justify-between items-center text-slate-700';
+          div.innerHTML = `
+            <span class="truncate max-w-[210px]" title="${file.name}">📎 <strong>${file.name}</strong></span>
+            <div class="flex items-center gap-2 shrink-0">
+              <span class="text-slate-400 text-[10px]">${(file.size / 1024).toFixed(0)} KB</span>
+              <button type="button" onclick="eliminarArchivo(${idx})" title="Quitar archivo" class="text-rose-500 hover:text-rose-700 hover:bg-rose-50 font-bold px-1.5 py-0.5 rounded transition cursor-pointer">✕</button>
+            </div>
+          `;
           fileList.appendChild(div);
         });
       } else {
         processBtn.disabled = true;
+        clearAllBtn.classList.add('hidden');
       }
     }
 
-    // Utilidades de imagen para OCR / PDFs escaneados
+    // Utilidades de lectura multiformato
     function imagenAJpegBase64(img) {
       const ancho = img.naturalWidth;
       const alto = img.naturalHeight;
@@ -167,7 +323,6 @@
       });
     }
 
-    // Lectores de Excel y Word
     async function leerExcel(file) {
       const arrayBuffer = await file.arrayBuffer();
       const workbook = XLSX.read(arrayBuffer, { type: 'array' });
@@ -186,152 +341,90 @@
       return result.value;
     }
 
-    // Función principal de procesamiento
-    async function procesarDocumentos() {
-      if (archivosSeleccionados.length === 0) return;
+    // Extraer contenido de todos los archivos actuales en memoria
+    async function extraerContenidoArchivos(loadingTextEl) {
+      let texto = '';
+      let imgs = [];
 
-      const loading = document.getElementById('loadingIndicator');
-      const loadingText = document.getElementById('loadingText');
-      const resultsContainer = document.getElementById('resultsContainer');
-      const avisoEl = document.getElementById('avisoTruncadoText');
+      for (let i = 0; i < archivosSeleccionados.length; i++) {
+        const archivo = archivosSeleccionados[i];
+        if (loadingTextEl) loadingTextEl.textContent = `Leyendo (${i + 1}/${archivosSeleccionados.length}): ${archivo.name}...`;
+        const ext = archivo.name.split('.').pop().toLowerCase();
 
-      loading.classList.remove('hidden');
-      resultsContainer.classList.add('hidden');
-      avisoEl.classList.add('hidden');
-      processBtn.disabled = true;
+        if (ext === 'pdf' || archivo.type === 'application/pdf') {
+          const arrayBuffer = await archivo.arrayBuffer();
+          const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+          let textoDigitalPdf = '';
+
+          for (let p = 1; p <= pdf.numPages; p++) {
+            const pagina = await pdf.getPage(p);
+            const contenido = await pagina.getTextContent();
+            const lineas = contenido.items.map(item => item.str).filter(s => s.trim().length > 0);
+            if (lineas.length > 0) textoDigitalPdf += lineas.join(' ') + '\n';
+          }
+
+          if (textoDigitalPdf.trim().length > 80) {
+            texto += `\n=== PDF (${archivo.name}) ===\n${textoDigitalPdf}\n`;
+          } else {
+            if (imgs.length + pdf.numPages > MAX_IMAGENES) {
+              throw new Error(`El PDF escaneado "${archivo.name}" supera el máximo de ${MAX_IMAGENES} páginas/imágenes.`);
+            }
+            for (let q = 1; q <= pdf.numPages; q++) {
+              const pag = await pdf.getPage(q);
+              const base = pag.getViewport({ scale: 1 });
+              const escala = Math.min(2, MAX_LADO_PX / Math.max(base.width, base.height));
+              const viewport = pag.getViewport({ scale: escala });
+              const canvas = document.createElement('canvas');
+              canvas.width = Math.round(viewport.width);
+              canvas.height = Math.round(viewport.height);
+              const ctx = canvas.getContext('2d');
+              ctx.fillStyle = '#ffffff';
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+              await pag.render({ canvasContext: ctx, viewport: viewport }).promise;
+              const b64 = canvas.toDataURL('image/jpeg', CALIDAD_JPEG).split(',')[1];
+              imgs.push({ nombre: `${archivo.name} (Pág ${q})`, base64: b64 });
+            }
+          }
+        } else if (archivo.type.startsWith('image/') || ['png', 'jpg', 'jpeg', 'webp'].includes(ext)) {
+          if (imgs.length + 1 > MAX_IMAGENES) {
+            throw new Error(`Máximo ${MAX_IMAGENES} imágenes por consulta.`);
+          }
+          const img = await cargarImagen(archivo);
+          imgs.push({ nombre: archivo.name, base64: imagenAJpegBase64(img) });
+        } else if (ext === 'xls' || ext === 'xlsx') {
+          texto += `\n=== EXCEL (${archivo.name}) ===\n${await leerExcel(archivo)}\n`;
+        } else if (ext === 'docx') {
+          texto += `\n=== WORD (${archivo.name}) ===\n${await leerWord(archivo)}\n`;
+        } else {
+          // TXT, CSV u otros archivos legibles como texto plano
+          const plano = await archivo.text();
+          texto += `\n=== ARCHIVO (${archivo.name}) ===\n${plano}\n`;
+        }
+      }
+
+      textoLegajoConsolidado = texto;
+      imagenesLegajoConsolidado = imgs;
+    }
+
+    // Llamada genérica a tu Edge Function en Supabase
+    async function invocarLlamaSupabase(promptFinal, imagenes) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
       try {
-        let expedienteTexto = '';
-        let imagenes = [];
-
-        for (let i = 0; i < archivosSeleccionados.length; i++) {
-          const archivo = archivosSeleccionados[i];
-          loadingText.textContent = `Procesando archivo ${i + 1} de ${archivosSeleccionados.length}: ${archivo.name}...`;
-          const ext = archivo.name.split('.').pop().toLowerCase();
-
-          if (ext === 'pdf' || archivo.type === 'application/pdf') {
-            const arrayBuffer = await archivo.arrayBuffer();
-            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-            let textoDigitalPdf = '';
-
-            for (let p = 1; p <= pdf.numPages; p++) {
-              const pagina = await pdf.getPage(p);
-              const contenido = await pagina.getTextContent();
-              const lineas = contenido.items.map(item => item.str).filter(s => s.trim().length > 0);
-              if (lineas.length > 0) textoDigitalPdf += lineas.join(' ') + '\n';
-            }
-
-            if (textoDigitalPdf.trim().length > 80) {
-              expedienteTexto += `\n=== DOCUMENTO PDF (${archivo.name}) ===\n${textoDigitalPdf}\n`;
-            } else {
-              // PDF Escaneado -> Convertir páginas a imagen
-              if (imagenes.length + pdf.numPages > MAX_IMAGENES) {
-                throw new Error(`El PDF escaneado "${archivo.name}" supera el máximo de ${MAX_IMAGENES} imágenes por consulta.`);
-              }
-              for (let q = 1; q <= pdf.numPages; q++) {
-                const pag = await pdf.getPage(q);
-                const base = pag.getViewport({ scale: 1 });
-                const escala = Math.min(2, MAX_LADO_PX / Math.max(base.width, base.height));
-                const viewport = pag.getViewport({ scale: escala });
-                const canvas = document.createElement('canvas');
-                canvas.width = Math.round(viewport.width);
-                canvas.height = Math.round(viewport.height);
-                const ctx = canvas.getContext('2d');
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                await pag.render({ canvasContext: ctx, viewport: viewport }).promise;
-                const b64 = canvas.toDataURL('image/jpeg', CALIDAD_JPEG).split(',')[1];
-                imagenes.push({ nombre: `${archivo.name} (Pág ${q})`, base64: b64 });
-              }
-            }
-          } else if (archivo.type.startsWith('image/') || ['png', 'jpg', 'jpeg', 'webp'].includes(ext)) {
-            if (imagenes.length + 1 > MAX_IMAGENES) {
-              throw new Error(`Máximo ${MAX_IMAGENES} imágenes/páginas escaneadas por consulta.`);
-            }
-            const img = await cargarImagen(archivo);
-            imagenes.push({ nombre: archivo.name, base64: imagenAJpegBase64(img) });
-          } else if (ext === 'xls' || ext === 'xlsx') {
-            const contenidoExcel = await leerExcel(archivo);
-            expedienteTexto += `\n=== DOCUMENTO EXCEL (${archivo.name}) ===\n${contenidoExcel}\n`;
-          } else if (ext === 'docx') {
-            const contenidoWord = await leerWord(archivo);
-            expedienteTexto += `\n=== DOCUMENTO WORD (${archivo.name}) ===\n${contenidoWord}\n`;
-          } else if (ext === 'doc') {
-            alert(`El formato .doc antiguo (${archivo.name}) tiene soporte limitado. Guárdalo como .docx o .pdf.`);
-          }
-        }
-
-        // Instrucción para que Llama devuelva los datos estructurados para DUS
-        const instruccionDUS = `INSTRUCCIÓN DE EXTRACCIÓN PARA CONFECCIÓN DE DUS (ADUANAS CHILE):
-Extrae todos los datos necesarios para confeccionar un Documento Único de Salida (DUS) a partir de los documentos adjuntos y responde ÚNICAMENTE con un objeto JSON válido (sin bloques markdown \`\`\`json ni texto adicional) con esta estructura exacta (usa "No especificado" si falta algún dato):
-{
-  "exportador_nombre": "",
-  "exportador_rut": "",
-  "consignatario_nombre": "",
-  "consignatario_pais": "",
-  "puerto_embarque": "",
-  "puerto_desembarque": "",
-  "pais_destino": "",
-  "via_transporte": "",
-  "clausula_venta_incoterm": "",
-  "moneda": "",
-  "valor_fob_total": "",
-  "valor_flete": "",
-  "valor_seguro": "",
-  "valor_cif_total": "",
-  "peso_neto_total": "",
-  "peso_bruto_total": "",
-  "cantidad_bultos": "",
-  "tipo_bultos": "",
-  "numero_factura": "",
-  "fecha_factura": "",
-  "items": [
-    {
-      "codigo_arancelario": "",
-      "descripcion": "",
-      "cantidad": "",
-      "unidad_medida": "",
-      "peso_neto": "",
-      "valor_fob": ""
-    }
-  ]
-}\n\n`;
-
-        expedienteTexto = instruccionDUS + expedienteTexto;
-
-        if (expedienteTexto.length > MAX_CHARS_TEXTO) {
-          expedienteTexto = expedienteTexto.slice(0, MAX_CHARS_TEXTO);
-          avisoEl.textContent = '⚠️ El texto del expediente fue recortado por su extensión; revisa los datos extraídos.';
-          avisoEl.classList.remove('hidden');
-        }
-
-        if (!expedienteTexto.trim() && imagenes.length === 0) {
-          throw new Error('No se pudo extraer contenido de los archivos seleccionados.');
-        }
-
-        loadingText.textContent = 'Analizando legajo con Llama en Supabase...';
-
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-
-        let respuesta;
-        try {
-          respuesta = await fetch(URL_SUPABASE, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer ' + SUPABASE_KEY,
-              'apikey': SUPABASE_KEY
-            },
-            body: JSON.stringify({
-              texto_expediente: expedienteTexto,
-              imagenes: imagenes
-            }),
-            signal: controller.signal
-          });
-        } finally {
-          clearTimeout(timer);
-        }
+        const respuesta = await fetch(URL_SUPABASE, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + SUPABASE_KEY,
+            'apikey': SUPABASE_KEY
+          },
+          body: JSON.stringify({
+            texto_expediente: promptFinal,
+            imagenes: imagenes
+          }),
+          signal: controller.signal
+        });
 
         const textoRespuesta = await respuesta.text();
         let datos;
@@ -347,111 +440,310 @@ Extrae todos los datos necesarios para confeccionar un Documento Único de Salid
           throw new Error(`HTTP ${respuesta.status}: ${detalle || 'sin detalle'}`);
         }
 
-        // Extraer el JSON de la respuesta de Llama (limpiando posible markdown)
-        let contenidoIA = datos.reply || datos;
-        let datosDUS = null;
+        return datos.reply || datos;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
 
+    // 1. Extracción completa para llenar el DUS
+    async function procesarDocumentos() {
+      if (archivosSeleccionados.length === 0) return;
+
+      const loading = document.getElementById('loadingIndicator');
+      const loadingText = document.getElementById('loadingText');
+      const avisoEl = document.getElementById('avisoTruncadoText');
+
+      loading.classList.remove('hidden');
+      avisoEl.classList.add('hidden');
+      processBtn.disabled = true;
+
+      try {
+        await extraerContenidoArchivos(loadingText);
+
+        const reglasAprendidas = localStorage.getItem('dus_ia_reglas_aprendidas') || '';
+        const bloqueAprendizaje = reglasAprendidas ? `\nREGLAS APRENDIDAS DEL DESPACHADOR (APLICAR OBLIGATORIAMENTE):\n${reglasAprendidas}\n` : '';
+
+        const instruccionDUS = `Eres un experto tramitador y agente de aduanas en Chile especializado en confeccionar Documentos Únicos de Salida (DUS).
+Analiza todos los documentos adjuntos y extrae la información ordenada para llenar un DUS.
+${bloqueAprendizaje}
+Responde ÚNICAMENTE con un objeto JSON válido (sin markdown ni texto adicional) usando exactamente esta estructura (coloca "No especificado" si el dato no figura):
+{
+  "identificacion": {
+    "aduana": "",
+    "tipo_operacion": "",
+    "exportador_rut": "",
+    "exportador_nombre": "",
+    "exportador_direccion": "",
+    "exportador_comuna": "",
+    "consignatario_nombre": "",
+    "consignatario_direccion": "",
+    "referencia_cliente": ""
+  },
+  "transporte": {
+    "puerto_embarque": "",
+    "puerto_desembarque": "",
+    "pais_destino": "",
+    "region_origen": "",
+    "via_transporte": "",
+    "tipo_carga": "",
+    "cia_transportadora": "",
+    "emisor_doc_transporte": "",
+    "numero_doc_transporte": "",
+    "nombre_nave_vuelo": ""
+  },
+  "financiero": {
+    "moneda": "",
+    "modalidad_venta": "",
+    "clausula_venta_incoterm": "",
+    "forma_pago": "",
+    "valor_fob_total": "",
+    "valor_flete": "",
+    "valor_seguro": "",
+    "valor_cif_total": "",
+    "total_bultos": "",
+    "tipo_bultos": "",
+    "identificacion_bultos": "",
+    "total_peso_bruto": "",
+    "vistos_buenos": "",
+    "observaciones_generales": ""
+  },
+  "items": [
+    {
+      "numero_item": "1",
+      "codigo_arancelario": "",
+      "nombre_mercancia": "",
+      "atributos": "",
+      "cantidad": "",
+      "unidad_medida": "",
+      "peso_bruto": "",
+      "precio_unitario_fob": "",
+      "valor_fob": "",
+      "observaciones_item": ""
+    }
+  ]
+}\n\nDOCUMENTOS DEL LEGAJO:\n`;
+
+        let promptCompleto = instruccionDUS + textoLegajoConsolidado;
+        if (promptCompleto.length > MAX_CHARS_TEXTO) {
+          promptCompleto = promptCompleto.slice(0, MAX_CHARS_TEXTO);
+          avisoEl.textContent = '⚠️ Texto recortado por extensión; verifica los datos.';
+          avisoEl.classList.remove('hidden');
+        }
+
+        loadingText.textContent = 'Analizando y estructurando DUS con Llama...';
+        const contenidoIA = await invocarLlamaSupabase(promptCompleto, imagenesLegajoConsolidado);
+
+        let datosDUS = null;
         if (typeof contenidoIA === 'string') {
           const jsonMatch = contenidoIA.match(/\{[\s\S]*\}/);
           if (jsonMatch) {
-            try {
-              datosDUS = JSON.parse(jsonMatch[0]);
-            } catch (e) {
-              datosDUS = null;
-            }
+            try { datosDUS = JSON.parse(jsonMatch[0]); } catch (e) { datosDUS = null; }
           }
         } else if (typeof contenidoIA === 'object' && contenidoIA !== null) {
           datosDUS = contenidoIA;
         }
 
-        if (datosDUS && (datosDUS.exportador_nombre || datosDUS.items || datosDUS.valor_fob_total)) {
+        document.getElementById('emptyStateDUS').classList.add('hidden');
+
+        if (datosDUS && (datosDUS.identificacion || datosDUS.items)) {
           ultimoResultadoJSON = datosDUS;
           document.getElementById('rawFallbackContainer').classList.add('hidden');
-          mostrarResultados(datosDUS);
+          renderizarFichaDUS(datosDUS);
         } else {
-          // Si la Edge Function devolvió un informe de texto en lugar de JSON puro, lo mostramos igualmente
-          ultimoResultadoJSON = { informe: contenidoIA };
-          document.getElementById('dusFieldsGrid').innerHTML = '';
-          document.getElementById('itemsTableBody').innerHTML = '';
+          ultimoResultadoJSON = { respuesta: contenidoIA };
+          document.getElementById('dusStructuredContainer').classList.add('hidden');
           document.getElementById('rawFallbackText').textContent = typeof contenidoIA === 'string' ? contenidoIA : JSON.stringify(contenidoIA, null, 2);
           document.getElementById('rawFallbackContainer').classList.remove('hidden');
-          resultsContainer.classList.remove('hidden');
         }
 
       } catch (error) {
-        console.error('Error durante el análisis:', error);
-        const msg = error.name === 'AbortError'
-          ? 'La consulta tardó demasiado y fue cancelada. Intenta con menos páginas.'
-          : error.message;
-        alert('❌ Error al procesar expedientes: ' + msg);
+        console.error(error);
+        alert('❌ Error al analizar documentos: ' + error.message);
       } finally {
         loading.classList.add('hidden');
         processBtn.disabled = false;
       }
     }
 
-    function mostrarResultados(datos) {
-      const grid = document.getElementById('dusFieldsGrid');
+    function renderizarFichaDUS(datos) {
+      const mapas = [
+        {
+          contenedor: 'secIdentificacion',
+          grupo: datos.identificacion || {},
+          campos: {
+            exportador_nombre: 'Consignante / Exportador',
+            exportador_rut: 'RUT Exportador',
+            exportador_direccion: 'Dirección Exportador',
+            exportador_comuna: 'Comuna / Cód.',
+            consignatario_nombre: 'Consignatario',
+            consignatario_direccion: 'Dirección Consignatario',
+            aduana: 'Aduana',
+            tipo_operacion: 'Tipo Operación',
+            referencia_cliente: 'Ref. Cliente / Factura'
+          }
+        },
+        {
+          contenedor: 'secTransporte',
+          grupo: datos.transporte || {},
+          campos: {
+            puerto_embarque: 'Puerto Embarque',
+            puerto_desembarque: 'Puerto Desembarque',
+            pais_destino: 'País Destino',
+            region_origen: 'Cód. Región Origen',
+            via_transporte: 'Vía Transporte',
+            tipo_carga: 'Tipo Carga',
+            cia_transportadora: 'Cía. Transportadora',
+            emisor_doc_transporte: 'Emisor Doc. Transporte',
+            numero_doc_transporte: 'N° Docto. Transporte (AWB/BL)',
+            nombre_nave_vuelo: 'Nave / Aerolínea'
+          }
+        },
+        {
+          contenedor: 'secFinanciero',
+          grupo: datos.financiero || {},
+          campos: {
+            moneda: 'Moneda',
+            modalidad_venta: 'Modalidad Venta',
+            clausula_venta_incoterm: 'Cláusula Venta (Incoterm)',
+            forma_pago: 'Forma de Pago',
+            valor_fob_total: 'Valor FOB Total',
+            valor_flete: 'Flete',
+            valor_seguro: 'Seguro',
+            valor_cif_total: 'Valor CIF Total',
+            total_bultos: 'Cantidad Bultos',
+            tipo_bultos: 'Tipo de Bulto (Cód/Desc)',
+            identificacion_bultos: 'Identificación Bultos',
+            total_peso_bruto: 'Total Peso Bruto',
+            vistos_buenos: 'Vistos Buenos (V.B.)',
+            observaciones_generales: 'Observaciones Generales'
+          }
+        }
+      ];
+
+      mapas.forEach(sec => {
+        const el = document.getElementById(sec.contenedor);
+        el.innerHTML = '';
+        for (const [key, label] of Object.entries(sec.campos)) {
+          const val = sec.grupo[key] || 'No especificado';
+          el.innerHTML += `
+            <div class="bg-slate-50/80 p-2 rounded border border-slate-200">
+              <label class="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">${label}</label>
+              <input type="text" data-sec="${sec.contenedor}" data-label="${label}" value="${String(val).replace(/"/g, '&quot;')}" class="dus-field-input w-full bg-white border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-800 font-medium focus:outline-none focus:border-indigo-500">
+            </div>
+          `;
+        }
+      });
+
       const tbody = document.getElementById('itemsTableBody');
-      grid.innerHTML = '';
       tbody.innerHTML = '';
-
-      const etiquetas = {
-        exportador_nombre: 'Exportador',
-        exportador_rut: 'RUT Exportador',
-        consignatario_nombre: 'Consignatario / Comprador',
-        consignatario_pais: 'País Consignatario',
-        puerto_embarque: 'Puerto de Embarque',
-        puerto_desembarque: 'Puerto de Desembarque',
-        pais_destino: 'País de Destino',
-        via_transporte: 'Vía de Transporte',
-        clausula_venta_incoterm: 'Cláusula de Venta (Incoterm)',
-        moneda: 'Moneda',
-        valor_fob_total: 'Valor FOB Total',
-        valor_flete: 'Flete',
-        valor_seguro: 'Seguro',
-        valor_cif_total: 'Valor CIF Total',
-        peso_neto_total: 'Peso Neto Total',
-        peso_bruto_total: 'Peso Bruto Total',
-        cantidad_bultos: 'Cantidad de Bultos',
-        tipo_bultos: 'Tipo de Bultos',
-        numero_factura: 'N° Factura Comercial',
-        fecha_factura: 'Fecha Factura'
-      };
-
-      for (const [key, label] of Object.entries(etiquetas)) {
-        const valor = datos[key] || 'No especificado';
-        grid.innerHTML += `
-          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
-            <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">${label}</label>
-            <input type="text" value="${String(valor).replace(/"/g, '&quot;')}" class="w-full bg-white border border-slate-300 rounded px-2 py-1 text-slate-800 font-medium focus:outline-none focus:border-indigo-500">
-          </div>
-        `;
-      }
-
       if (datos.items && Array.isArray(datos.items) && datos.items.length > 0) {
-        datos.items.forEach(item => {
+        datos.items.forEach((item, i) => {
           tbody.innerHTML += `
-            <tr>
-              <td class="p-2.5 font-mono text-indigo-700 font-semibold">${item.codigo_arancelario || '-'}</td>
-              <td class="p-2.5">${item.descripcion || '-'}</td>
-              <td class="p-2.5">${item.cantidad || ''} ${item.unidad_medida || ''}</td>
-              <td class="p-2.5">${item.peso_neto || '-'}</td>
-              <td class="p-2.5 font-semibold">${item.valor_fob || '-'}</td>
+            <tr class="hover:bg-slate-50">
+              <td class="p-2 font-bold text-slate-600">${item.numero_item || (i + 1)}</td>
+              <td class="p-2 font-mono font-bold text-indigo-700">${item.codigo_arancelario || '-'}</td>
+              <td class="p-2">
+                <div class="font-semibold text-slate-800">${item.nombre_mercancia || '-'}</div>
+                <div class="text-[10px] text-slate-500">${item.atributos || ''}</div>
+              </td>
+              <td class="p-2">${item.cantidad || ''} ${item.unidad_medida || ''}</td>
+              <td class="p-2">${item.peso_bruto || '-'}</td>
+              <td class="p-2">${item.precio_unitario_fob || '-'}</td>
+              <td class="p-2 font-bold text-emerald-700">${item.valor_fob || '-'}</td>
+              <td class="p-2 text-[10px] text-slate-600">${item.observaciones_item || '-'}</td>
             </tr>
           `;
         });
       } else {
-        tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-400">No se detectaron ítems detallados.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="p-3 text-center text-slate-400">Sin ítems detallados.</td></tr>';
       }
 
-      document.getElementById('resultsContainer').classList.remove('hidden');
+      document.getElementById('dusStructuredContainer').classList.remove('hidden');
+    }
+
+    // 2. Módulo de Consultas / Preguntas sobre los documentos
+    function hacerPreguntaRapida(texto) {
+      document.getElementById('questionInput').value = texto;
+      enviarPregunta();
+    }
+
+    async function enviarPregunta() {
+      const input = document.getElementById('questionInput');
+      const pregunta = input.value.trim();
+      if (!pregunta) return;
+
+      if (archivosSeleccionados.length === 0) {
+        alert('Primero carga al menos un documento para poder hacer preguntas sobre él.');
+        return;
+      }
+
+      const chatHistory = document.getElementById('chatHistory');
+      const askBtn = document.getElementById('askBtn');
+
+      if (chatHistory.querySelector('.italic')) chatHistory.innerHTML = '';
+
+      chatHistory.innerHTML += `
+        <div class="bg-indigo-600 text-white p-2 rounded-lg ml-6">
+          <strong>Tú:</strong> ${pregunta}
+        </div>
+      `;
+      input.value = '';
+      askBtn.disabled = true;
+      chatHistory.scrollTop = chatHistory.scrollHeight;
+
+      const tempId = 'msg-' + Date.now();
+      chatHistory.innerHTML += `<div id="${tempId}" class="text-slate-400 italic p-1">Analizando respuesta...</div>`;
+
+      try {
+        if (!textoLegajoConsolidado && imagenesLegajoConsolidado.length === 0) {
+          await extraerContenidoArchivos(null);
+        }
+
+        const reglasAprendidas = localStorage.getItem('dus_ia_reglas_aprendidas') || '';
+        const promptPregunta = `Eres un asistente aduanero experto en Chile. Responde de forma directa, breve y precisa a la siguiente pregunta basándote EXCLUSIVAMENTE en los documentos cargados y en las reglas aprendidas.
+${reglasAprendidas ? 'REGLAS APRENDIDAS:\n' + reglasAprendidas + '\n' : ''}
+PREGUNTA DEL USUARIO: ${pregunta}
+
+DOCUMENTOS DEL LEGAJO:
+${textoLegajoConsolidado.slice(0, MAX_CHARS_TEXTO - 1500)}`;
+
+        const respuestaIA = await invocarLlamaSupabase(promptPregunta, imagenesLegajoConsolidado);
+        const textoFinal = typeof respuestaIA === 'string' ? respuestaIA : JSON.stringify(respuestaIA, null, 2);
+
+        document.getElementById(tempId).outerHTML = `
+          <div class="bg-white border border-slate-200 text-slate-800 p-2 rounded-lg mr-4 shadow-2xs">
+            <strong class="text-indigo-700">IA DUS:</strong> ${textoFinal}
+          </div>
+        `;
+      } catch (err) {
+        document.getElementById(tempId).outerHTML = `
+          <div class="bg-rose-50 border border-rose-200 text-rose-700 p-2 rounded-lg">
+            Error: ${err.message}
+          </div>
+        `;
+      } finally {
+        askBtn.disabled = false;
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+      }
+    }
+
+    // Copiar ficha ordenada en texto limpio listo para pegar
+    function copiarResumenTexto() {
+      const inputs = document.querySelectorAll('.dus-field-input');
+      if (inputs.length === 0) return;
+      let texto = '=== DATOS PARA CONFECCIÓN DE DUS ===\n';
+      inputs.forEach(inp => {
+        texto += `${inp.dataset.label}: ${inp.value}\n`;
+      });
+      navigator.clipboard.writeText(texto);
+      alert('Ficha DUS ordenada copiada al portapapeles.');
     }
 
     function copiarJSON() {
       if (!ultimoResultadoJSON) return;
       navigator.clipboard.writeText(JSON.stringify(ultimoResultadoJSON, null, 2));
-      alert('Datos DUS copiados en formato JSON al portapapeles.');
+      alert('Datos DUS copiados en formato JSON.');
     }
   </script>
   <!--todos los derechos reservados para sergio figueroa quien puede administrar, ceder areenday y vender el aplicativo-->
