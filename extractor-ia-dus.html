@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Extractor IA (DUS) - Legalización Aduanera</title>
+  <title>Auditor Pre-Legalización DUS - Compendio Aduanero Chile</title>
   <script src="https://cdn.tailwindcss.com"></script>
   
   <!-- Librerías para lectura de archivos en el navegador -->
@@ -14,40 +14,40 @@
 <body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col text-xs">
 
   <!-- Barra Superior Compacta -->
-  <header class="bg-white border-b border-slate-200 px-4 py-2.5 flex justify-between items-center shadow-sm">
+  <header class="bg-slate-900 text-white px-4 py-2.5 flex justify-between items-center shadow-sm">
     <div class="flex items-center gap-2.5">
-      <span class="text-xl">🤖</span>
+      <span class="text-xl">⚖️</span>
       <div>
-        <h1 class="text-sm font-bold text-slate-900">Extractor y Asistente IA para Confección de DUS</h1>
-        <p class="text-[11px] text-slate-500">Conectado a Supabase Llama • Carga multiformato, ficha ordenada, preguntas y aprendizaje</p>
+        <h1 class="text-sm font-bold tracking-tight">Auditor IA Pre-Legalización DUS (Compendio Aduanero Chile)</h1>
+        <p class="text-[11px] text-slate-300">Cruce documental: DUS • Zona Primaria • AWB/BL/CRT • Factura • Packing List</p>
       </div>
     </div>
-    <button type="button" onclick="window.location.href='./index.html'" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-1 px-2.5 rounded text-xs transition cursor-pointer">
+    <button type="button" onclick="window.location.href='./index.html'" class="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-1 px-2.5 rounded text-xs transition cursor-pointer">
       ← Volver
     </button>
   </header>
 
-  <!-- Contenedor Principal Compacto -->
+  <!-- Contenedor Principal Compacto (2 Columnas) -->
   <main class="max-w-7xl w-full mx-auto p-4 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
 
-    <!-- COLUMNA IZQUIERDA: Carga de Archivos, Preguntas y Aprendizaje (4 columnas) -->
+    <!-- COLUMNA IZQUIERDA: Carga de Legajo, Consultas y Reglas (4 columnas) -->
     <div class="lg:col-span-4 space-y-3">
 
-      <!-- 1. Módulo Compacto de Carga de Archivos -->
+      <!-- 1. Módulo Compacto de Carga de Documentos -->
       <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-sm space-y-2.5">
         <div class="flex justify-between items-center">
           <h2 class="font-bold text-slate-800 flex items-center gap-1.5">
-            <span>📂</span> Documentos del Legajo
+            <span>📂</span> Carpeta / Legajo de Exportación
           </h2>
-          <span id="fileCountBadge" class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-semibold">0 archivos</span>
+          <span id="fileCountBadge" class="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-bold">0 archivos</span>
         </div>
 
-        <div id="dropZone" class="border border-dashed border-slate-300 hover:border-indigo-500 rounded-md p-3 text-center transition bg-slate-50/70">
+        <div id="dropZone" class="border border-dashed border-slate-300 hover:border-indigo-500 rounded-md p-3 text-center transition bg-slate-50/80">
           <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.png,.jpg,.jpeg,.webp" class="hidden">
-          <p class="text-[11px] text-slate-600 mb-1.5">PDF (digital/escaneado), Excel, Word, Imágenes o TXT</p>
+          <p class="text-[11px] text-slate-600 mb-1.5">Adjunta DUS, Captura Zona Primaria, AWB/BL, Factura y Packing List</p>
           <div class="flex justify-center gap-2">
             <button type="button" onclick="document.getElementById('fileInput').click()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-1 px-3 rounded text-[11px] transition cursor-pointer">
-              + Agregar Archivos
+              + Cargar Documentos
             </button>
             <button type="button" id="clearAllBtn" onclick="limpiarTodosArchivos()" class="hidden bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-semibold py-1 px-2.5 rounded text-[11px] transition cursor-pointer">
               Vaciar
@@ -55,143 +55,163 @@
           </div>
         </div>
 
-        <!-- Lista compacta con scroll y botón de borrar individual -->
+        <!-- Lista de archivos con eliminación individual -->
         <div id="fileList" class="max-h-36 overflow-y-auto space-y-1 pr-1"></div>
 
-        <button type="button" id="processBtn" onclick="procesarDocumentos()" disabled class="w-full bg-emerald-600 disabled:bg-slate-300 hover:bg-emerald-700 text-white font-semibold py-2 px-3 rounded text-xs transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer">
-          <span>⚡</span>
-          <span>Extraer Datos para DUS</span>
+        <button type="button" id="processBtn" onclick="auditarLegalizacion()" disabled class="w-full bg-sky-600 disabled:bg-slate-300 hover:bg-sky-700 text-white font-bold py-2 px-3 rounded text-xs transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer">
+          <span>🔍</span>
+          <span>Auditar Legajo para Legalización</span>
         </button>
 
-        <!-- Indicador de carga compacto -->
-        <div id="loadingIndicator" class="hidden bg-indigo-50 border border-indigo-100 rounded p-2 text-center flex items-center justify-center gap-2">
-          <div class="animate-spin w-3.5 h-3.5 border-2 border-indigo-600 border-t-transparent rounded-full"></div>
-          <span class="text-[11px] font-medium text-indigo-800" id="loadingText">Procesando...</span>
+        <!-- Indicador de carga -->
+        <div id="loadingIndicator" class="hidden bg-sky-50 border border-sky-200 rounded p-2 text-center flex items-center justify-center gap-2">
+          <div class="animate-spin w-3.5 h-3.5 border-2 border-sky-600 border-t-transparent rounded-full"></div>
+          <span class="text-[11px] font-medium text-sky-900" id="loadingText">Auditando documentos...</span>
         </div>
       </div>
 
-      <!-- 2. Módulo de Consultas / Preguntas sobre los Documentos -->
+      <!-- 2. Módulo de Consultas Específicas sobre el Legajo -->
       <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-sm space-y-2">
         <h2 class="font-bold text-slate-800 flex items-center gap-1.5">
-          <span>💬</span> Consultar al Legajo (Preguntas)
+          <span>💬</span> Consultar Discrepancias o Datos
         </h2>
-        <p class="text-[11px] text-slate-500">Pregunta cualquier dato específico de los archivos cargados.</p>
 
-        <!-- Preguntas rápidas -->
         <div class="flex flex-wrap gap-1">
-          <button type="button" onclick="hacerPreguntaRapida('¿Quién es el consignatario y cuál es el país de destino?')" class="text-[10px] bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-600 px-2 py-0.5 rounded border border-slate-200 transition cursor-pointer">
-            ¿Consignatario y destino?
+          <button type="button" onclick="hacerPreguntaRapida('¿Cuál es la diferencia exacta de peso entre Zona Primaria, AWB y DUS, y requiere SMDA?')" class="text-[10px] bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-600 px-2 py-0.5 rounded border border-slate-200 transition cursor-pointer">
+            ¿Diferencia peso / SMDA?
           </button>
-          <button type="button" onclick="hacerPreguntaRapida('¿Cuál es el valor FOB total, peso bruto y cantidad de bultos?')" class="text-[10px] bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-600 px-2 py-0.5 rounded border border-slate-200 transition cursor-pointer">
-            ¿FOB, peso y bultos?
+          <button type="button" onclick="hacerPreguntaRapida('Verifica si coincide el almacenista/bodega, bultos y número de guía aérea entre todos los documentos.')" class="text-[10px] bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-600 px-2 py-0.5 rounded border border-slate-200 transition cursor-pointer">
+            ¿Bodega, bultos y guía?
           </button>
-          <button type="button" onclick="hacerPreguntaRapida('¿Qué vistos buenos, certificados o códigos de observación aplican?')" class="text-[10px] bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-600 px-2 py-0.5 rounded border border-slate-200 transition cursor-pointer">
-            ¿V.B. y observaciones?
+          <button type="button" onclick="hacerPreguntaRapida('Compara moneda, valores FOB y consignatario entre factura, guía y DUS.')" class="text-[10px] bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-600 px-2 py-0.5 rounded border border-slate-200 transition cursor-pointer">
+            ¿Moneda, FOB y partes?
           </button>
         </div>
 
-        <!-- Historial compacto de chat -->
-        <div id="chatHistory" class="h-40 overflow-y-auto bg-slate-50 border border-slate-200 rounded p-2 space-y-2 text-[11px]">
-          <div class="text-slate-400 italic">Carga documentos y realiza una pregunta (ej: "¿Quién es el consignatario?").</div>
+        <div id="chatHistory" class="h-36 overflow-y-auto bg-slate-50 border border-slate-200 rounded p-2 space-y-2 text-[11px]">
+          <div class="text-slate-400 italic">Carga el legajo y consulta cualquier detalle puntual antes de enviar a legalizar.</div>
         </div>
 
         <div class="flex gap-1.5">
-          <input type="text" id="questionInput" placeholder="Ej: ¿Cuál es el puerto de desembarque?" onkeypress="if(event.key==='Enter') enviarPregunta()" class="flex-1 bg-white border border-slate-300 rounded px-2.5 py-1.5 text-xs focus:outline-none focus:border-indigo-500">
-          <button type="button" id="askBtn" onclick="enviarPregunta()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-1.5 rounded text-xs transition cursor-pointer">
+          <input type="text" id="questionInput" placeholder="Ej: ¿Coincide el consignatario en AWB y DUS?" onkeypress="if(event.key==='Enter') enviarPregunta()" class="flex-1 bg-white border border-slate-300 rounded px-2.5 py-1.5 text-xs focus:outline-none focus:border-sky-500">
+          <button type="button" id="askBtn" onclick="enviarPregunta()" class="bg-slate-800 hover:bg-slate-900 text-white font-semibold px-3 py-1.5 rounded text-xs transition cursor-pointer">
             Preguntar
           </button>
         </div>
       </div>
 
-      <!-- 3. Módulo de Aprendizaje / Reglas del Despachador -->
+      <!-- 3. Memoria y Criterios de Auditoría -->
       <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-sm space-y-2">
         <div class="flex justify-between items-center">
           <h2 class="font-bold text-slate-800 flex items-center gap-1.5">
-            <span>🧠</span> Memoria y Aprendizaje IA
+            <span>🧠</span> Reglas de Auditoría Aprendidas
           </h2>
           <button type="button" onclick="guardarReglaAprendizaje()" class="text-[10px] bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-semibold px-2 py-0.5 rounded cursor-pointer">
-            Guardar Regla
+            Guardar
           </button>
         </div>
-        <p class="text-[11px] text-slate-500">Instrucciones permanentes que la IA aplicará en cada análisis:</p>
-        <textarea id="reglasAprendidasInput" rows="2" placeholder="Ej: Si el almacenista es TEISA usar cód 58 A97; si es AEROSAN usar cód 58 A10. Exportador Ventisqueros usa V.B. SERNAPESCA cód 01." class="w-full bg-slate-50 border border-slate-300 rounded p-2 text-[11px] focus:outline-none focus:border-indigo-500"></textarea>
-        <div id="estadoAprendizaje" class="text-[10px] text-emerald-600 hidden font-medium">✓ Regla guardada en memoria local.</div>
+        <textarea id="reglasAprendidasInput" rows="2" placeholder="Ej: En embarques aéreos Ventisqueros verificar que almacenista sea A97 TEISA o A10 AEROSAN según guía. Tolerancia peso estricto +-10%." class="w-full bg-slate-50 border border-slate-300 rounded p-2 text-[11px] focus:outline-none focus:border-sky-500"></textarea>
+        <div id="estadoAprendizaje" class="text-[10px] text-emerald-600 hidden font-medium">✓ Criterio guardado en memoria.</div>
       </div>
 
     </div>
 
-    <!-- COLUMNA DERECHA: Ficha Ordenada para Llenado de DUS (8 columnas) -->
+    <!-- COLUMNA DERECHA: Dictamen de Legalización y Matriz de Cruce (8 columnas) -->
     <div class="lg:col-span-8 bg-white border border-slate-200 rounded-lg p-4 shadow-sm space-y-4">
       
       <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-200 pb-2.5">
         <div>
-          <h2 class="text-sm font-bold text-slate-900">Ficha Ordenada para Confección de DUS (Aduanas Chile)</h2>
+          <h2 class="text-sm font-bold text-slate-900">Dictamen Técnico de Pre-Legalización (Compendio Aduanero)</h2>
           <p id="avisoTruncadoText" class="text-[11px] text-amber-600 font-medium hidden"></p>
         </div>
-        <div class="flex gap-2">
-          <button type="button" onclick="copiarResumenTexto()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-[11px] font-semibold py-1 px-2.5 rounded cursor-pointer">
-            Copiar Ficha Ordenada
-          </button>
-          <button type="button" onclick="copiarJSON()" class="bg-slate-800 hover:bg-slate-900 text-white text-[11px] font-semibold py-1 px-2.5 rounded cursor-pointer">
-            Copiar JSON
-          </button>
-        </div>
+        <button type="button" onclick="copiarDictamen()" class="bg-slate-800 hover:bg-slate-900 text-white text-[11px] font-semibold py-1 px-3 rounded cursor-pointer">
+          Copiar Informe de Auditoría
+        </button>
       </div>
 
       <!-- Estado vacío inicial -->
-      <div id="emptyStateDUS" class="py-16 text-center text-slate-400 space-y-2">
-        <div class="text-3xl">📋</div>
-        <p class="text-xs font-medium text-slate-500">Sube facturas, packing lists, BL/AWB o DUS anteriores y presiona <strong>"Extraer Datos para DUS"</strong>.</p>
-        <p class="text-[11px]">Aquí aparecerán todos los campos ordenados por sección listos para copiar o editar.</p>
+      <div id="emptyStateAuditoria" class="py-16 text-center text-slate-400 space-y-2">
+        <div class="text-3xl">🛡️</div>
+        <p class="text-xs font-medium text-slate-600">Sube los documentos de la carpeta (DUS, Zona Primaria, AWB/BL, Factura, Packing List)</p>
+        <p class="text-[11px] max-w-md mx-auto">La IA cruzará pesos ($\pm 10\%$ tolerancia SMDA), bultos, moneda, almacenista, consignante, consignatario y documentos de transporte según el Compendio de Normas Aduaneras.</p>
       </div>
 
-      <!-- Contenedor de Secciones DUS -->
-      <div id="dusStructuredContainer" class="hidden space-y-4">
+      <!-- Resultados de Auditoría Estructurada -->
+      <div id="auditoriaContainer" class="hidden space-y-4">
 
-        <!-- Sección 1: Identificación y Partes -->
-        <div class="border border-slate-200 rounded-md overflow-hidden">
-          <div class="bg-slate-100 px-3 py-1.5 font-bold text-slate-700 border-b border-slate-200">
-            1. Identificación, Exportador y Consignatario
+        <!-- Semáforo / Dictamen Global -->
+        <div id="dictamenBanner" class="p-3.5 rounded-lg border flex items-start gap-3">
+          <div id="dictamenIcono" class="text-2xl"></div>
+          <div class="flex-1">
+            <div class="flex items-center justify-between">
+              <h3 id="dictamenTitulo" class="font-bold text-sm uppercase"></h3>
+              <span id="badgeSMDA" class="hidden text-[10px] font-bold px-2 py-0.5 rounded bg-amber-600 text-white uppercase">⚠️ Requiere SMDA</span>
+            </div>
+            <p id="dictamenResumen" class="text-xs mt-1"></p>
           </div>
-          <div class="p-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5" id="secIdentificacion"></div>
         </div>
 
-        <!-- Sección 2: Destino y Transporte -->
+        <!-- Alerta Específica de Control de Peso y Tolerancia +-10% (Zona Primaria vs DUS) -->
         <div class="border border-slate-200 rounded-md overflow-hidden">
-          <div class="bg-slate-100 px-3 py-1.5 font-bold text-slate-700 border-b border-slate-200">
-            2. Destino, Puertos y Transporte
+          <div class="bg-slate-100 px-3 py-1.5 font-bold text-slate-700 border-b border-slate-200 flex justify-between items-center">
+            <span>1. Control de Pesos y Tolerancia Compendio Aduanero ($\pm 10\%$ Zona Primaria)</span>
+            <span id="pesoEstadoBadge" class="text-[10px] px-2 py-0.5 rounded font-bold"></span>
           </div>
-          <div class="p-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5" id="secTransporte"></div>
+          <div class="p-3 grid grid-cols-2 sm:grid-cols-4 gap-2.5 bg-slate-50/50">
+            <div class="bg-white p-2 rounded border border-slate-200">
+              <span class="block text-[10px] text-slate-500 uppercase font-bold">Peso DUS (Bruto)</span>
+              <span id="pesoDusVal" class="text-xs font-bold text-slate-800">-</span>
+            </div>
+            <div class="bg-white p-2 rounded border border-slate-200">
+              <span class="block text-[10px] text-slate-500 uppercase font-bold">Peso Zona Primaria</span>
+              <span id="pesoZpVal" class="text-xs font-bold text-slate-800">-</span>
+            </div>
+            <div class="bg-white p-2 rounded border border-slate-200">
+              <span class="block text-[10px] text-slate-500 uppercase font-bold">Peso Guía (AWB/BL)</span>
+              <span id="pesoGuiaVal" class="text-xs font-bold text-slate-800">-</span>
+            </div>
+            <div class="bg-white p-2 rounded border border-slate-200">
+              <span class="block text-[10px] text-slate-500 uppercase font-bold">Variación vs ZP (%)</span>
+              <span id="pesoVariacionVal" class="text-xs font-bold">-</span>
+            </div>
+          </div>
+          <div id="pesoAnalisisTexto" class="px-3 py-2 text-[11px] bg-white border-t border-slate-100 text-slate-700"></div>
         </div>
 
-        <!-- Sección 3: Antecedentes Financieros, Bultos y Totales -->
-        <div class="border border-slate-200 rounded-md overflow-hidden">
-          <div class="bg-slate-100 px-3 py-1.5 font-bold text-slate-700 border-b border-slate-200">
-            3. Antecedentes Financieros, Bultos, V.B. y Observaciones
+        <!-- Hallazgos Críticos y Observaciones -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="border border-rose-200 bg-rose-50/40 rounded-md p-3">
+            <h4 class="font-bold text-rose-800 mb-1.5 flex items-center gap-1">
+              <span>🚨</span> Inconsistencias Graves (Impiden Legalizar)
+            </h4>
+            <ul id="listaErroresGraves" class="list-disc pl-4 space-y-1 text-[11px] text-rose-900"></ul>
           </div>
-          <div class="p-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5" id="secFinanciero"></div>
+          <div class="border border-amber-200 bg-amber-50/40 rounded-md p-3">
+            <h4 class="font-bold text-amber-800 mb-1.5 flex items-center gap-1">
+              <span>⚠️</span> Advertencias / Revisiones Preventivas
+            </h4>
+            <ul id="listaAdvertencias" class="list-disc pl-4 space-y-1 text-[11px] text-amber-900"></ul>
+          </div>
         </div>
 
-        <!-- Sección 4: Descripción de Mercancías / Ítems -->
+        <!-- Matriz Comparativa de Cruce Documental -->
         <div class="border border-slate-200 rounded-md overflow-hidden">
           <div class="bg-slate-100 px-3 py-1.5 font-bold text-slate-700 border-b border-slate-200">
-            4. Descripción de Mercancías (Ítems DUS)
+            2. Matriz de Validación Cruzada (DUS vs. Zona Primaria vs. Transporte vs. Factura/Packing)
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-left text-[11px]">
               <thead class="bg-slate-50 text-slate-600 border-b border-slate-200">
                 <tr>
-                  <th class="p-2">Ítem</th>
-                  <th class="p-2">Arancel (HS)</th>
-                  <th class="p-2">Nombre y Atributos (1 al 6)</th>
-                  <th class="p-2">Cant. / U.Med</th>
-                  <th class="p-2">Peso Bruto</th>
-                  <th class="p-2">P.Unit FOB</th>
-                  <th class="p-2">Valor FOB</th>
-                  <th class="p-2">Obs. Ítem (Cód/Val)</th>
+                  <th class="p-2">Campo Auditado</th>
+                  <th class="p-2">DUS (1° Mensaje)</th>
+                  <th class="p-2">Zona Primaria</th>
+                  <th class="p-2">AWB / BL / Guía</th>
+                  <th class="p-2">Factura / Packing</th>
+                  <th class="p-2 text-center">Estado</th>
                 </tr>
               </thead>
-              <tbody id="itemsTableBody" class="divide-y divide-slate-200"></tbody>
+              <tbody id="matrizCruceBody" class="divide-y divide-slate-200"></tbody>
             </table>
           </div>
         </div>
@@ -223,7 +243,7 @@
     let archivosSeleccionados = [];
     let textoLegajoConsolidado = '';
     let imagenesLegajoConsolidado = [];
-    let ultimoResultadoJSON = null;
+    let ultimoDictamenJSON = null;
 
     const fileInput = document.getElementById('fileInput');
     const fileList = document.getElementById('fileList');
@@ -231,9 +251,8 @@
     const clearAllBtn = document.getElementById('clearAllBtn');
     const fileCountBadge = document.getElementById('fileCountBadge');
 
-    // Cargar reglas de aprendizaje guardadas al iniciar
     window.addEventListener('DOMContentLoaded', () => {
-      const guardadas = localStorage.getItem('dus_ia_reglas_aprendidas');
+      const guardadas = localStorage.getItem('dus_auditoria_reglas');
       if (guardadas) {
         document.getElementById('reglasAprendidasInput').value = guardadas;
       }
@@ -241,13 +260,12 @@
 
     function guardarReglaAprendizaje() {
       const texto = document.getElementById('reglasAprendidasInput').value.trim();
-      localStorage.setItem('dus_ia_reglas_aprendidas', texto);
+      localStorage.setItem('dus_auditoria_reglas', texto);
       const estado = document.getElementById('estadoAprendizaje');
       estado.classList.remove('hidden');
       setTimeout(() => estado.classList.add('hidden'), 3000);
     }
 
-    // Agregar archivos sin sobrescribir los ya cargados
     fileInput.addEventListener('change', (e) => {
       const nuevos = Array.from(e.target.files);
       nuevos.forEach(nuevo => {
@@ -258,7 +276,6 @@
       renderFileList();
     });
 
-    // Eliminar un archivo específico de forma manual
     function eliminarArchivo(index) {
       archivosSeleccionados.splice(index, 1);
       textoLegajoConsolidado = '';
@@ -287,7 +304,7 @@
             <span class="truncate max-w-[210px]" title="${file.name}">📎 <strong>${file.name}</strong></span>
             <div class="flex items-center gap-2 shrink-0">
               <span class="text-slate-400 text-[10px]">${(file.size / 1024).toFixed(0)} KB</span>
-              <button type="button" onclick="eliminarArchivo(${idx})" title="Quitar archivo" class="text-rose-500 hover:text-rose-700 hover:bg-rose-50 font-bold px-1.5 py-0.5 rounded transition cursor-pointer">✕</button>
+              <button type="button" onclick="eliminarArchivo(${idx})" title="Eliminar documento" class="text-rose-500 hover:text-rose-700 hover:bg-rose-50 font-bold px-1.5 py-0.5 rounded transition cursor-pointer">✕</button>
             </div>
           `;
           fileList.appendChild(div);
@@ -298,7 +315,6 @@
       }
     }
 
-    // Utilidades de lectura multiformato
     function imagenAJpegBase64(img) {
       const ancho = img.naturalWidth;
       const alto = img.naturalHeight;
@@ -341,7 +357,6 @@
       return result.value;
     }
 
-    // Extraer contenido de todos los archivos actuales en memoria
     async function extraerContenidoArchivos(loadingTextEl) {
       let texto = '';
       let imgs = [];
@@ -364,7 +379,7 @@
           }
 
           if (textoDigitalPdf.trim().length > 80) {
-            texto += `\n=== PDF (${archivo.name}) ===\n${textoDigitalPdf}\n`;
+            texto += `\n=== DOCUMENTO PDF (${archivo.name}) ===\n${textoDigitalPdf}\n`;
           } else {
             if (imgs.length + pdf.numPages > MAX_IMAGENES) {
               throw new Error(`El PDF escaneado "${archivo.name}" supera el máximo de ${MAX_IMAGENES} páginas/imágenes.`);
@@ -392,9 +407,9 @@
           const img = await cargarImagen(archivo);
           imgs.push({ nombre: archivo.name, base64: imagenAJpegBase64(img) });
         } else if (ext === 'xls' || ext === 'xlsx') {
-          texto += `\n=== EXCEL (${archivo.name}) ===\n${await leerExcel(archivo)}\n`;
+          texto += `\n=== PLANILLA EXCEL (${archivo.name}) ===\n${await leerExcel(archivo)}\n`;
         } else if (ext === 'docx') {
-          texto += `\n=== WORD (${archivo.name}) ===\n${await leerWord(archivo)}\n`;
+          texto += `\n=== DOCUMENTO WORD (${archivo.name}) ===\n${await leerWord(archivo)}\n`;
         } else {
           const plano = await archivo.text();
           texto += `\n=== ARCHIVO (${archivo.name}) ===\n${plano}\n`;
@@ -405,7 +420,6 @@
       imagenesLegajoConsolidado = imgs;
     }
 
-    // Llamada directa a tu Edge Function en Supabase
     async function invocarLlamaSupabase(promptFinal, imagenes) {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
@@ -445,8 +459,8 @@
       }
     }
 
-    // 1. Extracción completa para llenar el DUS
-    async function procesarDocumentos() {
+    // Auditoría normativa según Compendio Aduanero de Chile
+    async function auditarLegalizacion() {
       if (archivosSeleccionados.length === 0) return;
 
       const loading = document.getElementById('loadingIndicator');
@@ -460,208 +474,242 @@
       try {
         await extraerContenidoArchivos(loadingText);
 
-        const reglasAprendidas = localStorage.getItem('dus_ia_reglas_aprendidas') || '';
-        const bloqueAprendizaje = reglasAprendidas ? `\nREGLAS APRENDIDAS DEL DESPACHADOR (APLICAR OBLIGATORIAMENTE):\n${reglasAprendidas}\n` : '';
+        const reglasAprendidas = localStorage.getItem('dus_auditoria_reglas') || '';
+        const bloqueReglas = reglasAprendidas ? `\nCRITERIOS ADICIONALES DEL DESPACHADOR:\n${reglasAprendidas}\n` : '';
 
-        const instruccionDUS = `Eres un experto tramitador y agente de aduanas en Chile especializado en confeccionar Documentos Únicos de Salida (DUS).
-Analiza todos los documentos adjuntos y extrae la información ordenada para llenar un DUS.
-${bloqueAprendizaje}
-Responde ÚNICAMENTE con un objeto JSON válido (sin markdown ni texto adicional) usando exactamente esta estructura (coloca "No especificado" si el dato no figura):
+        const promptAuditoria = `Eres un Auditor Senior de Comercio Exterior y Agente de Aduanas en Chile, experto en el Compendio de Normas Aduaneras (Capítulo IV - Salida de Mercancías y Legalización DUS 2° Mensaje).
+
+Tu misión es auditar de forma rigurosa los documentos adjuntos (DUS Aceptado a Trámite, Captura de Ingreso a Zona Primaria, Guía Aérea AWB / BL / CRT, Factura Comercial / Proforma y Lista de Empaque) para detectar CUALQUIER inconsistencia grave que impida legalizar la operación ante el Servicio Nacional de Aduanas.
+
+REGLAS NORMATIVAS OBLIGATORIAS A VERIFICAR:
+1. CONTROL DE PESOS Y TOLERANCIA +-10% (SMDA): Compara el Peso Bruto declarado en el DUS contra el peso registrado en el Ingreso a Zona Primaria y el Documento de Transporte (AWB/BL). Calcula la diferencia porcentual respecto al peso de Zona Primaria. Si la diferencia supera el +-10%, debes marcar "requiere_smda": true y advertir explícitamente que NO se puede legalizar sin presentar previamente una SMDA (Solicitud de Modificación a Documento Aduanero) por diferencia de peso fuera de tolerancia normativa.
+2. CANTIDAD Y TIPO DE BULTOS: Verifica coincidencia exacta entre DUS, Zona Primaria, Guía de Transporte y Packing List. Cualquier diferencia en bultos impide legalizar o exige SMDA.
+3. MONEDA Y VALORES: Verifica que el tipo de moneda (ej. DOLAR USA / USD) y los valores FOB / Cláusula de venta coincidan entre Factura Comercial/Proforma y DUS.
+4. ALMACENISTA / BODEGA (CÓD. 58): Verifica que el código y nombre de almacén/bodega en Zona Primaria coincida con el declarado en el DUS (ej. A97 TEISA, A10 AEROSAN, etc.).
+5. CONSIGNANTE (EXPORTADOR) Y CONSIGNATARIO: Verifica RUT, razón social y país de destino entre DUS, Factura y Guía de Transporte.
+6. DOCUMENTO DE TRANSPORTE Y VISTOS BUENOS: Verifica que el N° de AWB/BL/CRT y resoluciones de V.B. (SERNAPESCA, SAG, etc.) coincidan.
+${bloqueReglas}
+Responde ÚNICAMENTE con un objeto JSON válido (sin markdown ni texto extra) con esta estructura exacta:
 {
-  "identificacion": {
-    "aduana": "",
-    "tipo_operacion": "",
-    "exportador_rut": "",
-    "exportador_nombre": "",
-    "exportador_direccion": "",
-    "exportador_comuna": "",
-    "consignatario_nombre": "",
-    "consignatario_direccion": "",
-    "referencia_cliente": ""
+  "estado_general": "APROBADO_PARA_LEGALIZAR" | "RECHAZADO_INCONSISTENCIAS_GRAVES" | "REQUIERE_SMDA_O_REVISION",
+  "titulo_dictamen": "",
+  "resumen_ejecutivo": "",
+  "requiere_smda": false,
+  "control_peso": {
+    "peso_bruto_dus": "",
+    "peso_zona_primaria": "",
+    "peso_guia_transporte": "",
+    "diferencia_porcentual": "",
+    "dentro_tolerancia_10_porciento": true,
+    "conclusion_peso": ""
   },
-  "transporte": {
-    "puerto_embarque": "",
-    "puerto_desembarque": "",
-    "pais_destino": "",
-    "region_origen": "",
-    "via_transporte": "",
-    "tipo_carga": "",
-    "cia_transportadora": "",
-    "emisor_doc_transporte": "",
-    "numero_doc_transporte": "",
-    "nombre_nave_vuelo": ""
-  },
-  "financiero": {
-    "moneda": "",
-    "modalidad_venta": "",
-    "clausula_venta_incoterm": "",
-    "forma_pago": "",
-    "valor_fob_total": "",
-    "valor_flete": "",
-    "valor_seguro": "",
-    "valor_cif_total": "",
-    "total_bultos": "",
-    "tipo_bultos": "",
-    "identificacion_bultos": "",
-    "total_peso_bruto": "",
-    "vistos_buenos": "",
-    "observaciones_generales": ""
-  },
-  "items": [
+  "inconsistencias_graves": [
+    "Descripción clara de cada error grave que impide legalizar"
+  ],
+  "advertencias": [
+    "Observaciones menores o documentos faltantes en el legajo"
+  ],
+  "matriz_cruce": [
     {
-      "numero_item": "1",
-      "codigo_arancelario": "",
-      "nombre_mercancia": "",
-      "atributos": "",
-      "cantidad": "",
-      "unidad_medida": "",
-      "peso_bruto": "",
-      "precio_unitario_fob": "",
-      "valor_fob": "",
-      "observaciones_item": ""
+      "campo": "Cantidad de Bultos",
+      "valor_dus": "",
+      "valor_zona_primaria": "",
+      "valor_transporte": "",
+      "valor_factura_packing": "",
+      "coincide": true
+    },
+    {
+      "campo": "Peso Bruto (KN)",
+      "valor_dus": "",
+      "valor_zona_primaria": "",
+      "valor_transporte": "",
+      "valor_factura_packing": "",
+      "coincide": true
+    },
+    {
+      "campo": "Tipo de Moneda",
+      "valor_dus": "",
+      "valor_zona_primaria": "N/A",
+      "valor_transporte": "",
+      "valor_factura_packing": "",
+      "coincide": true
+    },
+    {
+      "campo": "Valor FOB / Total",
+      "valor_dus": "",
+      "valor_zona_primaria": "N/A",
+      "valor_transporte": "",
+      "valor_factura_packing": "",
+      "coincide": true
+    },
+    {
+      "campo": "Almacén / Bodega (Cód. 58)",
+      "valor_dus": "",
+      "valor_zona_primaria": "",
+      "valor_transporte": "",
+      "valor_factura_packing": "N/A",
+      "coincide": true
+    },
+    {
+      "campo": "Exportador / Consignante",
+      "valor_dus": "",
+      "valor_zona_primaria": "",
+      "valor_transporte": "",
+      "valor_factura_packing": "",
+      "coincide": true
+    },
+    {
+      "campo": "Consignatario y Destino",
+      "valor_dus": "",
+      "valor_zona_primaria": "N/A",
+      "valor_transporte": "",
+      "valor_factura_packing": "",
+      "coincide": true
+    },
+    {
+      "campo": "N° Docto. Transporte (AWB/BL)",
+      "valor_dus": "",
+      "valor_zona_primaria": "",
+      "valor_transporte": "",
+      "valor_factura_packing": "",
+      "coincide": true
     }
   ]
-}\n\nDOCUMENTOS DEL LEGAJO:\n`;
+}\n\nDOCUMENTOS DEL LEGAJO A AUDITAR:\n`;
 
-        let promptCompleto = instruccionDUS + textoLegajoConsolidado;
+        let promptCompleto = promptAuditoria + textoLegajoConsolidado;
         if (promptCompleto.length > MAX_CHARS_TEXTO) {
           promptCompleto = promptCompleto.slice(0, MAX_CHARS_TEXTO);
-          avisoEl.textContent = '⚠️ Texto recortado por extensión; verifica los datos.';
+          avisoEl.textContent = '⚠️ El texto consolidado superó el límite de caracteres y fue recortado parcialmente.';
           avisoEl.classList.remove('hidden');
         }
 
-        loadingText.textContent = 'Analizando y estructurando DUS con Llama...';
+        loadingText.textContent = 'Aplicando reglas del Compendio Aduanero con Llama...';
         const contenidoIA = await invocarLlamaSupabase(promptCompleto, imagenesLegajoConsolidado);
 
-        let datosDUS = null;
+        let dictamen = null;
         if (typeof contenidoIA === 'string') {
           const jsonMatch = contenidoIA.match(/\{[\s\S]*\}/);
           if (jsonMatch) {
-            try { datosDUS = JSON.parse(jsonMatch[0]); } catch (e) { datosDUS = null; }
+            try { dictamen = JSON.parse(jsonMatch[0]); } catch (e) { dictamen = null; }
           }
         } else if (typeof contenidoIA === 'object' && contenidoIA !== null) {
-          datosDUS = contenidoIA;
+          dictamen = contenidoIA;
         }
 
-        document.getElementById('emptyStateDUS').classList.add('hidden');
+        document.getElementById('emptyStateAuditoria').classList.add('hidden');
 
-        if (datosDUS && (datosDUS.identificacion || datosDUS.items)) {
-          ultimoResultadoJSON = datosDUS;
+        if (dictamen && (dictamen.estado_general || dictamen.matriz_cruce)) {
+          ultimoDictamenJSON = dictamen;
           document.getElementById('rawFallbackContainer').classList.add('hidden');
-          renderizarFichaDUS(datosDUS);
+          renderizarDictamen(dictamen);
         } else {
-          ultimoResultadoJSON = { respuesta: contenidoIA };
-          document.getElementById('dusStructuredContainer').classList.add('hidden');
+          ultimoDictamenJSON = { informe: contenidoIA };
+          document.getElementById('auditoriaContainer').classList.add('hidden');
           document.getElementById('rawFallbackText').textContent = typeof contenidoIA === 'string' ? contenidoIA : JSON.stringify(contenidoIA, null, 2);
           document.getElementById('rawFallbackContainer').classList.remove('hidden');
         }
 
       } catch (error) {
         console.error(error);
-        alert('❌ Error al analizar documentos: ' + error.message);
+        alert('❌ Error durante la auditoría: ' + error.message);
       } finally {
         loading.classList.add('hidden');
         processBtn.disabled = false;
       }
     }
 
-    function renderizarFichaDUS(datos) {
-      const mapas = [
-        {
-          contenedor: 'secIdentificacion',
-          grupo: datos.identificacion || {},
-          campos: {
-            exportador_nombre: 'Consignante / Exportador',
-            exportador_rut: 'RUT Exportador',
-            exportador_direccion: 'Dirección Exportador',
-            exportador_comuna: 'Comuna / Cód.',
-            consignatario_nombre: 'Consignatario',
-            consignatario_direccion: 'Dirección Consignatario',
-            aduana: 'Aduana',
-            tipo_operacion: 'Tipo Operación',
-            referencia_cliente: 'Ref. Cliente / Factura'
-          }
-        },
-        {
-          contenedor: 'secTransporte',
-          grupo: datos.transporte || {},
-          campos: {
-            puerto_embarque: 'Puerto Embarque',
-            puerto_desembarque: 'Puerto Desembarque',
-            pais_destino: 'País Destino',
-            region_origen: 'Cód. Región Origen',
-            via_transporte: 'Vía Transporte',
-            tipo_carga: 'Tipo Carga',
-            cia_transportadora: 'Cía. Transportadora',
-            emisor_doc_transporte: 'Emisor Doc. Transporte',
-            numero_doc_transporte: 'N° Docto. Transporte (AWB/BL)',
-            nombre_nave_vuelo: 'Nave / Aerolínea'
-          }
-        },
-        {
-          contenedor: 'secFinanciero',
-          grupo: datos.financiero || {},
-          campos: {
-            moneda: 'Moneda',
-            modalidad_venta: 'Modalidad Venta',
-            clausula_venta_incoterm: 'Cláusula Venta (Incoterm)',
-            forma_pago: 'Forma de Pago',
-            valor_fob_total: 'Valor FOB Total',
-            valor_flete: 'Flete',
-            valor_seguro: 'Seguro',
-            valor_cif_total: 'Valor CIF Total',
-            total_bultos: 'Cantidad Bultos',
-            tipo_bultos: 'Tipo de Bulto (Cód/Desc)',
-            identificacion_bultos: 'Identificación Bultos',
-            total_peso_bruto: 'Total Peso Bruto',
-            vistos_buenos: 'Vistos Buenos (V.B.)',
-            observaciones_generales: 'Observaciones Generales'
-          }
-        }
-      ];
+    function renderizarDictamen(d) {
+      const banner = document.getElementById('dictamenBanner');
+      const icono = document.getElementById('dictamenIcono');
+      const titulo = document.getElementById('dictamenTitulo');
+      const resumen = document.getElementById('dictamenResumen');
+      const badgeSMDA = document.getElementById('badgeSMDA');
 
-      mapas.forEach(sec => {
-        const el = document.getElementById(sec.contenedor);
-        el.innerHTML = '';
-        for (const [key, label] of Object.entries(sec.campos)) {
-          const val = sec.grupo[key] || 'No especificado';
-          el.innerHTML += `
-            <div class="bg-slate-50/80 p-2 rounded border border-slate-200">
-              <label class="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">${label}</label>
-              <input type="text" data-sec="${sec.contenedor}" data-label="${label}" value="${String(val).replace(/"/g, '&quot;')}" class="dus-field-input w-full bg-white border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-800 font-medium focus:outline-none focus:border-indigo-500">
-            </div>
-          `;
-        }
-      });
+      // Estilo según estado
+      banner.className = 'p-3.5 rounded-lg border flex items-start gap-3 ';
+      if (d.estado_general === 'APROBADO_PARA_LEGALIZAR') {
+        banner.className += 'bg-emerald-50 border-emerald-300 text-emerald-900';
+        icono.textContent = '✅';
+      } else if (d.estado_general === 'REQUIERE_SMDA_O_REVISION') {
+        banner.className += 'bg-amber-50 border-amber-300 text-amber-900';
+        icono.textContent = '⚠️';
+      } else {
+        banner.className += 'bg-rose-50 border-rose-300 text-rose-900';
+        icono.textContent = '🛑';
+      }
 
-      const tbody = document.getElementById('itemsTableBody');
+      titulo.textContent = d.titulo_dictamen || d.estado_general;
+      resumen.textContent = d.resumen_ejecutivo || '';
+      badgeSMDA.classList.toggle('hidden', !d.requiere_smda);
+
+      // Control de Peso (+-10%)
+      const cp = d.control_peso || {};
+      document.getElementById('pesoDusVal').textContent = cp.peso_bruto_dus || 'No detectado';
+      document.getElementById('pesoZpVal').textContent = cp.peso_zona_primaria || 'No detectado';
+      document.getElementById('pesoGuiaVal').textContent = cp.peso_guia_transporte || 'No detectado';
+      document.getElementById('pesoVariacionVal').textContent = cp.diferencia_porcentual || '-';
+      document.getElementById('pesoAnalisisTexto').textContent = cp.conclusion_peso || '';
+
+      const pesoBadge = document.getElementById('pesoEstadoBadge');
+      if (cp.dentro_tolerancia_10_porciento === false) {
+        pesoBadge.textContent = 'FUERA DE RANGO (±10%) - PRESENTAR SMDA';
+        pesoBadge.className = 'text-[10px] px-2 py-0.5 rounded font-bold bg-rose-600 text-white';
+        document.getElementById('pesoVariacionVal').className = 'text-xs font-bold text-rose-600';
+      } else {
+        pesoBadge.textContent = 'DENTRO DE TOLERANCIA (±10%)';
+        pesoBadge.className = 'text-[10px] px-2 py-0.5 rounded font-bold bg-emerald-100 text-emerald-800';
+        document.getElementById('pesoVariacionVal').className = 'text-xs font-bold text-emerald-700';
+      }
+
+      // Listas de errores y advertencias
+      const ulGraves = document.getElementById('listaErroresGraves');
+      ulGraves.innerHTML = '';
+      if (d.inconsistencias_graves && d.inconsistencias_graves.length > 0) {
+        d.inconsistencias_graves.forEach(err => {
+          ulGraves.innerHTML += `<li>${err}</li>`;
+        });
+      } else {
+        ulGraves.innerHTML = '<li class="text-emerald-700 list-none -ml-4">✓ No se detectaron inconsistencias bloqueantes.</li>';
+      }
+
+      const ulAdv = document.getElementById('listaAdvertencias');
+      ulAdv.innerHTML = '';
+      if (d.advertencias && d.advertencias.length > 0) {
+        d.advertencias.forEach(adv => {
+          ulAdv.innerHTML += `<li>${adv}</li>`;
+        });
+      } else {
+        ulAdv.innerHTML = '<li class="text-slate-500 list-none -ml-4">Sin advertencias adicionales.</li>';
+      }
+
+      // Matriz de cruce
+      const tbody = document.getElementById('matrizCruceBody');
       tbody.innerHTML = '';
-      if (datos.items && Array.isArray(datos.items) && datos.items.length > 0) {
-        datos.items.forEach((item, i) => {
+      if (d.matriz_cruce && Array.isArray(d.matriz_cruce)) {
+        d.matriz_cruce.forEach(fila => {
+          const ok = fila.coincide;
           tbody.innerHTML += `
-            <tr class="hover:bg-slate-50">
-              <td class="p-2 font-bold text-slate-600">${item.numero_item || (i + 1)}</td>
-              <td class="p-2 font-mono font-bold text-indigo-700">${item.codigo_arancelario || '-'}</td>
-              <td class="p-2">
-                <div class="font-semibold text-slate-800">${item.nombre_mercancia || '-'}</div>
-                <div class="text-[10px] text-slate-500">${item.atributos || ''}</div>
+            <tr class="${ok ? 'hover:bg-slate-50' : 'bg-rose-50/70 font-medium'}">
+              <td class="p-2 font-bold text-slate-700">${fila.campo || '-'}</td>
+              <td class="p-2">${fila.valor_dus || '-'}</td>
+              <td class="p-2">${fila.valor_zona_primaria || '-'}</td>
+              <td class="p-2">${fila.valor_transporte || '-'}</td>
+              <td class="p-2">${fila.valor_factura_packing || '-'}</td>
+              <td class="p-2 text-center">
+                ${ok 
+                  ? '<span class="bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-bold text-[10px]">OK</span>' 
+                  : '<span class="bg-rose-600 text-white px-1.5 py-0.5 rounded font-bold text-[10px]">DISCREPANCIA</span>'}
               </td>
-              <td class="p-2">${item.cantidad || ''} ${item.unidad_medida || ''}</td>
-              <td class="p-2">${item.peso_bruto || '-'}</td>
-              <td class="p-2">${item.precio_unitario_fob || '-'}</td>
-              <td class="p-2 font-bold text-emerald-700">${item.valor_fob || '-'}</td>
-              <td class="p-2 text-[10px] text-slate-600">${item.observaciones_item || '-'}</td>
             </tr>
           `;
         });
-      } else {
-        tbody.innerHTML = '<tr><td colspan="8" class="p-3 text-center text-slate-400">Sin ítems detallados.</td></tr>';
       }
 
-      document.getElementById('dusStructuredContainer').classList.remove('hidden');
+      document.getElementById('auditoriaContainer').classList.remove('hidden');
     }
 
-    // 2. Módulo de Consultas / Preguntas sobre los documentos
+    // Consultas interactivas sobre el legajo
     function hacerPreguntaRapida(texto) {
       document.getElementById('questionInput').value = texto;
       enviarPregunta();
@@ -673,7 +721,7 @@ Responde ÚNICAMENTE con un objeto JSON válido (sin markdown ni texto adicional
       if (!pregunta) return;
 
       if (archivosSeleccionados.length === 0) {
-        alert('Primero carga al menos un documento para poder hacer preguntas sobre él.');
+        alert('Primero carga los documentos del legajo para poder consultar.');
         return;
       }
 
@@ -683,7 +731,7 @@ Responde ÚNICAMENTE con un objeto JSON válido (sin markdown ni texto adicional
       if (chatHistory.querySelector('.italic')) chatHistory.innerHTML = '';
 
       chatHistory.innerHTML += `
-        <div class="bg-indigo-600 text-white p-2 rounded-lg ml-6">
+        <div class="bg-sky-600 text-white p-2 rounded-lg ml-6">
           <strong>Tú:</strong> ${pregunta}
         </div>
       `;
@@ -692,17 +740,18 @@ Responde ÚNICAMENTE con un objeto JSON válido (sin markdown ni texto adicional
       chatHistory.scrollTop = chatHistory.scrollHeight;
 
       const tempId = 'msg-' + Date.now();
-      chatHistory.innerHTML += `<div id="${tempId}" class="text-slate-400 italic p-1">Analizando respuesta...</div>`;
+      chatHistory.innerHTML += `<div id="${tempId}" class="text-slate-400 italic p-1">Analizando bajo normativa aduanera...</div>`;
 
       try {
         if (!textoLegajoConsolidado && imagenesLegajoConsolidado.length === 0) {
           await extraerContenidoArchivos(null);
         }
 
-        const reglasAprendidas = localStorage.getItem('dus_ia_reglas_aprendidas') || '';
-        const promptPregunta = `Eres un asistente aduanero experto en Chile. Responde de forma directa, breve y precisa a la siguiente pregunta basándote EXCLUSIVAMENTE en los documentos cargados y en las reglas aprendidas.
-${reglasAprendidas ? 'REGLAS APRENDIDAS:\n' + reglasAprendidas + '\n' : ''}
-PREGUNTA DEL USUARIO: ${pregunta}
+        const reglasAprendidas = localStorage.getItem('dus_auditoria_reglas') || '';
+        const promptPregunta = `Eres un Auditor de Aduanas en Chile experto en Compendio de Normas Aduaneras (tolerancia peso +-10% respecto a Zona Primaria, SMDA, DUS 2° mensaje).
+Responde de manera directa, técnica y precisa a la pregunta del usuario basándote en los documentos cargados.
+${reglasAprendidas ? 'REGLAS DEL DESPACHADOR:\n' + reglasAprendidas + '\n' : ''}
+PREGUNTA: ${pregunta}
 
 DOCUMENTOS DEL LEGAJO:
 ${textoLegajoConsolidado.slice(0, MAX_CHARS_TEXTO - 1500)}`;
@@ -712,7 +761,7 @@ ${textoLegajoConsolidado.slice(0, MAX_CHARS_TEXTO - 1500)}`;
 
         document.getElementById(tempId).outerHTML = `
           <div class="bg-white border border-slate-200 text-slate-800 p-2 rounded-lg mr-4 shadow-2xs">
-            <strong class="text-indigo-700">IA DUS:</strong> ${textoFinal}
+            <strong class="text-sky-700">Auditor IA:</strong> ${textoFinal}
           </div>
         `;
       } catch (err) {
@@ -727,22 +776,31 @@ ${textoLegajoConsolidado.slice(0, MAX_CHARS_TEXTO - 1500)}`;
       }
     }
 
-    // Copiar ficha ordenada en texto limpio listo para pegar
-    function copiarResumenTexto() {
-      const inputs = document.querySelectorAll('.dus-field-input');
-      if (inputs.length === 0) return;
-      let texto = '=== DATOS PARA CONFECCIÓN DE DUS ===\n';
-      inputs.forEach(inp => {
-        texto += `${inp.dataset.label}: ${inp.value}\n`;
-      });
+    function copiarDictamen() {
+      if (!ultimoDictamenJSON) return;
+      const d = ultimoDictamenJSON;
+      if (!d.estado_general) {
+        navigator.clipboard.writeText(JSON.stringify(d, null, 2));
+        alert('Informe copiado al portapapeles.');
+        return;
+      }
+      let texto = `=== DICTAMEN PRE-LEGALIZACIÓN DUS ===\n`;
+      texto += `Estado: ${d.estado_general} (${d.titulo_dictamen})\n`;
+      texto += `Requiere SMDA: ${d.requiere_smda ? 'SÍ' : 'NO'}\n`;
+      texto += `Resumen: ${d.resumen_ejecutivo}\n\n`;
+      if (d.control_peso) {
+        texto += `--- CONTROL DE PESOS (±10% ZONA PRIMARIA) ---\n`;
+        texto += `DUS: ${d.control_peso.peso_bruto_dus} | Zona Primaria: ${d.control_peso.peso_zona_primaria} | Guía: ${d.control_peso.peso_guia_transporte} | Variación: ${d.control_peso.diferencia_porcentual}\n`;
+        texto += `${d.control_peso.conclusion_peso}\n\n`;
+      }
+      if (d.inconsistencias_graves?.length) {
+        texto += `--- INCONSISTENCIAS GRAVES ---\n- ${d.inconsistencias_graves.join('\n- ')}\n\n`;
+      }
+      if (d.advertencias?.length) {
+        texto += `--- ADVERTENCIAS ---\n- ${d.advertencias.join('\n- ')}\n`;
+      }
       navigator.clipboard.writeText(texto);
-      alert('Ficha DUS ordenada copiada al portapapeles.');
-    }
-
-    function copiarJSON() {
-      if (!ultimoResultadoJSON) return;
-      navigator.clipboard.writeText(JSON.stringify(ultimoResultadoJSON, null, 2));
-      alert('Datos DUS copiados en formato JSON.');
+      alert('Dictamen técnico de legalización copiado al portapapeles.');
     }
   </script>
   <!--todos los derechos reservados para sergio figueroa quien puede administrar, ceder areenday y vender el aplicativo-->
