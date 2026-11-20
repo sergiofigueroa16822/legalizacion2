@@ -1,1285 +1,727 @@
 <!DOCTYPE html>
-<html lang="es" class="h-full">
+<html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DUS Aérea Chile | Validador Aduanero</title>
-
-  <!-- Tailwind CSS CDN + Configuración de Colores -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Auditor Pre-Legalización DUS - Compendio Aduanero Chile</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- PDF.js para lectura ordenada de PDF y miniaturas -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            aduana: {
-              50: '#f0f4f8', 100: '#d9e2ec', 500: '#102a43',
-              600: '#0b69a3', 700: '#003e6b', 800: '#002744', 900: '#00192d'
-            }
-          }
-        }
-      }
-    }
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   </script>
-
-  <!-- FontAwesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-  <!-- Google Fonts (Inter) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-
-  <!-- Estilos Personalizados -->
-  <link rel="stylesheet" href="styles.css">
+  <!-- Tesseract.js para OCR local en navegador (0 tokens de imagen a Groq) -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <!-- SheetJS para Excel y Mammoth para Word -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 </head>
-<body class="bg-slate-100 font-sans text-slate-800 antialiased min-h-screen">
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen">
 
-  <!-- ========================================== -->
-  <!-- VISTA 1: INICIO DE SESIÓN (LOGIN)          -->
-  <!-- ========================================== -->
-  <div id="login-view" class="min-h-screen flex items-center justify-center p-4 bg-slate-900">
-    <div class="max-w-md w-full bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-700">
-
-      <!-- Encabezado del Login -->
-      <div class="bg-aduana-700 p-6 text-center text-white space-y-2">
-        <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-white/10 text-white mb-1">
-          <i class="fa-solid fa-plane-departure text-2xl"></i>
-        </div>
-        <h1 class="text-xl font-bold tracking-tight">DUS Aérea Chile</h1>
-        <p class="text-xs text-blue-100">Validador Normativo Aduanero & Legalización DUS</p>
+  <!-- Barra Superior -->
+  <header class="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between sticky top-0 z-30 shadow-sm">
+    <div class="flex items-center gap-3">
+      <span class="text-2xl">⚖️</span>
+      <div>
+        <h1 class="text-base md:text-lg font-bold text-slate-900">Auditor IA Pre-Legalización DUS (Compendio Aduanero Chile)</h1>
+        <p class="Carga documentos de la operacion para analisis y cruce de infromacion con inteligencia artificial</p>
       </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <!-- Indicador de Tokens en Vivo -->
+      <span id="tokenMeter" class="hidden sm:inline-block text-xs font-semibold px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+        Consumo est.: 0 / 7.000 tokens
+      </span>
+      <span class="hidden md:inline-block text-[11px] font-semibold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+        🟢 IA activa
+      </span>
+      <a href="index.html" class="text-xs bg-slate-800 hover:bg-slate-900 text-white font-medium px-3.5 py-1.5 rounded-lg transition">
+        ← Volver
+      </a>
+    </div>
+  </header>
 
-      <!-- Formulario de Autenticación -->
-      <div class="p-6 space-y-4">
-        <form id="login-form" class="space-y-4">
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1" for="login-email">Correo Electrónico</label>
-            <div class="relative">
-              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                <i class="fa-solid fa-envelope text-xs"></i>
-              </span>
-              <input type="email" id="login-email" required placeholder="usuario@agencia.cl" class="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-aduana-500 focus:border-aduana-500 outline-none transition">
-            </div>
-          </div>
+  <!-- Contenedor Principal 2 Columnas -->
+  <main class="max-w-[1440px] mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1" for="login-password">Contraseña</label>
-            <div class="relative">
-              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                <i class="fa-solid fa-lock text-xs"></i>
-              </span>
-              <input type="password" id="login-password" required placeholder="••••••••" class="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-aduana-500 focus:border-aduana-500 outline-none transition">
-            </div>
-          </div>
+    <!-- COLUMNA IZQUIERDA (4 cols): Carga, Miniaturas, Chat y Reglas -->
+    <div class="lg:col-span-4 space-y-5">
 
-          <button type="submit" id="login-submit-btn" class="w-full bg-aduana-600 hover:bg-aduana-700 active:bg-aduana-800 text-white font-bold py-2.5 rounded-lg shadow-md transition flex items-center justify-center gap-2 text-sm cursor-pointer">
-            <span>Ingresar al Sistema</span>
-            <i class="fa-solid fa-arrow-right text-xs"></i>
+      <!-- 1. Documentos y Miniaturas -->
+      <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+        <div class="flex items-center justify-between mb-1">
+          <h2 class="text-sm font-bold text-slate-800">📂 Documentos y Miniaturas del Legajo</h2>
+          <span id="docCounter" class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">0 pág/arch.</span>
+        </div>
+        <p class="text-xs text-slate-500 mb-3">Carga tus PDF, imágenes, Excel o Word. Se convertirán a texto ordenado localmente:</p>
+
+        <div class="flex gap-2 mb-3">
+          <label class="flex-1 cursor-pointer bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-semibold py-2 px-3 rounded-lg text-center transition">
+            + Seleccionar Archivos
+            <input id="fileInput" type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.webp,.xlsx,.xls,.docx" class="hidden" />
+          </label>
+          <button id="btnVaciar" class="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-semibold py-2 px-3 rounded-lg transition">
+            Vaciar Todo
           </button>
-        </form>
-
-        <div class="pt-4 border-t border-slate-100 text-center">
-          <p class="text-[11px] text-slate-400">Acceso restringido para personal de operaciones y agentes de aduana.</p>
         </div>
-      </div>
 
+        <!-- Barra de progreso OCR / Extracción -->
+        <div id="extractProgress" class="hidden mb-3 bg-amber-50 border border-amber-200 text-amber-800 text-xs px-3 py-2 rounded-lg flex items-center gap-2">
+          <span class="animate-spin">⏳</span>
+          <span id="extractProgressText">Procesando documentos...</span>
+        </div>
+
+        <!-- Grilla de Miniaturas -->
+        <div id="thumbnailsGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-64 overflow-y-auto p-1">
+          <div class="col-span-full text-center py-8 border-2 border-dashed border-slate-200 rounded-lg text-xs text-slate-400">
+            No hay documentos cargados aún
+          </div>
+        </div>
+
+        <button id="btnAuditar" disabled class="mt-4 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-semibold text-sm py-2.5 px-4 rounded-lg shadow-sm transition flex items-center justify-center gap-2">
+          <span>🔍</span> Auditar Miniaturas y Cruzar Datos DUS
+        </button>
+      </section>
+
+      <!-- 2. Consultar al Legajo Visible -->
+      <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+        <h2 class="text-sm font-bold text-slate-800 mb-2">💬 Consultar al Legajo Visible</h2>
+        
+        <div class="flex flex-wrap gap-1.5 mb-3">
+          <button onclick="preguntaRapida('¿El peso bruto de la DUS cumple la tolerancia del ±10% respecto a Zona Primaria y Guía o requiere SMDA?')" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-full transition">
+            ¿Peso / SMDA (±10%)?
+          </button>
+          <button onclick="preguntaRapida('Verifica el código de almacén/bodega, cantidad de bultos y número de guía de transporte en todos los documentos.')" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-full transition">
+            ¿Bodega, bultos y guía?
+          </button>
+          <button onclick="preguntaRapida('Compara exportador, consignatario, país de destino, cláusula Incoterm y moneda entre DUS y Factura.')" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-full transition">
+            ¿Partes, destino y moneda?
+          </button>
+        </div>
+
+        <div id="chatHistory" class="bg-slate-50 border border-slate-200 rounded-lg p-3 h-44 overflow-y-auto space-y-2.5 mb-3 text-xs">
+          <div class="text-slate-400 text-center py-10">Ejecuta la auditoría y luego haz preguntas específicas sobre el legajo aquí.</div>
+        </div>
+
+        <div class="flex gap-2">
+          <input id="chatInput" type="text" placeholder="Ej: ¿Coincide el consignatario en AWB y DUS?" class="flex-1 text-xs border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500" />
+          <button id="btnPreguntar" class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">
+            Preguntar
+          </button>
+        </div>
+      </section>
+
+      <!-- 3. Reglas Aprendidas -->
+      <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-sm font-bold text-slate-800">🧠 Reglas Aprendidas</h2>
+          <button id="btnGuardarReglas" class="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-semibold px-2.5 py-1 rounded-md transition">
+            Guardar
+          </button>
+        </div>
+        <textarea id="reglasInput" rows="3" placeholder="Ej: Almacenista A97 TEISA o A10 AEROSAN debe coincidir con Zona Primaria. Tolerancia peso +-10%." class="w-full text-xs border border-slate-300 rounded-lg p-2.5 focus:outline-none focus:border-indigo-500"></textarea>
+      </section>
+
+    </div>
+
+    <!-- COLUMNA DERECHA (8 cols): Dictamen Técnico de Pre-Legalización -->
+    <div class="lg:col-span-8">
+      <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[760px]">
+        <div class="flex items-center justify-between border-b border-slate-200 pb-4 mb-5">
+          <h2 class="text-base md:text-lg font-bold text-slate-900">Dictamen Técnico de Pre-Legalización (Compendio Aduanero)</h2>
+          <button id="btnCopiarInforme" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-3 py-1.5 rounded-lg border border-slate-300 transition">
+            Copiar Informe
+          </button>
+        </div>
+
+        <!-- Estado Vacío Inicial -->
+        <div id="emptyReport" class="text-center py-28 text-slate-400">
+          <div class="text-5xl mb-3">📋</div>
+          <p class="text-sm font-medium text-slate-600">Carga los documentos del despacho y presiona "Auditar Miniaturas y Cruzar Datos DUS"</p>
+          <p class="text-xs mt-1">El sistema extraerá el texto ordenado y validará pesos, valores, bultos y normativa aduanera.</p>
+        </div>
+
+        <!-- Contenedor del Reporte Estructurado -->
+        <div id="reportContainer" class="hidden space-y-6">
+          
+          <!-- Banner Veredicto -->
+          <div id="verdictBox" class="rounded-xl p-5 border">
+            <div class="flex items-start gap-3">
+              <span id="verdictIcon" class="text-3xl">🛑</span>
+              <div>
+                <h3 id="verdictTitle" class="text-base md:text-lg font-extrabold uppercase tracking-tight"></h3>
+                <p id="verdictSummary" class="text-xs md:text-sm mt-1.5 leading-relaxed"></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 1. Control de Pesos y Tolerancia -->
+          <div class="border border-slate-200 rounded-xl p-4 bg-slate-50/50">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <h4 class="text-sm font-bold text-slate-800">1. Control de Pesos y Tolerancia (±10% Zona Primaria)</h4>
+              <span id="weightBadge" class="text-[11px] font-bold px-3 py-1 rounded-full uppercase"></span>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+              <div class="bg-white border border-slate-200 rounded-lg p-3">
+                <span class="block text-[10px] font-bold text-slate-400 uppercase">PESO DUS (BRUTO)</span>
+                <span id="pesoDus" class="text-sm font-extrabold text-slate-800 mt-0.5 block">-</span>
+              </div>
+              <div class="bg-white border border-slate-200 rounded-lg p-3">
+                <span class="block text-[10px] font-bold text-slate-400 uppercase">PESO ZONA PRIMARIA</span>
+                <span id="pesoZp" class="text-sm font-extrabold text-slate-800 mt-0.5 block">-</span>
+              </div>
+              <div class="bg-white border border-slate-200 rounded-lg p-3">
+                <span class="block text-[10px] font-bold text-slate-400 uppercase">PESO GUÍA (AWB/BL)</span>
+                <span id="pesoGuia" class="text-sm font-extrabold text-slate-800 mt-0.5 block">-</span>
+              </div>
+              <div class="bg-white border border-slate-200 rounded-lg p-3">
+                <span class="block text-[10px] font-bold text-slate-400 uppercase">VARIACIÓN VS ZP (%)</span>
+                <span id="variacionPeso" class="text-sm font-extrabold text-slate-800 mt-0.5 block">-</span>
+              </div>
+            </div>
+            <p id="weightNote" class="text-xs text-slate-600"></p>
+          </div>
+
+          <!-- Grid Inconsistencias y Advertencias -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-rose-50/70 border border-rose-200 rounded-xl p-4">
+              <h4 class="text-sm font-bold text-rose-800 mb-2">🚨 Inconsistencias Graves (Impiden Legalizar)</h4>
+              <ul id="gravesList" class="list-disc pl-4 space-y-1.5 text-xs text-rose-900"></ul>
+            </div>
+            <div class="bg-amber-50/70 border border-amber-200 rounded-xl p-4">
+              <h4 class="text-sm font-bold text-amber-800 mb-2">⚠️ Advertencias / Revisiones</h4>
+              <ul id="advertenciasList" class="list-disc pl-4 space-y-1.5 text-xs text-amber-900"></ul>
+            </div>
+          </div>
+
+          <!-- 2. Matriz de Validación Cruzada -->
+          <div>
+            <h4 class="text-sm font-bold text-slate-800 mb-3">2. Matriz de Validación Cruzada</h4>
+            <div class="overflow-x-auto border border-slate-200 rounded-xl">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="bg-slate-100 text-slate-700 border-b border-slate-200">
+                    <th class="py-2.5 px-3 font-bold">Campo Auditado</th>
+                    <th class="py-2.5 px-3 font-bold">DUS</th>
+                    <th class="py-2.5 px-3 font-bold">Zona Primaria</th>
+                    <th class="py-2.5 px-3 font-bold">AWB / BL</th>
+                    <th class="py-2.5 px-3 font-bold">Factura / Packing</th>
+                    <th class="py-2.5 px-3 font-bold text-center">Estado</th>
+                  </tr>
+                </thead>
+                <tbody id="matrixBody" class="divide-y divide-slate-200"></tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </section>
+    </div>
+
+  </main>
+
+  <!-- Modal para Ampliar Miniatura y Ver Texto Extraído -->
+  <div id="previewModal" class="hidden fixed inset-0 bg-slate-900/80 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+      <div class="px-5 py-3 border-b border-slate-200 flex items-center justify-between">
+        <h3 id="modalTitle" class="text-sm font-bold text-slate-800 truncate">Vista Previa</h3>
+        <button onclick="cerrarModal()" class="text-slate-500 hover:text-rose-600 font-bold text-lg">✕</button>
+      </div>
+      <div class="p-4 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50">
+        <div class="bg-white p-2 rounded-lg border border-slate-200 flex items-center justify-center">
+          <img id="modalImg" src="" class="max-h-[65vh] object-contain" />
+        </div>
+        <div class="bg-slate-900 text-emerald-400 p-3 rounded-lg font-mono text-[11px] overflow-y-auto max-h-[65vh] whitespace-pre-wrap" id="modalText"></div>
+      </div>
     </div>
   </div>
 
-  <!-- ========================================== -->
-  <!-- VISTA 2: APLICACIÓN PRINCIPAL              -->
-  <!-- ========================================== -->
-  <div id="app-view" class="hidden min-h-screen flex-col">
-
-    <header class="bg-aduana-900 text-white shadow-md border-b-4 border-aduana-600 no-print">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap justify-between items-center gap-4">
-        <div class="flex items-center space-x-3">
-          <div class="bg-aduana-600 text-white font-bold text-xl p-2.5 rounded-xl shadow-sm border border-aduana-500">
-            <i class="fa-solid fa-plane-departure"></i>
-          </div>
-          <div>
-            <h1 class="text-lg font-extrabold tracking-tight leading-none text-white flex items-center gap-2">
-              DUS Aérea + Vistos Buenos Chile
-              <span class="text-xs bg-aduana-800 text-sky-200 font-mono px-2 py-0.5 rounded font-semibold border border-aduana-600">Arancel SNA & CNA Cap. IV</span>
-            </h1>
-            <p class="text-xs text-slate-300 mt-1">Asistente de Legalización Aduanera, Póliza, AWB y Certificados Regulatorios</p>
-          </div>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-2.5 text-xs">
-          <a href="extractor-ia-dus.html" class="bg-aduana-600 hover:bg-aduana-700 text-white px-3 py-1.5 rounded-lg border border-aduana-500 transition flex items-center gap-1.5 font-semibold shadow-sm">
-            <i class="fa-solid fa-wand-magic-sparkles"></i> Extractor IA DUS
-          </a>
-          <button type="button" onclick="copyChecklistToClipboard()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1.5 font-medium cursor-pointer">
-            <i class="fa-regular fa-copy"></i> Copiar
-          </button>
-          <button type="button" onclick="window.print()" class="bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-1.5 rounded-lg transition font-medium flex items-center gap-1.5 shadow-sm cursor-pointer">
-            <i class="fa-solid fa-print"></i> Imprimir Expediente
-          </button>
-          <button id="logout-btn" type="button" class="bg-red-900/60 hover:bg-red-800 text-red-200 px-3 py-1.5 rounded-lg border border-red-700/50 transition font-medium flex items-center gap-1 cursor-pointer">
-            <i class="fa-solid fa-right-from-bracket"></i> Salir
-          </button>
-        </div>
-      </div>
-    </header>
-
-    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-      <!-- PANEL IZQUIERDO: CONFIGURADOR & BUSCADOR ARANCELARIO (5 columnas) -->
-      <section class="lg:col-span-5 space-y-5 no-print">
-
-        <!-- TARJETA: BUSCADOR DE ARANCEL DE ADUANAS DE CHILE -->
-        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-3 relative">
-          <div class="border-b border-slate-100 pb-2 flex justify-between items-center">
-            <label for="hs-search-input" class="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-              <i class="fa-solid fa-barcode text-aduana-600 text-sm"></i> 1. Código Arancelario / Glosa Chilena
-            </label>
-            <span id="db-status-badge" class="text-[10px] bg-slate-100 text-slate-600 font-mono px-1.5 py-0.5 rounded">Cargando BD...</span>
-          </div>
-
-          <div class="relative">
-            <div class="relative">
-              <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                <i class="fa-solid fa-magnifying-glass text-xs"></i>
-              </span>
-              <input type="text" id="hs-search-input" onkeyup="filterTariffCodes()" placeholder="Buscar por código (ej. 0101.21.00 u 01012100) o descripción..."
-                     class="w-full pl-9 pr-8 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:ring-2 focus:ring-aduana-600 focus:border-aduana-600 bg-slate-50">
-              <button type="button" onclick="clearHsSearch()" class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer">
-                <i class="fa-solid fa-xmark text-xs"></i>
-              </button>
-            </div>
-
-            <!-- Lista desplegable de sugerencias -->
-            <div id="hs-dropdown" class="hidden absolute z-30 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 overflow-y-auto custom-scroll divide-y divide-slate-100 text-xs">
-            </div>
-          </div>
-
-          <!-- Partida Seleccionada Actual -->
-          <div id="selected-tariff-card" class="p-3 bg-slate-900 text-white rounded-lg border border-slate-800 space-y-1">
-            <div class="flex justify-between items-center text-[10px] font-mono text-slate-400">
-              <span>CÓDIGO ARANCELARIO SELECCIONADO</span>
-              <span id="tariff-organismo-badge" class="bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-bold border border-amber-500/30">N/A</span>
-            </div>
-            <div class="flex items-baseline gap-2">
-              <span id="tariff-code-display" class="font-mono text-sm font-extrabold text-amber-400">--</span>
-              <span id="tariff-glosa-display" class="font-bold text-xs truncate text-slate-100">Seleccione un código</span>
-            </div>
-            <p id="tariff-vobo-desc" class="text-[11px] text-slate-300 leading-tight pt-1 border-t border-slate-800/80">
-              Ingrese un código o palabra clave para realizar la consulta en la base arancelaria.
-            </p>
-          </div>
-        </div>
-
-        <!-- TARJETA: PARÁMETROS OPERATIVOS DUS -->
-        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-4">
-
-          <div class="border-b border-slate-100 pb-2 flex justify-between items-center">
-            <h2 class="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
-              <i class="fa-solid fa-sliders text-aduana-600"></i> 2. Datos Operativos de Salida
-            </h2>
-            <span class="text-[10px] text-slate-400 font-mono">CNA Cap. IV</span>
-          </div>
-
-          <!-- Régimen / Destinación Aduanera -->
-          <div class="space-y-1">
-            <label for="sel-regimen" class="block text-[11px] font-bold text-slate-700">Régimen / Destinación Aduanera</label>
-            <select id="sel-regimen" onchange="onRegimenChange()" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-aduana-600 bg-slate-50">
-              <option value="DEF" selected>Exportación Definitiva (Código 200)</option>
-              <option value="TEMP_SALIDA">Salida Temporal (Código 20)</option>
-              <option value="TEMP_PERFECC">Salida Temporal p/ Perfeccionamiento Pasivo (Código 21)</option>
-              <option value="TEMP_PASAJERO">Pasajeros / Propios Medios (Trámite Agencia)</option>
-              <option value="REEXP">Reexportación de Mercancías (Código 30)</option>
-              <option value="RANCHO">Rancho / Provisiones de A bordo (Código 40)</option>
-            </select>
-          </div>
-
-          <!-- Opciones específicas para Régimen de Pasajeros -->
-          <div id="pasajero-options" class="hidden p-3 bg-indigo-50/70 border border-indigo-200 rounded-xl space-y-2.5">
-            <div class="text-[11px] font-extrabold text-indigo-900 flex items-center gap-1.5">
-              <i class="fa-solid fa-passport text-indigo-600"></i> Parámetros de Pasajero / Propios Medios
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div>
-                <label for="sel-motivo-pasajero" class="block text-[10px] font-bold text-slate-700 mb-0.5">Motivo de Salida</label>
-                <select id="sel-motivo-pasajero" onchange="evaluarReglasAereas()" class="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 bg-white">
-                  <option value="EXPORTACION_PROFORMA" selected>Sin Venta / Proforma</option>
-                  <option value="REPARACION">Reparación / Garantía (RMA)</option>
-                  <option value="FERIA">Feria / Exposición</option>
-                  <option value="EQUIPO_PROF">Equipo Profesional</option>
-                </select>
-              </div>
-              <div>
-                <label for="sel-modalidad-pasajero" class="block text-[10px] font-bold text-slate-700 mb-0.5">Modalidad de Transporte</label>
-                <select id="sel-modalidad-pasajero" onchange="evaluarReglasAereas()" class="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 bg-white">
-                  <option value="ACOMPANADO" selected>Equipaje Acompañado</option>
-                  <option value="NO_ACOMPANADO">Equipaje No Acompañado (AWB)</option>
-                </select>
-              </div>
-            </div>
-
-            <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-700 pt-0.5">
-              <input type="checkbox" id="chk-seguro-pasajero" onchange="evaluarReglasAereas()" class="rounded text-indigo-600">
-              <span class="text-[11px]">¿Cuenta con póliza de seguro contratada para el pasajero?</span>
-            </label>
-          </div>
-
-          <!-- Modalidad de Venta y Forma de Pago -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            <div class="space-y-1">
-              <label for="sel-modalidad-venta" class="block text-[11px] font-bold text-slate-700">Modalidad de Venta</label>
-              <select id="sel-modalidad-venta" onchange="actualizarFormasPagoCompatible(); evaluarReglasAereas();" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 bg-slate-50 focus:ring-2 focus:ring-aduana-600">
-                <option value="FIRME" selected>A Firme (Venta Definitiva)</option>
-                <option value="CONDICION">Bajo Condición</option>
-                <option value="CONSIGNACION">A Consignación</option>
-                <option value="LIBRE">Libre / Sin Valor Comercial</option>
-              </select>
-            </div>
-
-            <div class="space-y-1">
-              <label for="sel-forma-pago" class="block text-[11px] font-bold text-slate-700">Forma de Pago</label>
-              <select id="sel-forma-pago" onchange="evaluarReglasAereas()" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 bg-slate-50 focus:ring-2 focus:ring-aduana-600">
-                <option value="CONTADO" selected>Contado / Anticipado</option>
-                <option value="COBRANZA">Cobranza Documentaria</option>
-                <option value="CREDITO">Carta de Crédito</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Incoterm Aéreo (Se oculta en Pasajeros y Rancho) -->
-          <div id="incoterm-container" class="space-y-1">
-            <label for="sel-incoterm" class="block text-[11px] font-bold text-slate-700">Incoterm 2020 (Exclusivo Aéreo/Multimodal)</label>
-            <select id="sel-incoterm" onchange="actualizarBarraIncoterm(); evaluarReglasAereas();" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs font-bold text-aduana-900 bg-slate-50 focus:ring-2 focus:ring-aduana-600">
-              <option value="EXW">EXW - Ex Works (En Fábrica)</option>
-              <option value="FCA" selected>FCA - Free Carrier (Libre Transportista)</option>
-              <option value="CPT">CPT - Carriage Paid To (Flete Pagado Hasta)</option>
-              <option value="CIP">CIP - Carriage & Insurance Paid To (Flete y Seguro Pagados)</option>
-              <option value="DAP">DAP - Delivered at Place (Entregado en Lugar)</option>
-              <option value="DPU">DPU - Delivered at Place Unloaded (Descargado en Destino)</option>
-              <option value="DDP">DDP - Delivered Duty Paid (Derechos Pagados)</option>
-            </select>
-          </div>
-
-          <!-- BARRA GRÁFICA DE TRANSFERENCIA DE RIESGO -->
-          <div id="risk-graph-box" class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 shadow-sm">
-            <div class="flex justify-between items-center text-xs">
-              <span class="font-extrabold text-slate-800 flex items-center gap-1.5">
-                <i class="fa-solid fa-scale-balanced text-aduana-600"></i> Distribución de Responsabilidad y Riesgo:
-              </span>
-              <span id="incoterm-risk-badge" class="font-mono font-extrabold text-[11px] px-2 py-0.5 rounded bg-aduana-100 text-aduana-800 border border-aduana-200">FCA</span>
-            </div>
-
-            <div class="flex justify-between text-[11px] font-bold px-1 text-slate-600">
-              <span class="text-aduana-700 flex items-center gap-1"><i class="fa-solid fa-user-tie text-[10px]"></i> Riesgo Vendedor</span>
-              <span class="flex items-center gap-1">Riesgo Comprador <i class="fa-solid fa-user text-[10px]"></i></span>
-            </div>
-
-            <div class="relative py-3">
-              <div class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-3 bg-slate-200 rounded-full overflow-hidden shadow-inner">
-                <div id="risk-bar-seller" class="h-full bg-aduana-600 transition-all duration-500 rounded-l-full" style="width: 30%;"></div>
-              </div>
-
-              <div class="relative flex justify-between text-[10px] font-bold text-slate-700 px-1">
-                <div class="text-center">
-                  <div class="w-5 h-5 mx-auto rounded-full bg-white border-2 border-aduana-600 flex items-center justify-center text-[9px] text-aduana-600 shadow-sm mb-1 font-bold">1</div>
-                  <span>Fábrica Origen</span>
-                </div>
-                <div class="text-center">
-                  <div class="w-5 h-5 mx-auto rounded-full bg-white border-2 border-slate-400 flex items-center justify-center text-[9px] text-slate-600 shadow-sm mb-1 font-bold">2</div>
-                  <span>Terminal Aérea</span>
-                </div>
-                <div class="text-center">
-                  <div class="w-5 h-5 mx-auto rounded-full bg-white border-2 border-slate-400 flex items-center justify-center text-[9px] text-slate-600 shadow-sm mb-1 font-bold">3</div>
-                  <span>Vuelo Internacional</span>
-                </div>
-                <div class="text-center">
-                  <div class="w-5 h-5 mx-auto rounded-full bg-white border-2 border-slate-400 flex items-center justify-center text-[9px] text-slate-600 shadow-sm mb-1 font-bold">4</div>
-                  <span>Destino Final</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="bg-white p-3 rounded-lg border border-slate-200 text-xs space-y-1 shadow-inner">
-              <div class="font-bold text-slate-800 flex items-center gap-1 text-[11px] uppercase tracking-wider text-aduana-700">
-                <i class="fa-solid fa-circle-info"></i> Resumen de la Regla:
-              </div>
-              <p id="risk-desc-text" class="text-slate-600 leading-relaxed text-xs">
-                <strong>FCA (Libre Transportista):</strong> El vendedor gestiona la exportación local y entrega en la terminal o depósito acordado. En ese punto exacto, el riesgo pasa al comprador.
-              </p>
-            </div>
-          </div>
-
-          <!-- Selector Emisor del Documento de Transporte -->
-          <div id="awb-emitter-container" class="space-y-1">
-            <label for="sel-awb-type" class="block text-[11px] font-bold text-slate-700">Emisor del Documento de Transporte / Operador</label>
-            <select id="sel-awb-type" onchange="onAwbTypeChange()" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 bg-slate-50 focus:ring-2 focus:ring-aduana-600">
-              <option value="DIRECT" selected>Aerolínea Directa (MAWB Directo)</option>
-              <option value="FORWARDER">Freight Forwarder / Embarcador (HAWB + MAWB Consolidado)</option>
-              <option value="COURIER">Courier Internacional (FedEx / DHL / UPS - Guía Courier / Recojo)</option>
-            </select>
-            <p id="courier-helper-note" class="hidden text-[10px] text-amber-800 bg-amber-50 border border-amber-200 rounded-md p-2 mt-1 leading-tight">
-              <i class="fa-solid fa-truck-fast text-amber-600 mr-1"></i>
-              <strong>Modalidad Courier:</strong> La empresa de courier realiza el recojo en planta y traslado al aeropuerto con su documento interno (<strong>Guía de Recojo / Guía Courier</strong>), por lo que no se emite Guía de Despacho SII. Dicha guía se valora según el Incoterm pactado.
-            </p>
-          </div>
-
-          <!-- FOB USD & Aduana -->
-          <div class="grid grid-cols-2 gap-2.5">
-            <div>
-              <label for="num-fob" class="block text-[11px] font-bold text-slate-700">Valor Estimado FOB (USD)</label>
-              <div class="relative mt-0.5">
-                <span class="absolute inset-y-0 left-0 pl-2 flex items-center text-slate-400 font-bold text-xs">$</span>
-                <input type="number" id="num-fob" value="5500" min="0" step="500" oninput="evaluarReglasAereas()" class="w-full pl-5 pr-2 py-1.5 border border-slate-300 rounded-lg text-xs font-bold text-slate-900 bg-slate-50">
-              </div>
-            </div>
-            <div>
-              <label for="sel-aduana" class="block text-[11px] font-bold text-slate-700">Aduana Tramitación</label>
-              <select id="sel-aduana" onchange="evaluarReglasAereas()" class="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 bg-slate-50 mt-0.5">
-                <option value="33">AMB Santiago (Cod. 33)</option>
-                <option value="01">Arica Aéreo (Cod. 01)</option>
-                <option value="02">Iquique Aéreo (Cod. 02)</option>
-                <option value="08">Antofagasta (Cod. 08)</option>
-                <option value="28">Puerto Montt (Cod. 28)</option>
-                <option value="29">Punta Arenas (Cod. 29)</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Factores Adicionales -->
-          <div class="pt-2 border-t border-slate-100 space-y-1.5">
-            <label id="lbl-traslado-camion" class="flex items-center gap-2 cursor-pointer text-xs text-slate-700">
-              <input type="checkbox" id="chk-traslado-camion" checked onchange="evaluarReglasAereas()" class="rounded text-aduana-600">
-              <span id="txt-traslado-camion" class="text-[11px]">¿Tránsito terrestre en camión hacia Aeropuerto?</span>
-            </label>
-
-            <label id="lbl-seguro-contratado" class="flex items-center gap-2 cursor-pointer text-xs text-slate-700">
-              <input type="checkbox" id="chk-seguro-contratado" onchange="evaluarReglasAereas()" class="rounded text-aduana-600">
-              <span class="text-[11px]">¿Póliza de seguro efectiva contratada en Chile?</span>
-            </label>
-          </div>
-
-        </div>
-
-      </section>
-
-      <!-- PANEL DERECHO: CHECKLIST & VISTOS BUENOS ADUANEROS (7 columnas) -->
-      <section class="lg:col-span-7 space-y-5">
-
-        <!-- TARJETA SÍNTESIS DE LEGALIZACIÓN DUS -->
-        <div id="status-banner" class="p-4 rounded-xl border bg-aduana-50 border-aduana-200 flex items-start gap-3 print-card">
-          <div id="status-icon" class="text-2xl text-aduana-600 mt-0.5">
-            <i class="fa-solid fa-plane-circle-check"></i>
-          </div>
-          <div class="flex-grow space-y-1">
-            <div class="flex flex-wrap justify-between items-start gap-2">
-              <h3 id="status-title" class="font-extrabold text-aduana-900 text-xs sm:text-sm uppercase tracking-wide">
-                DUS EXPORTACIÓN DEFINITIVA AÉREA (COD. 200)
-              </h3>
-              <span id="badge-mandato" class="text-[10px] font-bold px-2 py-0.5 rounded bg-red-600 text-white">
-                Mandato Obligatorio (Agencia de Aduanas)
-              </span>
-            </div>
-            <p id="status-summary" class="text-xs text-slate-700 leading-relaxed">
-              Evaluación para salida de carga por vía aérea con respaldo documental de transporte y certificados sectoriales exigibles.
-            </p>
-          </div>
-        </div>
-
-        <!-- TARJETA DE VISTOS BUENOS SECTORIALES (PROMINENTE) -->
-        <div id="vobo-card-alert" class="p-4 rounded-xl border border-amber-300 bg-amber-50/90 shadow-sm space-y-2">
-          <div class="flex items-center justify-between border-b border-amber-200/80 pb-2">
-            <div class="flex items-center gap-2 font-bold text-amber-900 text-xs">
-              <i class="fa-solid fa-building-shield text-amber-600 text-sm"></i>
-              <span>REQUISITOS SECTORIALES Y CERTIFICADOS (VISTOS BUENOS)</span>
-            </div>
-            <span id="vobo-organismo-tag" class="bg-amber-800 text-white text-[10px] font-mono px-2 py-0.5 rounded font-bold">
-              N/A
-            </span>
-          </div>
-          <div class="text-xs space-y-1 text-slate-800">
-            <div id="vobo-title" class="font-bold text-amber-950">Seleccione una partida arancelaria</div>
-            <p id="vobo-full-desc" class="text-[11px] leading-relaxed text-slate-700">
-              Los requerimientos de Vistos Buenos sectoriales se actualizarán automáticamente al seleccionar un código arancelario.
-            </p>
-          </div>
-        </div>
-
-        <!-- TABLA DE EVALUACIÓN RÁPIDA (GD / RECOJO, AWB, SEGURO / GASTOS HASTA FOB) -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div class="p-3 rounded-xl border border-slate-200 bg-white space-y-1 shadow-sm print-card">
-            <span id="lbl-card-gd" class="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block">1. Guía de Despacho SII</span>
-            <div id="res-gd-status" class="font-bold text-xs text-slate-900 flex items-center gap-1">
-              <i class="fa-solid fa-circle-check text-emerald-500"></i> OBLIGATORIA
-            </div>
-            <p id="res-gd-text" class="text-[10px] text-slate-500 leading-tight">
-              Exigida para respaldar el tránsito hacia el Aeropuerto.
-            </p>
-          </div>
-
-          <div class="p-3 rounded-xl border border-slate-200 bg-white space-y-1 shadow-sm print-card">
-            <span id="lbl-card-awb" class="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block">2. Valoración AWB (Flete)</span>
-            <div id="res-awb-status" class="font-bold text-xs text-aduana-800 flex items-center gap-1">
-              <i class="fa-solid fa-file-invoice text-aduana-600"></i> AWB VALORADA
-            </div>
-            <p id="res-awb-text" class="text-[10px] text-slate-500 leading-tight">
-              Debe detallar flete según Incoterm.
-            </p>
-          </div>
-
-          <div class="p-3 rounded-xl border border-slate-200 bg-white space-y-1 shadow-sm print-card">
-            <span id="lbl-card-seg" class="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block">3. Seguro / Gastos FOB</span>
-            <div id="res-seg-status" class="font-bold text-xs text-slate-900 flex items-center gap-1">
-              <i class="fa-solid fa-shield-halved text-amber-500"></i> CONDICIONAL
-            </div>
-            <p id="res-seg-text" class="text-[10px] text-slate-500 leading-tight">
-              Según cláusula Incoterm y póliza contratada.
-            </p>
-          </div>
-        </div>
-
-        <!-- CHECKLIST CONSOLIDADA DE DOCUMENTOS OBLIGATORIOS -->
-        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden print-card">
-          <div class="bg-slate-900 text-white px-4 py-3 flex justify-between items-center border-b border-slate-800">
-            <h3 class="font-bold text-xs sm:text-sm flex items-center gap-2">
-              <i class="fa-solid fa-clipboard-check text-amber-400"></i> Expediente Digital - Checklist DUS Segundo Mensaje
-            </h3>
-            <span class="text-[10px] bg-slate-800 text-slate-300 font-mono px-2 py-0.5 rounded">Respaldo Legajo Legal</span>
-          </div>
-
-          <div id="checklist-container" class="divide-y divide-slate-100 text-xs">
-          </div>
-        </div>
-
-        <!-- RESUMEN EJECUTIVO IMPRESO / EXPORTABLE -->
-        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 text-xs space-y-2">
-          <div class="font-bold text-slate-900 flex items-center gap-1.5">
-            <i class="fa-solid fa-gavel text-aduana-600"></i> Consideraciones del Compendio de Normas Aduaneras (SNA)
-          </div>
-          <ul id="normative-list" class="space-y-1 text-slate-600 text-[11px] list-disc pl-4">
-          </ul>
-        </div>
-
-      </section>
-
-    </main>
-
-  </div>
-
-  <!-- NOTIFICACIÓN DE COPIADO TOAST -->
-  <div id="toast-msg" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-2.5 rounded-lg text-xs shadow-xl hidden flex items-center gap-2 border border-slate-700 z-50">
-    <i class="fa-solid fa-circle-check text-emerald-400"></i>
-    <span id="toast-text">Checklist copiada al portapapeles</span>
-  </div>
-
   <script>
-    // BASE DE DATOS Y ESTADO GLOBAL
-    let arancelDatabase = [];
-    let currentTariff = null;
+    // ==========================================
+    // CONFIGURACIÓN DE TU EDGE FUNCTION EN SUPABASE
+    // ==========================================
+    const URL_SUPABASE = 'https://lmmoqcpptyzgscnjwvgk.supabase.co/functions/v1/llama-function';
+    const SUPABASE_KEY = 'sb_publishable_xRnGuxmB5oen-G7LDlI6JQ_SUEvLDMr';
 
-    function normalizarCodigo(str) {
-      return String(str || '').replace(/[\s.]/g, '').toLowerCase();
+    let docsLegajo = []; // { id, name, page, mode, thumbUrl, texto }
+    let ultimoDictamenJSON = null;
+
+    // Cargar reglas guardadas en localStorage
+    const reglasInput = document.getElementById('reglasInput');
+    reglasInput.value = localStorage.getItem('dus_reglas_aprendidas') || '';
+    document.getElementById('btnGuardarReglas').addEventListener('click', () => {
+      localStorage.setItem('dus_reglas_aprendidas', reglasInput.value);
+      alert('✅ Reglas guardadas en la memoria del navegador.');
+    });
+
+    // ==========================================
+    // 1. PROCESAMIENTO DE ARCHIVOS (TEXTO ORDENADO + OCR LOCAL)
+    // ==========================================
+    document.getElementById('fileInput').addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files);
+      if (!files.length) return;
+
+      const progressBox = document.getElementById('extractProgress');
+      const progressText = document.getElementById('extractProgressText');
+      progressBox.classList.remove('hidden');
+
+      for (const file of files) {
+        progressText.textContent = `Extrayendo texto de: ${file.name}...`;
+        try {
+          if (file.type === 'application/pdf') {
+            await procesarPDF(file);
+          } else if (file.type.startsWith('image/')) {
+            await procesarImagen(file);
+          } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+            await procesarExcel(file);
+          } else if (file.name.endsWith('.docx')) {
+            await procesarWord(file);
+          }
+        } catch (err) {
+          console.error('Error procesando archivo:', file.name, err);
+          alert(`No se pudo leer ${file.name}: ${err.message}`);
+        }
+      }
+
+      progressBox.classList.add('hidden');
+      e.target.value = '';
+      actualizarVistaMiniaturas();
+    });
+
+    async function procesarPDF(file) {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+      for (let p = 1; p <= pdf.numPages; p++) {
+        const page = await pdf.getPage(p);
+        
+        // 1. Generar miniatura visual para el usuario (0 tokens enviados)
+        const viewport = page.getViewport({ scale: 1.2 });
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+        const thumbUrl = canvas.toDataURL('image/jpeg', 0.75);
+
+        // 2. Extraer texto nativo ordenado por fila (Y) y columna (X)
+        const textContent = await page.getTextContent();
+        const items = textContent.items.sort((a, b) => {
+          const diffY = Math.abs(b.transform[5] - a.transform[5]);
+          return diffY > 5 ? b.transform[5] - a.transform[5] : a.transform[4] - b.transform[4];
+        });
+
+        let textoOrdenado = '';
+        let lastY = null;
+        for (const item of items) {
+          if (lastY !== null && Math.abs(item.transform[5] - lastY) > 5) textoOrdenado += '\n';
+          else if (lastY !== null) textoOrdenado += ' ';
+          textoOrdenado += item.str;
+          lastY = item.transform[5];
+        }
+        textoOrdenado = limpiarTexto(textoOrdenado);
+
+        let modo = 'TXT';
+        // 3. Si el PDF es escaneado (< 70 chars), ejecutar OCR local con Tesseract
+        if (textoOrdenado.length < 70) {
+          document.getElementById('extractProgressText').textContent = `OCR local en ${file.name} (Pág ${p})...`;
+          const ocrRes = await Tesseract.recognize(canvas, 'spa+eng');
+          textoOrdenado = limpiarTexto(ocrRes.data.text);
+          modo = 'OCR-TXT';
+        }
+
+        docsLegajo.push({
+          id: crypto.randomUUID(),
+          name: file.name,
+          page: p,
+          mode: modo,
+          thumbUrl,
+          texto: textoOrdenado
+        });
+      }
     }
 
-    async function cargarBaseDatosArancel() {
-      const badge = document.getElementById('db-status-badge');
+    async function procesarImagen(file) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = async (ev) => {
+          const thumbUrl = ev.target.result;
+          document.getElementById('extractProgressText').textContent = `OCR local en imagen: ${file.name}...`;
+          const ocrRes = await Tesseract.recognize(thumbUrl, 'spa+eng');
+          docsLegajo.push({
+            id: crypto.randomUUID(),
+            name: file.name,
+            page: 1,
+            mode: 'OCR-TXT',
+            thumbUrl,
+            texto: limpiarTexto(ocrRes.data.text)
+          });
+          resolve();
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function procesarExcel(file) {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: 'array' });
+      let textoExcel = '';
+      workbook.SheetNames.forEach(sheet => {
+        const csv = XLSX.utils.sheet_to_csv(workbook.Sheets[sheet], { blankrows: false });
+        textoExcel += `[Hoja: ${sheet}]\n${csv}\n`;
+      });
+      docsLegajo.push({
+        id: crypto.randomUUID(),
+        name: file.name,
+        page: 1,
+        mode: 'XLS-TXT',
+        thumbUrl: crearPlaceholderMiniatura('EXCEL', file.name),
+        texto: limpiarTexto(textoExcel)
+      });
+    }
+
+    async function procesarWord(file) {
+      const arrayBuffer = await file.arrayBuffer();
+      const result = await mammoth.extractRawText({ arrayBuffer });
+      docsLegajo.push({
+        id: crypto.randomUUID(),
+        name: file.name,
+        page: 1,
+        mode: 'DOC-TXT',
+        thumbUrl: crearPlaceholderMiniatura('WORD', file.name),
+        texto: limpiarTexto(result.value)
+      });
+    }
+
+    function limpiarTexto(str) {
+      return str
+        .replace(/[ \t]+/g, ' ')
+        .replace(/\n\s*\n/g, '\n')
+        .trim();
+    }
+
+    function crearPlaceholderMiniatura(tipo, nombre) {
+      const c = document.createElement('canvas');
+      c.width = 200; c.height = 240;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#f1f5f9'; ctx.fillRect(0, 0, 200, 240);
+      ctx.fillStyle = '#0f172a'; ctx.font = 'bold 22px sans-serif'; ctx.fillText(tipo, 60, 110);
+      ctx.fillStyle = '#64748b'; ctx.font = '12px sans-serif'; ctx.fillText(nombre.substring(0, 22), 20, 140);
+      return c.toDataURL();
+    }
+
+    function generarExpedienteConsolidado() {
+      const maxCharsPorDoc = Math.max(1500, Math.floor(18000 / Math.max(1, docsLegajo.length)));
+      return docsLegajo.map((d, i) => {
+        const recorte = d.texto.substring(0, maxCharsPorDoc);
+        return `>>> DOCUMENTO #${i + 1}: ${d.name} (Pág ${d.page}) [Extracción: ${d.mode}] <<<\n${recorte}`;
+      }).join('\n\n====================================\n\n');
+    }
+
+    function actualizarVistaMiniaturas() {
+      const grid = document.getElementById('thumbnailsGrid');
+      const counter = document.getElementById('docCounter');
+      const btnAuditar = document.getElementById('btnAuditar');
+      const tokenMeter = document.getElementById('tokenMeter');
+
+      counter.textContent = `${docsLegajo.length} pág/arch.`;
+      btnAuditar.disabled = docsLegajo.length === 0;
+
+      if (docsLegajo.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center py-8 border-2 border-dashed border-slate-200 rounded-lg text-xs text-slate-400">No hay documentos cargados aún</div>`;
+        tokenMeter.textContent = 'Consumo est.: 0 / 7.000 tokens';
+        return;
+      }
+
+      const expediente = generarExpedienteConsolidado();
+      const tokensEst = Math.ceil(expediente.length / 3.8) + 600;
+      tokenMeter.textContent = `Consumo est.: ~${tokensEst} / 7.000 tokens`;
+      tokenMeter.className = tokensEst > 6200
+        ? 'hidden sm:inline-block text-xs font-semibold px-3 py-1.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200'
+        : 'hidden sm:inline-block text-xs font-semibold px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200';
+
+      grid.innerHTML = docsLegajo.map(doc => `
+        <div class="relative group border border-slate-200 rounded-lg bg-slate-50 p-1.5 shadow-sm">
+          <button onclick="eliminarDoc('${doc.id}')" class="absolute -top-1.5 -right-1.5 bg-rose-600 text-white w-5 h-5 rounded-full text-[10px] font-bold shadow hover:bg-rose-700 z-10">✕</button>
+          <span class="absolute top-2 left-2 bg-emerald-600/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">${doc.mode}</span>
+          <img onclick="abrirModal('${doc.id}')" src="${doc.thumbUrl}" title="Clic para ampliar y ver texto extraído" class="w-full h-24 object-cover rounded cursor-pointer border border-slate-200 bg-white" />
+          <p class="text-[10px] text-slate-700 font-medium truncate mt-1" title="${doc.name} (Pág ${doc.page})">${doc.name} (Pág ${doc.page})</p>
+        </div>
+      `).join('');
+    }
+
+    function eliminarDoc(id) {
+      docsLegajo = docsLegajo.filter(d => d.id !== id);
+      actualizarVistaMiniaturas();
+    }
+
+    document.getElementById('btnVaciar').addEventListener('click', () => {
+      docsLegajo = [];
+      ultimoDictamenJSON = null;
+      actualizarVistaMiniaturas();
+    });
+
+    function abrirModal(id) {
+      const doc = docsLegajo.find(d => d.id === id);
+      if (!doc) return;
+      document.getElementById('modalTitle').textContent = `${doc.name} (Pág ${doc.page}) — Modo: ${doc.mode}`;
+      document.getElementById('modalImg').src = doc.thumbUrl;
+      document.getElementById('modalText').textContent = doc.texto || '(Sin texto detectado)';
+      document.getElementById('previewModal').classList.remove('hidden');
+    }
+
+    function cerrarModal() {
+      document.getElementById('previewModal').classList.add('hidden');
+    }
+
+    // ==========================================
+    // 2. LLAMADA A TU EDGE FUNCTION DE SUPABASE (SOLO TEXTO PURO)
+    // ==========================================
+    async function llamarSupabaseLlama(promptCompleto) {
+      const res = await fetch(URL_SUPABASE, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'apikey': SUPABASE_KEY
+        },
+        body: JSON.stringify({
+          texto_expediente: promptCompleto,
+          imagenes: [] // Enviamos arreglo vacío porque ya extrajimos todo el texto localmente (0 tokens de imagen)
+        })
+      });
+
+      const textoRespuesta = await res.text();
+      let data;
       try {
-        const response = await fetch('arancel_chile.json');
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-        arancelDatabase = await response.json();
-        badge.textContent = `${arancelDatabase.length} registros`;
-        badge.className = "text-[10px] bg-emerald-100 text-emerald-800 font-mono px-1.5 py-0.5 rounded border border-emerald-300 font-bold";
-
-        if (arancelDatabase.length > 0) {
-          currentTariff = arancelDatabase[0];
-          updateTariffUI();
-        }
-        evaluarReglasAereas();
-      } catch (error) {
-        console.error('Error al cargar arancel_chile.json:', error);
-        if (badge) {
-          badge.textContent = "Error al cargar JSON";
-          badge.className = "text-[10px] bg-red-100 text-red-800 font-mono px-1.5 py-0.5 rounded border border-red-300 font-bold";
-        }
-        evaluarReglasAereas();
+        data = JSON.parse(textoRespuesta);
+      } catch (e) {
+        data = { reply: textoRespuesta };
       }
+
+      if (!res.ok) {
+        let detalle = data.error || data.message || textoRespuesta;
+        if (typeof detalle === 'object') detalle = JSON.stringify(detalle);
+        throw new Error(`HTTP ${res.status}: ${detalle}`);
+      }
+
+      return data.reply || data;
     }
 
-    function filterTariffCodes() {
-      const queryRaw = document.getElementById('hs-search-input').value.trim();
-      const queryNorm = normalizarCodigo(queryRaw);
-      const queryText = queryRaw.toLowerCase();
-      const dropdown = document.getElementById('hs-dropdown');
+    // ==========================================
+    // 3. AUDITORÍA PRINCIPAL Y RENDER DE TARJETAS
+    // ==========================================
+    document.getElementById('btnAuditar').addEventListener('click', async () => {
+      const btn = document.getElementById('btnAuditar');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="animate-spin">⏳</span> Cruzando datos del expediente en Supabase...';
 
-      if (!queryRaw) {
-        dropdown.classList.add('hidden');
+      const expedienteTexto = generarExpedienteConsolidado();
+      const reglas = reglasInput.value.trim();
+
+      const promptAuditoria = `Eres un Auditor Aduanero Senior en Chile especialista en el Compendio de Normas Aduaneras (Legalización de DUS - 2do Mensaje).
+Analiza el expediente consolidado en texto y devuelve EXCLUSIVAMENTE un objeto JSON válido (sin texto adicional ni bloques markdown) con la siguiente estructura exacta:
+{
+  "veredicto_estado": "APROBADO" | "RECHAZO" | "OBSERVADO",
+  "veredicto_titulo": "Título en mayúsculas del dictamen",
+  "veredicto_resumen": "Párrafo técnico resumiendo la operación, mercancía, N° DUS y conclusión.",
+  "pesos": {
+    "estado_badge": "DENTRO DE RANGO (±10%)" | "FUERA DE RANGO (±10%) - PRESENTAR SMDA" | "NO VERIFICABLE",
+    "es_valido": true,
+    "peso_dus": "ej: 100,00 KN",
+    "peso_zp": "ej: 102,00 KN o NO DISPONIBLE",
+    "peso_guia": "ej: 102,00 KN o NO DISPONIBLE",
+    "variacion_pct": "ej: +2,0% o NO CALCULABLE",
+    "nota_peso": "Explicación breve del cruce de pesos y si requiere SMDA."
+  },
+  "inconsistencias_graves": ["Lista de errores críticos que impiden legalizar"],
+  "advertencias": ["Lista de observaciones menores o documentos complementarios faltantes"],
+  "matriz": [
+    { "campo": "Cantidad de Bultos", "dus": "...", "zp": "...", "guia": "...", "factura": "...", "estado": "OK" },
+    { "campo": "Peso Bruto (KN)", "dus": "...", "zp": "...", "guia": "...", "factura": "...", "estado": "OK" },
+    { "campo": "Tipo de Moneda", "dus": "...", "zp": "N/A", "guia": "N/A", "factura": "...", "estado": "OK" },
+    { "campo": "Valor FOB / Total", "dus": "...", "zp": "N/A", "guia": "N/A", "factura": "...", "estado": "OK" },
+    { "campo": "Almacén / Bodega (Cód. 58)", "dus": "...", "zp": "...", "guia": "N/A", "factura": "N/A", "estado": "OK" },
+    { "campo": "Exportador / Consignante", "dus": "...", "zp": "...", "guia": "...", "factura": "...", "estado": "OK" },
+    { "campo": "Consignatario y Destino", "dus": "...", "zp": "N/A", "guia": "...", "factura": "...", "estado": "OK" },
+    { "campo": "N° Docto. Transporte (AWB/BL)", "dus": "...", "zp": "...", "guia": "...", "factura": "N/A", "estado": "OK" }
+  ]
+}
+Reglas operativas del usuario a aplicar estrictamente: ${reglas || 'Ninguna adicional.'}
+
+EXPEDIENTE CONSOLIDADO A AUDITAR:
+${expedienteTexto}`;
+
+      try {
+        const respuestaRaw = await llamarSupabaseLlama(promptAuditoria);
+        let dictamen = null;
+
+        if (typeof respuestaRaw === 'string') {
+          const match = respuestaRaw.match(/\{[\s\S]*\}/);
+          if (match) dictamen = JSON.parse(match[0]);
+        } else if (typeof respuestaRaw === 'object') {
+          dictamen = respuestaRaw;
+        }
+
+        if (!dictamen || !dictamen.veredicto_titulo) {
+          throw new Error('La IA no devolvió el formato JSON esperado. Respuesta: ' + String(respuestaRaw).slice(0, 200));
+        }
+
+        ultimoDictamenJSON = dictamen;
+        renderizarDictamen(dictamen);
+      } catch (err) {
+        alert('❌ Error al auditar: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>🔍</span> Auditar Miniaturas y Cruzar Datos DUS';
+      }
+    });
+
+    function renderizarDictamen(d) {
+      document.getElementById('emptyReport').classList.add('hidden');
+      document.getElementById('reportContainer').classList.remove('hidden');
+
+      const vBox = document.getElementById('verdictBox');
+      const vIcon = document.getElementById('verdictIcon');
+      const vTitle = document.getElementById('verdictTitle');
+      const vSummary = document.getElementById('verdictSummary');
+
+      if (d.veredicto_estado === 'APROBADO') {
+        vBox.className = 'rounded-xl p-5 border bg-emerald-50 border-emerald-200 text-emerald-950';
+        vIcon.textContent = '✅';
+        vTitle.className = 'text-base md:text-lg font-extrabold uppercase text-emerald-800';
+      } else if (d.veredicto_estado === 'OBSERVADO') {
+        vBox.className = 'rounded-xl p-5 border bg-amber-50 border-amber-200 text-amber-950';
+        vIcon.textContent = '⚠️';
+        vTitle.className = 'text-base md:text-lg font-extrabold uppercase text-amber-800';
+      } else {
+        vBox.className = 'rounded-xl p-5 border bg-rose-50 border-rose-200 text-rose-950';
+        vIcon.textContent = '🛑';
+        vTitle.className = 'text-base md:text-lg font-extrabold uppercase text-rose-800';
+      }
+
+      vTitle.textContent = d.veredicto_titulo;
+      vSummary.textContent = d.veredicto_resumen;
+
+      const badge = document.getElementById('weightBadge');
+      badge.textContent = d.pesos.estado_badge;
+      badge.className = d.pesos.es_valido
+        ? 'text-[11px] font-bold px-3 py-1 rounded-full uppercase bg-emerald-600 text-white'
+        : 'text-[11px] font-bold px-3 py-1 rounded-full uppercase bg-rose-600 text-white';
+
+      document.getElementById('pesoDus').textContent = d.pesos.peso_dus;
+      document.getElementById('pesoZp').textContent = d.pesos.peso_zp;
+      document.getElementById('pesoGuia').textContent = d.pesos.peso_guia;
+      document.getElementById('variacionPeso').textContent = d.pesos.variacion_pct;
+      document.getElementById('weightNote').textContent = d.pesos.nota_peso;
+
+      const gravesUl = document.getElementById('gravesList');
+      gravesUl.innerHTML = (d.inconsistencias_graves?.length)
+        ? d.inconsistencias_graves.map(item => `<li>${item}</li>`).join('')
+        : '<li class="text-emerald-700 font-medium">Sin inconsistencias graves detectadas.</li>';
+
+      const advUl = document.getElementById('advertenciasList');
+      advUl.innerHTML = (d.advertencias?.length)
+        ? d.advertencias.map(item => `<li>${item}</li>`).join('')
+        : '<li>Sin advertencias adicionales.</li>';
+
+      const tbody = document.getElementById('matrixBody');
+      tbody.innerHTML = (d.matriz || []).map(row => {
+        const badgeColor = row.estado === 'OK'
+          ? 'bg-emerald-600 text-white'
+          : (row.estado === 'ADVERTENCIA' ? 'bg-amber-500 text-white' : 'bg-rose-600 text-white');
+        return `
+          <tr class="hover:bg-slate-50">
+            <td class="py-2.5 px-3 font-semibold text-slate-800">${row.campo}</td>
+            <td class="py-2.5 px-3 text-slate-700">${row.dus}</td>
+            <td class="py-2.5 px-3 text-slate-700">${row.zp}</td>
+            <td class="py-2.5 px-3 text-slate-700">${row.guia}</td>
+            <td class="py-2.5 px-3 text-slate-700">${row.factura}</td>
+            <td class="py-2.5 px-3 text-center">
+              <span class="inline-block px-2.5 py-0.5 rounded text-[10px] font-bold uppercase ${badgeColor}">${row.estado}</span>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // ==========================================
+    // 4. CHAT LIGERO (USA EL DICTAMEN YA RESUMIDO PARA NO GASTAR TOKENS)
+    // ==========================================
+    function preguntaRapida(texto) {
+      document.getElementById('chatInput').value = texto;
+      enviarPreguntaChat();
+    }
+
+    document.getElementById('btnPreguntar').addEventListener('click', enviarPreguntaChat);
+    document.getElementById('chatInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') enviarPreguntaChat();
+    });
+
+    async function enviarPreguntaChat() {
+      const input = document.getElementById('chatInput');
+      const pregunta = input.value.trim();
+      if (!pregunta) return;
+      if (!docsLegajo.length) {
+        alert('Primero carga documentos en el legajo.');
         return;
       }
 
-      const matches = arancelDatabase.filter(item => {
-        const codeNorm = normalizarCodigo(item.code);
-        const glosaText = String(item.glosa || '').toLowerCase();
-        const orgText = String(item.organismo || '').toLowerCase();
-        const voboText = String(item.vobo_nombre || '').toLowerCase();
+      const chatBox = document.getElementById('chatHistory');
+      if (chatBox.querySelector('.text-center')) chatBox.innerHTML = '';
 
-        return codeNorm.includes(queryNorm) ||
-               glosaText.includes(queryText) ||
-               orgText.includes(queryText) ||
-               voboText.includes(queryText);
-      }).slice(0, 30);
+      chatBox.innerHTML += `
+        <div class="bg-blue-600 text-white rounded-lg px-3 py-2 ml-6">
+          <strong>Tú:</strong> ${pregunta}
+        </div>
+      `;
+      input.value = '';
+      chatBox.scrollTop = chatBox.scrollHeight;
 
-      if (matches.length === 0) {
-        dropdown.innerHTML = `
-          <div class="p-3 text-slate-400 text-center text-[11px]">
-            No se encontraron partidas exactas. Se aplicará Régimen General de Salida.
+      const contextoBase = ultimoDictamenJSON
+        ? `DICTAMEN PREVIO:\n${JSON.stringify(ultimoDictamenJSON)}\n\nEXTRACTO DOCUMENTOS:\n${generarExpedienteConsolidado().substring(0, 9000)}`
+        : generarExpedienteConsolidado().substring(0, 12000);
+
+      try {
+        const promptChat = `Eres un asistente experto en aduanas de Chile. Responde de forma directa, precisa y breve basándote únicamente en los datos del expediente.\n\n${contextoBase}\n\nPREGUNTA DEL OPERADOR: ${pregunta}`;
+        const respuesta = await llamarSupabaseLlama(promptChat);
+        const textoFinal = typeof respuesta === 'string' ? respuesta : JSON.stringify(respuesta);
+
+        chatBox.innerHTML += `
+          <div class="bg-white border border-slate-200 text-slate-800 rounded-lg px-3 py-2 mr-4 shadow-sm">
+            ${textoFinal.replace(/\n/g, '<br>')}
           </div>
         `;
-      } else {
-        dropdown.innerHTML = matches.map(item => `
-          <div onclick="selectTariff('${item.code}')" class="p-2.5 hover:bg-slate-100 cursor-pointer transition flex items-start justify-between gap-2">
-            <div>
-              <div class="font-mono font-bold text-aduana-600 text-xs">${item.code || 'S/C'}</div>
-              <div class="font-semibold text-slate-800 text-[11px]">${item.glosa || 'Sin Glosa'}</div>
-              <div class="text-[10px] text-slate-500 leading-tight">${item.vobo_nombre || ''}</div>
-            </div>
-            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded ${item.obligatorio ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-slate-100 text-slate-600'}">
-              ${item.organismo || 'GENERAL'}
-            </span>
-          </div>
-        `).join('');
-      }
-
-      dropdown.classList.remove('hidden');
-    }
-
-    function selectTariff(code) {
-      const found = arancelDatabase.find(t => t.code === code);
-      if (found) {
-        currentTariff = found;
-        updateTariffUI();
-        evaluarReglasAereas();
-      }
-      document.getElementById('hs-dropdown').classList.add('hidden');
-      document.getElementById('hs-search-input').value = "";
-    }
-
-    function clearHsSearch() {
-      document.getElementById('hs-search-input').value = "";
-      document.getElementById('hs-dropdown').classList.add('hidden');
-    }
-
-    function updateTariffUI() {
-      if (!currentTariff) return;
-
-      document.getElementById('tariff-code-display').textContent = currentTariff.code || 'S/C';
-      document.getElementById('tariff-glosa-display').textContent = currentTariff.glosa || 'Sin glosa disponible';
-      document.getElementById('tariff-organismo-badge').textContent = currentTariff.organismo || 'GENERAL';
-      document.getElementById('tariff-vobo-desc').textContent = currentTariff.desc || currentTariff.vobo_nombre || 'Sin observaciones adicionales.';
-
-      document.getElementById('vobo-organismo-tag').textContent = currentTariff.organismo || 'RÉGIMEN GENERAL';
-      document.getElementById('vobo-title').textContent = currentTariff.vobo_nombre || 'Sin Visto Bueno Obligatorio';
-      document.getElementById('vobo-full-desc').textContent = currentTariff.desc || 'Mercancía bajo régimen general no sujeta a control fitosanitario u organismo restrictivo directo en origen.';
-
-      const voboCard = document.getElementById('vobo-card-alert');
-      if (!currentTariff.obligatorio) {
-        voboCard.className = "p-4 rounded-xl border border-slate-200 bg-slate-100/80 shadow-sm space-y-2";
-      } else {
-        voboCard.className = "p-4 rounded-xl border border-amber-300 bg-amber-50/90 shadow-sm space-y-2";
-      }
-    }
-
-    function onAwbTypeChange() {
-      const awbType = document.getElementById('sel-awb-type').value;
-      const courierNote = document.getElementById('courier-helper-note');
-      const chkCamion = document.getElementById('chk-traslado-camion');
-      const lblCamion = document.getElementById('lbl-traslado-camion');
-      const txtCamion = document.getElementById('txt-traslado-camion');
-
-      if (awbType === 'COURIER') {
-        if (courierNote) courierNote.classList.remove('hidden');
-        if (chkCamion) {
-          chkCamion.checked = false;
-          chkCamion.disabled = true;
-        }
-        if (lblCamion) lblCamion.classList.add('opacity-50', 'cursor-not-allowed');
-        if (txtCamion) txtCamion.textContent = "Traslado efectuado directamente por Courier (Sin Guía de Despacho SII)";
-      } else {
-        if (courierNote) courierNote.classList.add('hidden');
-        if (chkCamion) {
-          chkCamion.disabled = false;
-          chkCamion.checked = true;
-        }
-        if (lblCamion) lblCamion.classList.remove('opacity-50', 'cursor-not-allowed');
-        if (txtCamion) txtCamion.textContent = "¿Tránsito terrestre en camión hacia Aeropuerto?";
-      }
-
-      evaluarReglasAereas();
-    }
-
-    function onRegimenChange() {
-      const regimen = document.getElementById('sel-regimen').value;
-      const pasajeroBox = document.getElementById('pasajero-options');
-      const awbContainer = document.getElementById('awb-emitter-container');
-      const lblSeguroContratado = document.getElementById('lbl-seguro-contratado');
-
-      if (pasajeroBox) {
-        pasajeroBox.classList.toggle('hidden', regimen !== 'TEMP_PASAJERO');
-      }
-      if (awbContainer) {
-        awbContainer.classList.toggle('hidden', regimen === 'TEMP_PASAJERO');
-      }
-      if (lblSeguroContratado) {
-        lblSeguroContratado.classList.toggle('hidden', regimen === 'TEMP_PASAJERO');
-      }
-
-      actualizarFormasPagoCompatible();
-      evaluarReglasAereas();
-    }
-
-    function actualizarFormasPagoCompatible() {
-      const regimen = document.getElementById('sel-regimen').value;
-      const selModalidad = document.getElementById('sel-modalidad-venta');
-      const selPago = document.getElementById('sel-forma-pago');
-      const incotermContainer = document.getElementById('incoterm-container');
-      const riskGraphBox = document.getElementById('risk-graph-box');
-
-      if (regimen === "TEMP_PASAJERO" || regimen === "RANCHO") {
-        if (incotermContainer) incotermContainer.style.display = "none";
-        if (riskGraphBox) riskGraphBox.style.display = "none";
-      } else {
-        if (incotermContainer) incotermContainer.style.display = "block";
-        if (riskGraphBox) riskGraphBox.style.display = "block";
-      }
-
-      if (regimen === "TEMP_PASAJERO") {
-        selModalidad.innerHTML = `<option value="LIBRE" selected>Libre / Sin Valor Comercial (Proforma / Pasajero)</option>`;
-        selModalidad.disabled = true;
-        selPago.innerHTML = `<option value="SIN_PAGO" selected>Sin Pago / No Comercial</option>`;
-        selPago.disabled = true;
-        return;
-      }
-
-      if (regimen === "RANCHO") {
-        selModalidad.innerHTML = `<option value="LIBRE" selected>Libre / Suministro de A Bordo (Rancho)</option>`;
-        selModalidad.disabled = true;
-        selPago.innerHTML = `<option value="SIN_PAGO" selected>Sin Pago / Suministro de A Bordo</option>`;
-        selPago.disabled = true;
-        return;
-      }
-
-      if (["TEMP_SALIDA", "TEMP_PERFECC", "REEXP"].includes(regimen)) {
-        selModalidad.innerHTML = `<option value="LIBRE" selected>Sin Venta / Destinación Temporal o Reexportación</option>`;
-        selModalidad.disabled = true;
-        selPago.innerHTML = `<option value="SIN_PAGO" selected>Sin Pago / No Constituye Venta Comercial</option>`;
-        selPago.disabled = true;
-        return;
-      }
-
-      if (selModalidad.disabled || selModalidad.options.length <= 1) {
-        selModalidad.innerHTML = `
-          <option value="FIRME" selected>A Firme (Venta Definitiva)</option>
-          <option value="CONDICION">Bajo Condición</option>
-          <option value="CONSIGNACION">A Consignación</option>
-          <option value="LIBRE">Libre / Sin Valor Comercial</option>
-        `;
-        selModalidad.disabled = false;
-        selPago.disabled = false;
-      }
-
-      const modalidad = selModalidad.value;
-      const valorActualPago = selPago.value;
-      selPago.innerHTML = "";
-
-      if (modalidad === "FIRME") {
-        selPago.innerHTML = `
-          <option value="CONTADO">Contado / Anticipado</option>
-          <option value="COBRANZA">Cobranza Documentaria</option>
-          <option value="CREDITO">Carta de Crédito</option>
-        `;
-      } else if (modalidad === "CONDICION") {
-        selPago.innerHTML = `
-          <option value="COBRANZA">Cobranza Documentaria (Sujeto a Fijación de Precio)</option>
-          <option value="CREDITO">Carta de Crédito Condicionada</option>
-        `;
-      } else if (modalidad === "CONSIGNACION") {
-        selPago.innerHTML = `
-          <option value="COBRANZA">Cobranza / Venta Posterior Realizada</option>
-          <option value="SIN_PAGO">Sin Pago / Cuenta Corriente Comercial</option>
-        `;
-      } else {
-        selPago.innerHTML = `
-          <option value="SIN_PAGO" selected>Sin Pago / Muestras o Proforma</option>
-        `;
-      }
-
-      if ([...selPago.options].some(o => o.value === valorActualPago)) {
-        selPago.value = valorActualPago;
-      }
-    }
-
-    function actualizarBarraIncoterm() {
-      const incoterm = document.getElementById('sel-incoterm').value;
-      const barSeller = document.getElementById('risk-bar-seller');
-      const badge = document.getElementById('incoterm-risk-badge');
-      const descText = document.getElementById('risk-desc-text');
-
-      let porcentaje = '30%';
-      let descripcion = '';
-
-      switch (incoterm) {
-        case 'EXW':
-          porcentaje = '5%';
-          descripcion = '<strong>EXW (En Fábrica):</strong> El vendedor solo empaqueta. El comprador asume costos, trámites y riesgos desde la puerta de origen. Para efectos aduaneros se deben declarar los <strong>gastos hasta FOB teórico</strong>.';
-          break;
-        case 'FCA':
-          porcentaje = '30%';
-          descripcion = '<strong>FCA (Libre Transportista):</strong> El vendedor gestiona la exportación local y entrega en la terminal o depósito acordado. En ese punto exacto, el riesgo pasa al comprador.';
-          break;
-        case 'CPT':
-          porcentaje = '75%';
-          descripcion = '<strong>CPT (Flete Pagado Hasta):</strong> El vendedor paga el flete aéreo hasta destino, pero el riesgo pasa al comprador al entregar la carga al primer porteador.';
-          break;
-        case 'CIP':
-          porcentaje = '75%';
-          descripcion = '<strong>CIP (Flete y Seguro Pagados):</strong> Igual que CPT, pero el vendedor debe contratar seguro obligatorio a nombre del comprador durante el transporte.';
-          break;
-        case 'DAP':
-          porcentaje = '90%';
-          descripcion = '<strong>DAP (Entregado en Lugar):</strong> El vendedor asume costos y riesgos hasta el lugar convenido en destino (sin descarga ni internación).';
-          break;
-        case 'DPU':
-          porcentaje = '95%';
-          descripcion = '<strong>DPU (Entregado y Descargado):</strong> El vendedor asume el transporte y la descarga en el punto acordado en destino.';
-          break;
-        case 'DDP':
-          porcentaje = '100%';
-          descripcion = '<strong>DDP (Derechos Pagados):</strong> El vendedor asume costos, riesgos y trámites de salida e importación en destino.';
-          break;
-        default:
-          porcentaje = '30%';
-          descripcion = 'Seleccione un Incoterm válido.';
-      }
-
-      if (barSeller) barSeller.style.width = porcentaje;
-      if (badge) badge.textContent = incoterm;
-      if (descText) descText.innerHTML = descripcion;
-    }
-
-    function evaluarReglasAereas() {
-      const regimen = document.getElementById('sel-regimen').value;
-      const incoterm = document.getElementById('sel-incoterm').value;
-      const awbType = document.getElementById('sel-awb-type')?.value || 'DIRECT';
-      const fobUSD = parseFloat(document.getElementById('num-fob').value) || 0;
-      const trasladaCamion = document.getElementById('chk-traslado-camion').checked;
-      const seguroContratado = document.getElementById('chk-seguro-contratado').checked;
-      const modalidadVenta = document.getElementById('sel-modalidad-venta').value;
-      const formaPago = document.getElementById('sel-forma-pago').value;
-
-      const esPasajero = (regimen === "TEMP_PASAJERO");
-      const esRancho = (regimen === "RANCHO");
-      const esReexp = (regimen === "REEXP");
-      const esTempSalida = (regimen === "TEMP_SALIDA");
-      const esTempPerfecc = (regimen === "TEMP_PERFECC");
-      const esTemporalOReexp = (esTempSalida || esTempPerfecc || esReexp);
-      const esCourier = (!esPasajero && awbType === "COURIER");
-
-      const motivoPasajero = document.getElementById('sel-motivo-pasajero')?.value || "EXPORTACION_PROFORMA";
-      const modalidadPasajero = document.getElementById('sel-modalidad-pasajero')?.value || "ACOMPANADO";
-      const seguroPasajero = document.getElementById('chk-seguro-pasajero')?.checked || false;
-
-      // Operación siempre por Agencia de Aduanas: el mandato es siempre exigible
-      const requiereAgente = true;
-      const requiereAWBValorada = !esRancho && !esPasajero && ["CPT", "CIP", "DAP", "DPU", "DDP"].includes(incoterm);
-      const seguroObligatorio = !esRancho && !esPasajero && (incoterm === "CIP");
-      const esEXW = !esRancho && !esPasajero && (incoterm === "EXW");
-
-      // 1. Banner Superior
-      const badgeMandato = document.getElementById('badge-mandato');
-      const statusTitle = document.getElementById('status-title');
-      const statusSummary = document.getElementById('status-summary');
-
-      const regimenNames = {
-        "DEF": "DUS EXPORTACIÓN DEFINITIVA AÉREA (COD. 200)",
-        "TEMP_SALIDA": "SALIDA TEMPORAL DE MERCANCÍAS (COD. 20)",
-        "TEMP_PERFECC": "SALIDA TEMPORAL P/ PERFECCIONAMIENTO PASIVO (COD. 21)",
-        "TEMP_PASAJERO": "DUS DE PASAJEROS / PROPIOS MEDIOS (TRÁMITE AGENCIA)",
-        "REEXP": "REEXPORTACIÓN DE MERCANCÍAS (COD. 30)",
-        "RANCHO": "RANCHO / PROVISIONES DE A BORDO (COD. 40)"
-      };
-
-      statusTitle.textContent = regimenNames[regimen] || "DUS AÉREA CHILE";
-
-      if (esPasajero) {
-        statusSummary.textContent = "Legalización de DUS para pasajeros / propios medios (Sin Incoterm / Sin Valor Comercial) con ingreso a Zona Primaria.";
-      } else if (esRancho) {
-        statusSummary.textContent = "Suministro de rancho / provisiones a bordo sin venta comercial definitiva ni reglas Incoterm.";
-      } else if (esReexp) {
-        statusSummary.textContent = "Reexportación de mercancías (Cód. 30): no corresponde Factura de Exportación SII; se respalda con documento de reexportación y DIN / DAPI / antecedente de ingreso previo.";
-      } else if (esTempSalida || esTempPerfecc) {
-        statusSummary.textContent = "Destinación sin venta comercial definitiva: no corresponde Factura de Exportación SII; se respalda con Factura Proforma / Declaración de Valor y antecedentes del régimen.";
-      } else {
-        const emisorLabel = esCourier ? "Courier Internacional" : (awbType === "FORWARDER" ? "Freight Forwarder" : "Aerolínea Directa");
-        statusSummary.textContent = `Evaluación para salida aérea vía ${emisorLabel} (${modalidadVenta}, Incoterm ${incoterm}, pago: ${formaPago}) con respaldo documental y certificados sectoriales.`;
-      }
-
-      badgeMandato.textContent = "Mandato Obligatorio (Agencia de Aduanas)";
-      badgeMandato.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-red-600 text-white";
-
-      // 2. Tarjetas de Evaluación Rápida
-      const lblCardGd = document.getElementById('lbl-card-gd');
-      const resGdStatus = document.getElementById('res-gd-status');
-      const resGdText = document.getElementById('res-gd-text');
-
-      const lblCardAwb = document.getElementById('lbl-card-awb');
-      const resAwbStatus = document.getElementById('res-awb-status');
-      const resAwbText = document.getElementById('res-awb-text');
-
-      const lblCardSeg = document.getElementById('lbl-card-seg');
-      const resSegStatus = document.getElementById('res-seg-status');
-      const resSegText = document.getElementById('res-seg-text');
-
-      if (esPasajero) {
-        lblCardGd.textContent = "1. Guía de Despacho SII";
-        resGdStatus.innerHTML = `<i class="fa-solid fa-circle-minus text-slate-400"></i> NO APLICA`;
-        resGdText.textContent = "No requiere Guía de Despacho SII; la especie viaja con visación en Zona Primaria.";
-
-        lblCardAwb.textContent = "2. Documento de Viaje";
-        if (modalidadPasajero === "ACOMPANADO") {
-          resAwbStatus.innerHTML = `<i class="fa-solid fa-ticket text-indigo-600"></i> RESERVA + MANIFIESTO`;
-          resAwbText.textContent = "Respaldado con ticket/reserva aérea del pasajero y manifiesto de vuelo.";
-        } else {
-          resAwbStatus.innerHTML = `<i class="fa-solid fa-file-lines text-aduana-600"></i> AWB EQUIPAJE`;
-          resAwbText.textContent = "Equipaje no acompañado requiere Guía Aérea consignada al pasajero + manifiesto.";
-        }
-
-        lblCardSeg.textContent = "3. Seguro / Declaración";
-        if (seguroPasajero) {
-          resSegStatus.innerHTML = `<i class="fa-solid fa-shield-check text-emerald-600"></i> PÓLIZA ADJUNTA`;
-          resSegText.textContent = "Respaldado con póliza o certificado de seguro contratado.";
-        } else {
-          resSegStatus.innerHTML = `<i class="fa-solid fa-file-signature text-amber-600"></i> D.J. SIN SEGURO`;
-          resSegText.textContent = "Debe adjuntar Declaración Jurada simple indicando que viaja sin seguro.";
-        }
-      } else if (esRancho) {
-        lblCardGd.textContent = "1. Guía de Despacho SII";
-        resGdStatus.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-500"></i> OBLIGATORIA`;
-        resGdText.textContent = "Guía de despacho para traslado de provisiones hacia la aeronave.";
-
-        lblCardAwb.textContent = "2. Documento Embarque";
-        resAwbStatus.innerHTML = `<i class="fa-solid fa-file-invoice text-aduana-600"></i> AWB / MANIFIESTO`;
-        resAwbText.textContent = "Documento de entrega de provisiones a bordo de la aeronave.";
-
-        lblCardSeg.textContent = "3. Seguro / Gastos FOB";
-        resSegStatus.innerHTML = `<i class="fa-solid fa-circle-minus text-slate-400"></i> NO APLICA`;
-        resSegText.textContent = "Provisiones de rancho sin seguro comercial externo.";
-      } else {
-        if (esCourier) {
-          lblCardGd.textContent = "1. Guía de Recojo / Courier";
-          resGdStatus.innerHTML = `<i class="fa-solid fa-truck-fast text-aduana-600"></i> GUÍA COURIER`;
-          resGdText.textContent = "Sin Guía SII: Courier retira con documento interno valorado según Incoterm.";
-
-          lblCardAwb.textContent = "2. Valoración Guía Courier";
-          if (requiereAWBValorada) {
-            resAwbStatus.innerHTML = `<i class="fa-solid fa-file-invoice-dollar text-aduana-600"></i> VALORADA (${incoterm})`;
-            resAwbText.textContent = `Guía Courier debe desglosar flete prepagado bajo cláusula ${incoterm}.`;
-          } else {
-            resAwbStatus.innerHTML = `<i class="fa-solid fa-file-lines text-slate-700"></i> GUÍA COURIER (${incoterm})`;
-            resAwbText.textContent = `Valorada conforme a cláusula ${incoterm} para determinar FOB aduanero.`;
-          }
-        } else {
-          lblCardGd.textContent = "1. Guía de Despacho SII";
-          if (trasladaCamion) {
-            resGdStatus.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600"></i> OBLIGATORIA`;
-            resGdText.textContent = esTemporalOReexp
-              ? "Exigida por el SII para respaldar el traslado sin venta hacia el Aeropuerto."
-              : "Exigible por el SII para el tránsito de la carga hacia la Zona Primaria Aérea.";
-          } else {
-            resGdStatus.innerHTML = `<i class="fa-solid fa-circle-minus text-slate-400"></i> NO REQUERIDA`;
-            resGdText.textContent = "Sin traslado terrestre público previo al depósito aéreo.";
-          }
-
-          lblCardAwb.textContent = "2. Valoración AWB (Flete)";
-          if (requiereAWBValorada) {
-            resAwbStatus.innerHTML = `<i class="fa-solid fa-file-invoice-dollar text-aduana-600"></i> AWB VALORADA`;
-            resAwbText.textContent = `Venta ${incoterm} exige desglosar el flete prepagado en la guía aérea.`;
-          } else {
-            resAwbStatus.innerHTML = `<i class="fa-solid fa-file-lines text-slate-600"></i> AWB AS AGREED`;
-            resAwbText.textContent = `Cláusula ${incoterm} permite tarifa pactada u omitir flete en origen.`;
-          }
-        }
-
-        if (esEXW) {
-          lblCardSeg.textContent = "3. Ajuste Valor FOB (EXW)";
-          resSegStatus.innerHTML = `<i class="fa-solid fa-calculator text-amber-600"></i> GASTOS HASTA FOB TEÓRICO`;
-          resSegText.textContent = "En EXW debe sumar gastos locales hasta aeropuerto (o adjuntar respaldo de gastos).";
-        } else if (seguroObligatorio) {
-          lblCardSeg.textContent = "3. Póliza / Seguro (CIP)";
-          resSegStatus.innerHTML = `<i class="fa-solid fa-shield-halved text-red-600"></i> SEGURO OBLIGATORIO`;
-          resSegText.textContent = "Cláusula CIP exige adjuntar póliza o certificado de seguro formal.";
-        } else if (seguroContratado) {
-          lblCardSeg.textContent = "3. Póliza / Seguro";
-          resSegStatus.innerHTML = `<i class="fa-solid fa-shield-check text-emerald-600"></i> PÓLIZA ADJUNTA`;
-          resSegText.textContent = "Póliza real contratada para deducción/ajuste del valor FOB exportación.";
-        } else {
-          lblCardSeg.textContent = "3. Póliza / Seguro";
-          resSegStatus.innerHTML = `<i class="fa-solid fa-circle-info text-slate-600"></i> SIN SEGURO CONTRATADO`;
-          resSegText.textContent = `Cláusula ${incoterm} en exportación no aplica seguro teórico; se declara valor FOB neto.`;
-        }
-      }
-
-      // 3. Construcción del Checklist
-      const checklist = [];
-
-      checklist.push({
-        nombre: "DUS - Primer Mensaje (Aceptada a Trámite)",
-        desc: "Autorización de ingreso a zona primaria aérea (Aeropuerto) emitida por Servicio Nacional de Aduanas.",
-        badge: "Obligatorio",
-        badgeClass: "bg-red-100 text-red-800",
-        icon: "fa-file-signature"
-      });
-
-      checklist.push({
-        nombre: "Consulta de Ingreso a Zona Primaria (IZP)",
-        desc: "Comprobante de recepción y pesaje efectivo de la carga emitido por el Depósito Aéreo / Terminal del Aeropuerto.",
-        badge: "Obligatorio",
-        badgeClass: "bg-red-100 text-red-800",
-        icon: "fa-warehouse"
-      });
-
-      checklist.push({
-        nombre: "Manifiesto de Vuelo / Encabezado de Carga Aérea",
-        desc: "Documento oficial de la aerolínea que consigna el vuelo, fecha de embarque y la recepción del embarque en el medio de transporte.",
-        badge: "Obligatorio",
-        badgeClass: "bg-red-100 text-red-800",
-        icon: "fa-plane-arrival"
-      });
-
-      if (esPasajero) {
-        checklist.push({
-          nombre: modalidadPasajero === "ACOMPANADO" ? "Reserva / Pasaje Aéreo del Pasajero" : "Reserva / Pasaje Aéreo + Guía Aérea (AWB) Equipaje",
-          desc: modalidadPasajero === "ACOMPANADO"
-            ? "Ticket electrónico e itinerario de vuelo que acredita el viaje del pasajero."
-            : "Ticket del pasajero junto a la AWB de equipaje no acompañado.",
-          badge: "Transporte Pasajero",
-          badgeClass: "bg-indigo-100 text-indigo-800",
-          icon: "fa-ticket"
-        });
-
-        checklist.push({
-          nombre: "Factura Proforma / Declaración Jurada de Valor (Sin Factura SII)",
-          desc: "Detalla descripción, serie y valor referencial FOB sin constituir venta comercial definitiva.",
-          badge: "Sin Factura SII",
-          badgeClass: "bg-amber-100 text-amber-800",
-          icon: "fa-file-lines"
-        });
-
-        if (!seguroPasajero) {
-          checklist.push({
-            nombre: "Declaración Jurada Simple de Mercancías Sin Seguro",
-            desc: "Declaración firmada por el pasajero o exportador dejando constancia de que el traslado se realiza sin póliza de seguro contratada.",
-            badge: "Obligatorio (Sin Póliza)",
-            badgeClass: "bg-amber-100 text-amber-900 font-bold",
-            icon: "fa-file-shield"
-          });
-        }
-
-        if (motivoPasajero === "REPARACION") {
-          checklist.push({
-            nombre: "Respaldo de Origen / Orden de Servicio Técnico o Garantía (RMA)",
-            desc: "DIN previa o factura local + orden de trabajo o respaldo del taller extranjero.",
-            badge: "Motivo: Reparación",
-            badgeClass: "bg-slate-200 text-slate-800",
-            icon: "fa-screwdriver-wrench"
-          });
-        } else if (motivoPasajero === "FERIA") {
-          checklist.push({
-            nombre: "Invitación / Inscripción Oficial a Feria o Exposición",
-            desc: "Acredita participación en evento internacional y retorno posterior de los equipos.",
-            badge: "Motivo: Ferias",
-            badgeClass: "bg-slate-200 text-slate-800",
-            icon: "fa-tent"
-          });
-        } else if (motivoPasajero === "EQUIPO_PROF") {
-          checklist.push({
-            nombre: "Inventario Técnico Detallado con Números de Serie",
-            desc: "Listado individualizado de instrumentos, herramientas o equipos profesionales.",
-            badge: "Equipo Profesional",
-            badgeClass: "bg-slate-200 text-slate-800",
-            icon: "fa-camera-retro"
-          });
-        }
-      } else if (esReexp) {
-        checklist.push({
-          nombre: "Factura Proforma / Documento de Reexportación (Sin Factura Exportación SII)",
-          desc: "Respalda la devolución o reexpedición al extranjero sin constituir venta de exportación definitiva.",
-          badge: "Sin Factura SII",
-          badgeClass: "bg-amber-100 text-amber-800",
-          icon: "fa-right-left"
-        });
-        checklist.push({
-          nombre: "Declaración de Ingreso Previa (DIN / DAPI) o Resolución de Origen",
-          desc: "Documento aduanero de ingreso previo que habilita la reexportación de las mercancías (Cód. 30).",
-          badge: "Obligatorio Cód. 30",
-          badgeClass: "bg-red-100 text-red-800",
-          icon: "fa-folder-open"
-        });
-      } else if (esTempSalida) {
-        checklist.push({
-          nombre: "Factura Proforma / Declaración de Valor para Salida Temporal (Sin Factura SII)",
-          desc: "Consigna descripción, serie y valor referencial de mercancías que saldrán temporalmente sin venta comercial.",
-          badge: "Sin Factura SII",
-          badgeClass: "bg-amber-100 text-amber-800",
-          icon: "fa-file-lines"
-        });
-        checklist.push({
-          nombre: "Respaldo de Origen y Motivo de Salida Temporal",
-          desc: "Factura local o DIN previa + antecedente que acredite el motivo y plazo de retorno (Cód. 20).",
-          badge: "Requerido Cód. 20",
-          badgeClass: "bg-slate-200 text-slate-800",
-          icon: "fa-clock-rotate-left"
-        });
-      } else if (esTempPerfecc) {
-        checklist.push({
-          nombre: "Factura Proforma / Valorización para Perfeccionamiento Pasivo (Sin Factura SII)",
-          desc: "Detalla especies enviadas al exterior para reparación, transformación o elaboración sin venta definitiva.",
-          badge: "Sin Factura SII",
-          badgeClass: "bg-amber-100 text-amber-800",
-          icon: "fa-file-lines"
-        });
-        checklist.push({
-          nombre: "Orden de Reparación / Garantía (RMA) o Contrato en el Exterior",
-          desc: "Acredita el perfeccionamiento pasivo y condiciones de retorno de la mercancía (Cód. 21).",
-          badge: "Requerido Cód. 21",
-          badgeClass: "bg-slate-200 text-slate-800",
-          icon: "fa-screwdriver-wrench"
-        });
-      } else if (esRancho) {
-        checklist.push({
-          nombre: "Solicitud / Vale de Recepción de Provisiones de A bordo",
-          desc: "Comprobante de aprovisionamiento con firma o respaldo de la compañía aérea / aeronave (Sin Factura Exportación SII).",
-          badge: "Rancho / Provisiones",
-          badgeClass: "bg-purple-100 text-purple-800",
-          icon: "fa-boxes-packing"
-        });
-      } else if (regimen === "DEF" && modalidadVenta !== "LIBRE") {
-        checklist.push({
-          nombre: modalidadVenta === "FIRME"
-            ? "Factura Comercial de Exportación (E-Factura SII)"
-            : "Factura Comercial / Documento de Operación (" + modalidadVenta + ")",
-          desc: "Respalda la operación comercial de exportación con expresión de Incoterm aéreo y valor FOB USD.",
-          badge: modalidadVenta === "FIRME" ? "Obligatorio" : "Requerido por Modalidad",
-          badgeClass: modalidadVenta === "FIRME" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-800",
-          icon: "fa-file-invoice-dollar"
-        });
-      } else if (modalidadVenta === "LIBRE") {
-        checklist.push({
-          nombre: "Factura Proforma / Declaración de Valor Sin Valor Comercial (Sin Factura SII)",
-          desc: "Consigna descripción, serie y valor referencial de mercancías sin venta comercial definitiva.",
-          badge: "Sin Factura SII",
-          badgeClass: "bg-amber-100 text-amber-800",
-          icon: "fa-file-lines"
-        });
-      }
-
-      if (!esPasajero) {
-        if (awbType === "DIRECT") {
-          checklist.push({
-            nombre: "Master AWB (Air Waybill Directo Aerolínea)",
-            desc: `Guía aérea matriz original. ${requiereAWBValorada ? 'Debe ser VALORADA con flete prepaid.' : 'Acepta tarifa As Agreed.'}`,
-            badge: "Transporte Directo",
-            badgeClass: "bg-aduana-100 text-aduana-900",
-            icon: "fa-plane"
-          });
-        } else if (awbType === "FORWARDER") {
-          checklist.push({
-            nombre: "House AWB (HAWB Forwarder) + Copia Master AWB Consolidado",
-            desc: "Guía aérea hija (HAWB) emitida por el agente consolidador junto al manifiesto de carga.",
-            badge: "Carga Consolidada",
-            badgeClass: "bg-aduana-100 text-aduana-900",
-            icon: "fa-sitemap"
-          });
-        } else if (awbType === "COURIER") {
-          checklist.push({
-            nombre: "Guía Courier / Documento de Recojo Internacional (FedEx / DHL / UPS)",
-            desc: `Reemplaza la Guía de Despacho SII para el retiro en planta y traslado al aeropuerto. Se valora conforme al Incoterm ${esRancho ? 'aplicable' : incoterm} para determinar el valor FOB.`,
-            badge: "Courier / Sin Guía SII",
-            badgeClass: "bg-sky-100 text-sky-900 font-bold border border-sky-300",
-            icon: "fa-truck-fast"
-          });
-        }
-      }
-
-      if (currentTariff && currentTariff.obligatorio) {
-        checklist.push({
-          nombre: `${currentTariff.vobo_nombre || 'Certificado Regulatorio'} [Partida ${currentTariff.code}]`,
-          desc: currentTariff.desc || "Documento o visto bueno obligatorio antes del embarque.",
-          badge: `Visto Bueno ${currentTariff.organismo || 'Sectorial'}`,
-          badgeClass: "bg-amber-100 text-amber-900 font-bold border border-amber-300",
-          icon: "fa-stamp"
-        });
-      }
-
-      if (!esPasajero && !esCourier && trasladaCamion) {
-        checklist.push({
-          nombre: "Guía de Despacho Electrónica (SII)",
-          desc: esTemporalOReexp || esRancho
-            ? "Respalda el traslado sin venta de la carga desde bodega hasta el aeropuerto."
-            : "Respalda el traslado de la carga desde la bodega del exportador hasta el aeropuerto.",
-          badge: "Obligatorio Tránsito",
-          badgeClass: "bg-slate-200 text-slate-800",
-          icon: "fa-truck-ramp-box"
-        });
-      }
-
-      if (esEXW) {
-        checklist.push({
-          nombre: "Hoja de Cálculo de Gastos hasta FOB Teórico / Respaldo Gastos Locales",
-          desc: "En venta EXW deben adicionarse los gastos de transporte interno, manipulación y embarque hasta poner la carga a bordo/aeropuerto (valor FOB aduanero).",
-          badge: "Ajuste EXW a FOB",
-          badgeClass: "bg-amber-100 text-amber-900 font-bold",
-          icon: "fa-calculator"
-        });
-      }
-
-      checklist.push({
-        nombre: "Lista de Empaque (Packing List)",
-        desc: "Detalle de pesos (Bruto/Neto), marcas, número de bultos y dimensiones volumétricas de la carga aérea.",
-        badge: "Operativo Aéreo",
-        badgeClass: "bg-slate-100 text-slate-700",
-        icon: "fa-box"
-      });
-
-      if ((esPasajero && seguroPasajero) || (!esPasajero && (seguroObligatorio || seguroContratado))) {
-        checklist.push({
-          nombre: "Póliza / Certificado de Seguro de Carga Aérea",
-          desc: seguroObligatorio ? "Exigido obligatoriamente por la cláusula CIP." : "Documenta la prima real pagada para el cálculo del valor FOB.",
-          badge: seguroObligatorio ? "Obligatorio (CIP)" : "Adjunto",
-          badgeClass: seguroObligatorio ? "bg-red-100 text-red-800" : "bg-slate-100 text-slate-700",
-          icon: "fa-shield-halved"
-        });
-      }
-
-      if (requiereAgente) {
-        checklist.push({
-          nombre: "Mandato Aduanero (Endoso AWB/Guía o Poder Notarial Especial)",
-          desc: "Autorización al Agente de Aduanas conforme al Art. 197 de la Ordenanza de Aduanas (obligatorio por tramitación mediante Agencia de Aduanas).",
-          badge: "Mandato Obligatorio",
-          badgeClass: "bg-red-100 text-red-800",
-          icon: "fa-user-check"
-        });
-      }
-
-      const container = document.getElementById('checklist-container');
-      container.innerHTML = "";
-
-      checklist.forEach((item, idx) => {
-        container.innerHTML += `
-          <div class="p-3.5 hover:bg-slate-50 transition flex items-start gap-3">
-            <div class="mt-0.5 text-aduana-600 font-bold text-xs w-5 text-center">
-              <i class="fa-solid ${item.icon}"></i>
-            </div>
-            <div class="flex-grow space-y-0.5">
-              <div class="flex flex-wrap items-center justify-between gap-1">
-                <span class="font-bold text-xs text-slate-900">${idx + 1}. ${item.nombre}</span>
-                <span class="text-[9px] font-bold px-2 py-0.5 rounded ${item.badgeClass}">${item.badge}</span>
-              </div>
-              <p class="text-[11px] text-slate-600 leading-tight">${item.desc}</p>
-            </div>
+      } catch (err) {
+        chatBox.innerHTML += `
+          <div class="bg-rose-50 border border-rose-200 text-rose-700 rounded-lg px-3 py-2">
+            Error: ${err.message}
           </div>
         `;
-      });
-
-      // 4. Consideraciones Normativas Dinámicas (CNA Cap. IV)
-      const normativeList = document.getElementById('normative-list');
-      normativeList.innerHTML = "";
-
-      normativeList.innerHTML += `<li><strong>Plazo de Embarque y Legalización DUS:</strong> El embarque y presentación del segundo mensaje (Legalización) se rigen por el plazo general de 25 días corridos contados desde la aceptación a trámite del DUS (salvo prórroga o regla especial aplicable).</li>`;
-      normativeList.innerHTML += `<li><strong>Mandato de Agencia de Aduanas:</strong> Al tramitarse la operación mediante Agencia de Aduanas, el mandato aduanero (Art. 197 de la Ordenanza de Aduanas) es exigido en todo el flujo del expediente${fobUSD < 3000 && !esPasajero && !esTemporalOReexp && !esRancho ? ' (sin perjuicio de la posibilidad de tramitación simplificada bajo USD 3.000 cuando la operación se realice en forma directa sin agencia)' : ''}.</li>`;
-
-      if (esPasajero) {
-        normativeList.innerHTML += `<li><strong>Salida de Pasajeros / Propios Medios:</strong> No aplican reglas Incoterms. En ausencia de póliza contratada, se debe acompañar <strong>Declaración Jurada simple de mercancías sin seguro</strong>.</li>`;
-      } else if (esReexp) {
-        normativeList.innerHTML += `<li><strong>Reexportación (Cód. 30):</strong> No constituye venta comercial definitiva; se respalda con documento de reexportación y DIN / DAPI / antecedente de ingreso previo en lugar de Factura Comercial de Exportación SII.</li>`;
-      } else if (esTemporalOReexp || esRancho || modalidadVenta === "LIBRE") {
-        normativeList.innerHTML += `<li><strong>Destinación sin Venta Definitiva:</strong> En Salida Temporal, Perfeccionamiento Pasivo o Rancho no se configura una venta comercial definitiva al exterior; se respalda con Factura Proforma / antecedentes del régimen en lugar de Factura Comercial de Exportación SII.</li>`;
-      } else {
-        normativeList.innerHTML += `<li><strong>Modalidad y Forma de Pago:</strong> Operación bajo modalidad <strong>${modalidadVenta}</strong>, Incoterm <strong>${incoterm}</strong> y forma de pago <strong>${formaPago}</strong>.</li>`;
       }
-
-      if (esEXW) {
-        normativeList.innerHTML += `<li><strong>Cláusula EXW en Exportación:</strong> Dado que la valoración aduanera de exportación se expresa en base FOB, se deben sumar los <strong>gastos hasta FOB teórico</strong> (flete interno, seguros locales y costos portuarios/aeroportuarios hasta el embarque) o adjuntar los comprobantes de dichos gastos.</li>`;
-      }
-
-      if (seguroObligatorio) {
-        normativeList.innerHTML += `<li><strong>Cláusula CIP (Seguro Obligatorio):</strong> Requiere adjuntar la póliza o certificado de seguro contratado para deducir la prima y determinar correctamente el valor FOB.</li>`;
-      }
-
-      if (esCourier) {
-        normativeList.innerHTML += `<li><strong>Operación vía Courier Internacional:</strong> Al efectuar el retiro la empresa de courier con su documento interno (Guía de Recojo / Guía Courier), no corresponde emisión de Guía de Despacho SII. Dicha guía courier se valora según el Incoterm (${incoterm}) para conformar el valor FOB.</li>`;
-      } else if (!esPasajero && awbType === "FORWARDER") {
-        normativeList.innerHTML += `<li><strong>Emisión Consolidador:</strong> Se debe consignar el número de HAWB y vincularlo con el manifiesto aéreo Master de la aerolínea.</li>`;
-      }
-
-      if (currentTariff) {
-        normativeList.innerHTML += `<li><strong>Vistos Buenos Sectoriales:</strong> La partida <strong>${currentTariff.code}</strong> (${currentTariff.glosa || 'Sin glosa'}) evalúa regulación formal ante <strong>${currentTariff.organismo || 'Régimen General'}</strong> previa transmisión del segundo mensaje.</li>`;
-      }
-
-      if (requiereAWBValorada) {
-        normativeList.innerHTML += `<li><strong>Incoterm ${incoterm}:</strong> Exige documento de transporte valorado con tarifa de flete declarada para verificar el FOB neto aduanero.</li>`;
-      }
+      chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    function copyChecklistToClipboard() {
-      const container = document.getElementById('checklist-container');
-      const items = container.querySelectorAll('.font-bold.text-xs');
-      let text = `CHECKLIST DUS LEGALIZACIÓN AÉREA CHILE\n`;
-      if (currentTariff) {
-        text += `PARTIDA ARANCELARIA: ${currentTariff.code} - ${currentTariff.glosa}\n`;
-        text += `VISTO BUENO: ${currentTariff.vobo_nombre || 'N/A'}\n`;
-      }
-      text += `--------------------------------------------------\n`;
-
-      items.forEach((it) => {
-        text += `${it.innerText}\n`;
-      });
-
-      navigator.clipboard?.writeText(text).catch(() => {
-        const tempInput = document.createElement("textarea");
-        tempInput.value = text;
-        document.body.appendChild(tempInput);
-        tempInput.select();
-        document.execCommand("copy");
-        document.body.removeChild(tempInput);
-      });
-
-      const toast = document.getElementById('toast-msg');
-      toast.classList.remove('hidden');
-      setTimeout(() => {
-        toast.classList.add('hidden');
-      }, 2500);
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      actualizarFormasPagoCompatible();
-      actualizarBarraIncoterm();
-      evaluarReglasAereas();
-      cargarBaseDatosArancel();
-
-      document.addEventListener('click', function(e) {
-        const dropdown = document.getElementById('hs-dropdown');
-        const searchInput = document.getElementById('hs-search-input');
-        if (dropdown && !dropdown.contains(e.target) && e.target !== searchInput) {
-          dropdown.classList.add('hidden');
-        }
-      });
+    // Copiar informe al portapapeles
+    document.getElementById('btnCopiarInforme').addEventListener('click', () => {
+      if (!ultimoDictamenJSON) return;
+      const texto = `${ultimoDictamenJSON.veredicto_titulo}\n\n${ultimoDictamenJSON.veredicto_resumen}\n\nPesos: DUS ${ultimoDictamenJSON.pesos.peso_dus} | ZP ${ultimoDictamenJSON.pesos.peso_zp} | Guía ${ultimoDictamenJSON.pesos.peso_guia} (${ultimoDictamenJSON.pesos.estado_badge})`;
+      navigator.clipboard.writeText(texto);
+      alert('📋 Informe copiado al portapapeles.');
     });
   </script>
-
-  <!-- 1. SDK Oficial de Supabase v2 desde CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <!-- 2. Lógica de Autenticación -->
-  <script src="login.js"></script>
+  <footer class="mt-12 border-t border-slate-200 bg-white/80 backdrop-blur-sm py-6 text-center text-sm text-slate-500">
+  <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2">
+    <p>
+      &copy; 2026 <span class="font-semibold text-slate-700">Sergio Figueroa S.</span> Todos los derechos reservados.
+    </p>
+    <p class="text-xs text-slate-400">
+      Gestión Aduanera &amp; Comercio Exterior
+    </p>
+  </div>
+</footer>
 </body>
 </html>
+
+
+
