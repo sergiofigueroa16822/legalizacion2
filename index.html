@@ -307,7 +307,7 @@
             </div>
           </div>
 
-          <!-- Selector Emisor del Documento de Transporte (Reemplazo de radio buttons por selector con Courier) -->
+          <!-- Selector Emisor del Documento de Transporte -->
           <div id="awb-emitter-container" class="space-y-1">
             <label for="sel-awb-type" class="block text-[11px] font-bold text-slate-700">Emisor del Documento de Transporte / Operador</label>
             <select id="sel-awb-type" onchange="onAwbTypeChange()" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 bg-slate-50 focus:ring-2 focus:ring-aduana-600">
@@ -641,7 +641,6 @@
       const incotermContainer = document.getElementById('incoterm-container');
       const riskGraphBox = document.getElementById('risk-graph-box');
 
-      // Ocultar Incoterm y gráfico de riesgo tanto en PASAJERO como en RANCHO
       if (regimen === "TEMP_PASAJERO" || regimen === "RANCHO") {
         if (incotermContainer) incotermContainer.style.display = "none";
         if (riskGraphBox) riskGraphBox.style.display = "none";
@@ -776,7 +775,10 @@
 
       const esPasajero = (regimen === "TEMP_PASAJERO");
       const esRancho = (regimen === "RANCHO");
-      const esTemporalOReexp = ["TEMP_SALIDA", "TEMP_PERFECC", "REEXP"].includes(regimen);
+      const esReexp = (regimen === "REEXP");
+      const esTempSalida = (regimen === "TEMP_SALIDA");
+      const esTempPerfecc = (regimen === "TEMP_PERFECC");
+      const esTemporalOReexp = (esTempSalida || esTempPerfecc || esReexp);
       const esCourier = (!esPasajero && awbType === "COURIER");
 
       const motivoPasajero = document.getElementById('sel-motivo-pasajero')?.value || "EXPORTACION_PROFORMA";
@@ -808,7 +810,9 @@
         statusSummary.textContent = "Legalización de DUS para pasajeros / propios medios (Sin Incoterm / Sin Valor Comercial) con ingreso a Zona Primaria.";
       } else if (esRancho) {
         statusSummary.textContent = "Suministro de rancho / provisiones a bordo sin venta comercial definitiva ni reglas Incoterm.";
-      } else if (esTemporalOReexp) {
+      } else if (esReexp) {
+        statusSummary.textContent = "Reexportación de mercancías (Cód. 30): no corresponde Factura de Exportación SII; se respalda con documento de reexportación y DIN / DAPI / antecedente de ingreso previo.";
+      } else if (esTempSalida || esTempPerfecc) {
         statusSummary.textContent = "Destinación sin venta comercial definitiva: no corresponde Factura de Exportación SII; se respalda con Factura Proforma / Declaración de Valor y antecedentes del régimen.";
       } else {
         const emisorLabel = esCourier ? "Courier Internacional" : (awbType === "FORWARDER" ? "Freight Forwarder" : "Aerolínea Directa");
@@ -871,7 +875,6 @@
         resSegStatus.innerHTML = `<i class="fa-solid fa-circle-minus text-slate-400"></i> NO APLICA`;
         resSegText.textContent = "Provisiones de rancho sin seguro comercial externo.";
       } else {
-        // Caso Exportación General (Aerolínea, Forwarder o Courier)
         if (esCourier) {
           lblCardGd.textContent = "1. Guía de Recojo / Courier";
           resGdStatus.innerHTML = `<i class="fa-solid fa-truck-fast text-aduana-600"></i> GUÍA COURIER`;
@@ -907,7 +910,6 @@
           }
         }
 
-        // Tarjeta 3: Exportación (Sin Seguro Teórico de Importación; Gastos hasta FOB Teórico en EXW o Seguro Obligatorio en CIP)
         if (esEXW) {
           lblCardSeg.textContent = "3. Ajuste Valor FOB (EXW)";
           resSegStatus.innerHTML = `<i class="fa-solid fa-calculator text-amber-600"></i> GASTOS HASTA FOB TEÓRICO`;
@@ -1008,49 +1010,7 @@
             icon: "fa-camera-retro"
           });
         }
-      } else if (regimen === "DEF" && modalidadVenta !== "LIBRE") {
-        checklist.push({
-          nombre: modalidadVenta === "FIRME"
-            ? "Factura Comercial de Exportación (E-Factura SII)"
-            : "Factura Comercial / Documento de Operación (" + modalidadVenta + ")",
-          desc: "Respalda la operación comercial de exportación con expresión de Incoterm aéreo y valor FOB USD.",
-          badge: modalidadVenta === "FIRME" ? "Obligatorio" : "Requerido por Modalidad",
-          badgeClass: modalidadVenta === "FIRME" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-800",
-          icon: "fa-file-invoice-dollar"
-        });
-      } else if (regimen === "TEMP_SALIDA" || modalidadVenta === "LIBRE") {
-        checklist.push({
-          nombre: "Factura Proforma / Declaración de Valor para Salida Temporal (Sin Factura SII)",
-          desc: "Consigna descripción, serie y valor referencial de mercancías que saldrán temporalmente sin venta comercial.",
-          badge: "Sin Factura SII",
-          badgeClass: "bg-amber-100 text-amber-800",
-          icon: "fa-file-lines"
-        });
-        if (regimen === "TEMP_SALIDA") {
-          checklist.push({
-            nombre: "Respaldo de Origen y Motivo de Salida Temporal",
-            desc: "Factura local o DIN previa + antecedente que acredite el motivo y plazo de retorno (Cód. 20).",
-            badge: "Requerido Cód. 20",
-            badgeClass: "bg-slate-200 text-slate-800",
-            icon: "fa-clock-rotate-left"
-          });
-        }
-      } else if (regimen === "TEMP_PERFECC") {
-        checklist.push({
-          nombre: "Factura Proforma / Valorización para Perfeccionamiento Pasivo (Sin Factura SII)",
-          desc: "Detalla especies enviadas al exterior para reparación, transformación o elaboración sin venta definitiva.",
-          badge: "Sin Factura SII",
-          badgeClass: "bg-amber-100 text-amber-800",
-          icon: "fa-file-lines"
-        });
-        checklist.push({
-          nombre: "Orden de Reparación / Garantía (RMA) o Contrato en el Exterior",
-          desc: "Acredita el perfeccionamiento pasivo y condiciones de retorno de la mercancía (Cód. 21).",
-          badge: "Requerido Cód. 21",
-          badgeClass: "bg-slate-200 text-slate-800",
-          icon: "fa-screwdriver-wrench"
-        });
-      } else if (regimen === "REEXP") {
+      } else if (esReexp) {
         checklist.push({
           nombre: "Factura Proforma / Documento de Reexportación (Sin Factura Exportación SII)",
           desc: "Respalda la devolución o reexpedición al extranjero sin constituir venta de exportación definitiva.",
@@ -1065,13 +1025,61 @@
           badgeClass: "bg-red-100 text-red-800",
           icon: "fa-folder-open"
         });
-      } else if (regimen === "RANCHO") {
+      } else if (esTempSalida) {
+        checklist.push({
+          nombre: "Factura Proforma / Declaración de Valor para Salida Temporal (Sin Factura SII)",
+          desc: "Consigna descripción, serie y valor referencial de mercancías que saldrán temporalmente sin venta comercial.",
+          badge: "Sin Factura SII",
+          badgeClass: "bg-amber-100 text-amber-800",
+          icon: "fa-file-lines"
+        });
+        checklist.push({
+          nombre: "Respaldo de Origen y Motivo de Salida Temporal",
+          desc: "Factura local o DIN previa + antecedente que acredite el motivo y plazo de retorno (Cód. 20).",
+          badge: "Requerido Cód. 20",
+          badgeClass: "bg-slate-200 text-slate-800",
+          icon: "fa-clock-rotate-left"
+        });
+      } else if (esTempPerfecc) {
+        checklist.push({
+          nombre: "Factura Proforma / Valorización para Perfeccionamiento Pasivo (Sin Factura SII)",
+          desc: "Detalla especies enviadas al exterior para reparación, transformación o elaboración sin venta definitiva.",
+          badge: "Sin Factura SII",
+          badgeClass: "bg-amber-100 text-amber-800",
+          icon: "fa-file-lines"
+        });
+        checklist.push({
+          nombre: "Orden de Reparación / Garantía (RMA) o Contrato en el Exterior",
+          desc: "Acredita el perfeccionamiento pasivo y condiciones de retorno de la mercancía (Cód. 21).",
+          badge: "Requerido Cód. 21",
+          badgeClass: "bg-slate-200 text-slate-800",
+          icon: "fa-screwdriver-wrench"
+        });
+      } else if (esRancho) {
         checklist.push({
           nombre: "Solicitud / Vale de Recepción de Provisiones de A bordo",
           desc: "Comprobante de aprovisionamiento con firma o respaldo de la compañía aérea / aeronave (Sin Factura Exportación SII).",
           badge: "Rancho / Provisiones",
           badgeClass: "bg-purple-100 text-purple-800",
           icon: "fa-boxes-packing"
+        });
+      } else if (regimen === "DEF" && modalidadVenta !== "LIBRE") {
+        checklist.push({
+          nombre: modalidadVenta === "FIRME"
+            ? "Factura Comercial de Exportación (E-Factura SII)"
+            : "Factura Comercial / Documento de Operación (" + modalidadVenta + ")",
+          desc: "Respalda la operación comercial de exportación con expresión de Incoterm aéreo y valor FOB USD.",
+          badge: modalidadVenta === "FIRME" ? "Obligatorio" : "Requerido por Modalidad",
+          badgeClass: modalidadVenta === "FIRME" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-800",
+          icon: "fa-file-invoice-dollar"
+        });
+      } else if (modalidadVenta === "LIBRE") {
+        checklist.push({
+          nombre: "Factura Proforma / Declaración de Valor Sin Valor Comercial (Sin Factura SII)",
+          desc: "Consigna descripción, serie y valor referencial de mercancías sin venta comercial definitiva.",
+          badge: "Sin Factura SII",
+          badgeClass: "bg-amber-100 text-amber-800",
+          icon: "fa-file-lines"
         });
       }
 
@@ -1113,7 +1121,6 @@
         });
       }
 
-      // Solo exige Guía de Despacho SII si NO es Pasajero, NO es Courier y hay traslado en camión
       if (!esPasajero && !esCourier && trasladaCamion) {
         checklist.push({
           nombre: "Guía de Despacho Electrónica (SII)",
@@ -1192,8 +1199,10 @@
 
       if (esPasajero) {
         normativeList.innerHTML += `<li><strong>Salida de Pasajeros / Propios Medios:</strong> No aplican reglas Incoterms. En ausencia de póliza contratada, se debe acompañar <strong>Declaración Jurada simple de mercancías sin seguro</strong>.</li>`;
+      } else if (esReexp) {
+        normativeList.innerHTML += `<li><strong>Reexportación (Cód. 30):</strong> No constituye venta comercial definitiva; se respalda con documento de reexportación y DIN / DAPI / antecedente de ingreso previo en lugar de Factura Comercial de Exportación SII.</li>`;
       } else if (esTemporalOReexp || esRancho || modalidadVenta === "LIBRE") {
-        normativeList.innerHTML += `<li><strong>Destinación sin Venta Definitiva:</strong> En Salida Temporal, Perfeccionamiento Pasivo, Reexportación o Rancho no se configura una venta comercial definitiva al exterior; se respalda con Factura Proforma / antecedentes del régimen en lugar de Factura Comercial de Exportación SII.</li>`;
+        normativeList.innerHTML += `<li><strong>Destinación sin Venta Definitiva:</strong> En Salida Temporal, Perfeccionamiento Pasivo o Rancho no se configura una venta comercial definitiva al exterior; se respalda con Factura Proforma / antecedentes del régimen en lugar de Factura Comercial de Exportación SII.</li>`;
       } else {
         normativeList.innerHTML += `<li><strong>Modalidad y Forma de Pago:</strong> Operación bajo modalidad <strong>${modalidadVenta}</strong>, Incoterm <strong>${incoterm}</strong> y forma de pago <strong>${formaPago}</strong>.</li>`;
       }
