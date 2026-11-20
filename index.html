@@ -244,7 +244,7 @@
             </div>
           </div>
 
-          <!-- Incoterm Aéreo -->
+          <!-- Incoterm Aéreo (Se oculta en Pasajeros y Rancho) -->
           <div id="incoterm-container" class="space-y-1">
             <label for="sel-incoterm" class="block text-[11px] font-bold text-slate-700">Incoterm 2020 (Exclusivo Aéreo/Multimodal)</label>
             <select id="sel-incoterm" onchange="actualizarBarraIncoterm(); evaluarReglasAereas();" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs font-bold text-aduana-900 bg-slate-50 focus:ring-2 focus:ring-aduana-600">
@@ -307,25 +307,18 @@
             </div>
           </div>
 
-          <!-- Emisor AWB -->
-          <div class="space-y-1">
-            <label class="block text-[11px] font-bold text-slate-700">Emisor del Documento de Transporte (AWB)</label>
-            <div class="grid grid-cols-2 gap-2">
-              <label class="p-2 border rounded-lg cursor-pointer text-xs flex items-center gap-2 font-medium bg-slate-50 border-slate-200 hover:bg-slate-100">
-                <input type="radio" name="awb_type" value="DIRECT" checked onchange="evaluarReglasAereas()" class="text-aduana-600">
-                <span>
-                  <strong class="block text-slate-800 text-[11px]">Aerolínea Directa</strong>
-                  <span class="text-[9px] text-slate-500 block">MAWB Directo</span>
-                </span>
-              </label>
-              <label class="p-2 border rounded-lg cursor-pointer text-xs flex items-center gap-2 font-medium bg-slate-50 border-slate-200 hover:bg-slate-100">
-                <input type="radio" name="awb_type" value="FORWARDER" onchange="evaluarReglasAereas()" class="text-aduana-600">
-                <span>
-                  <strong class="block text-slate-800 text-[11px]">Freight Forwarder</strong>
-                  <span class="text-[9px] text-slate-500 block">HAWB + MAWB Consolidado</span>
-                </span>
-              </label>
-            </div>
+          <!-- Selector Emisor del Documento de Transporte (Reemplazo de radio buttons por selector con Courier) -->
+          <div id="awb-emitter-container" class="space-y-1">
+            <label for="sel-awb-type" class="block text-[11px] font-bold text-slate-700">Emisor del Documento de Transporte / Operador</label>
+            <select id="sel-awb-type" onchange="onAwbTypeChange()" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 bg-slate-50 focus:ring-2 focus:ring-aduana-600">
+              <option value="DIRECT" selected>Aerolínea Directa (MAWB Directo)</option>
+              <option value="FORWARDER">Freight Forwarder / Embarcador (HAWB + MAWB Consolidado)</option>
+              <option value="COURIER">Courier Internacional (FedEx / DHL / UPS - Guía Courier / Recojo)</option>
+            </select>
+            <p id="courier-helper-note" class="hidden text-[10px] text-amber-800 bg-amber-50 border border-amber-200 rounded-md p-2 mt-1 leading-tight">
+              <i class="fa-solid fa-truck-fast text-amber-600 mr-1"></i>
+              <strong>Modalidad Courier:</strong> La empresa de courier realiza el recojo en planta y traslado al aeropuerto con su documento interno (<strong>Guía de Recojo / Guía Courier</strong>), por lo que no se emite Guía de Despacho SII. Dicha guía se valora según el Incoterm pactado.
+            </p>
           </div>
 
           <!-- FOB USD & Aduana -->
@@ -352,12 +345,12 @@
 
           <!-- Factores Adicionales -->
           <div class="pt-2 border-t border-slate-100 space-y-1.5">
-            <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-700">
+            <label id="lbl-traslado-camion" class="flex items-center gap-2 cursor-pointer text-xs text-slate-700">
               <input type="checkbox" id="chk-traslado-camion" checked onchange="evaluarReglasAereas()" class="rounded text-aduana-600">
-              <span class="text-[11px]">¿Tránsito terrestre en camión hacia Aeropuerto?</span>
+              <span id="txt-traslado-camion" class="text-[11px]">¿Tránsito terrestre en camión hacia Aeropuerto?</span>
             </label>
 
-            <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-700">
+            <label id="lbl-seguro-contratado" class="flex items-center gap-2 cursor-pointer text-xs text-slate-700">
               <input type="checkbox" id="chk-seguro-contratado" onchange="evaluarReglasAereas()" class="rounded text-aduana-600">
               <span class="text-[11px]">¿Póliza de seguro efectiva contratada en Chile?</span>
             </label>
@@ -409,10 +402,10 @@
           </div>
         </div>
 
-        <!-- TABLA DE EVALUACIÓN RÁPIDA (GD, AWB, SEGURO) -->
+        <!-- TABLA DE EVALUACIÓN RÁPIDA (GD / RECOJO, AWB, SEGURO / GASTOS HASTA FOB) -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div class="p-3 rounded-xl border border-slate-200 bg-white space-y-1 shadow-sm print-card">
-            <span class="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block">1. Guía de Despacho SII</span>
+            <span id="lbl-card-gd" class="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block">1. Guía de Despacho SII</span>
             <div id="res-gd-status" class="font-bold text-xs text-slate-900 flex items-center gap-1">
               <i class="fa-solid fa-circle-check text-emerald-500"></i> OBLIGATORIA
             </div>
@@ -422,7 +415,7 @@
           </div>
 
           <div class="p-3 rounded-xl border border-slate-200 bg-white space-y-1 shadow-sm print-card">
-            <span class="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block">2. Valoración AWB (Flete)</span>
+            <span id="lbl-card-awb" class="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block">2. Valoración AWB (Flete)</span>
             <div id="res-awb-status" class="font-bold text-xs text-aduana-800 flex items-center gap-1">
               <i class="fa-solid fa-file-invoice text-aduana-600"></i> AWB VALORADA
             </div>
@@ -432,12 +425,12 @@
           </div>
 
           <div class="p-3 rounded-xl border border-slate-200 bg-white space-y-1 shadow-sm print-card">
-            <span class="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block">3. Póliza / Seguro</span>
+            <span id="lbl-card-seg" class="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block">3. Seguro / Gastos FOB</span>
             <div id="res-seg-status" class="font-bold text-xs text-slate-900 flex items-center gap-1">
               <i class="fa-solid fa-shield-halved text-amber-500"></i> CONDICIONAL
             </div>
             <p id="res-seg-text" class="text-[10px] text-slate-500 leading-tight">
-              Seguro teórico (2%) si no hay póliza real.
+              Según cláusula Incoterm y póliza contratada.
             </p>
           </div>
         </div>
@@ -593,12 +586,50 @@
       }
     }
 
+    function onAwbTypeChange() {
+      const awbType = document.getElementById('sel-awb-type').value;
+      const courierNote = document.getElementById('courier-helper-note');
+      const chkCamion = document.getElementById('chk-traslado-camion');
+      const lblCamion = document.getElementById('lbl-traslado-camion');
+      const txtCamion = document.getElementById('txt-traslado-camion');
+
+      if (awbType === 'COURIER') {
+        if (courierNote) courierNote.classList.remove('hidden');
+        if (chkCamion) {
+          chkCamion.checked = false;
+          chkCamion.disabled = true;
+        }
+        if (lblCamion) lblCamion.classList.add('opacity-50', 'cursor-not-allowed');
+        if (txtCamion) txtCamion.textContent = "Traslado efectuado directamente por Courier (Sin Guía de Despacho SII)";
+      } else {
+        if (courierNote) courierNote.classList.add('hidden');
+        if (chkCamion) {
+          chkCamion.disabled = false;
+          chkCamion.checked = true;
+        }
+        if (lblCamion) lblCamion.classList.remove('opacity-50', 'cursor-not-allowed');
+        if (txtCamion) txtCamion.textContent = "¿Tránsito terrestre en camión hacia Aeropuerto?";
+      }
+
+      evaluarReglasAereas();
+    }
+
     function onRegimenChange() {
       const regimen = document.getElementById('sel-regimen').value;
       const pasajeroBox = document.getElementById('pasajero-options');
+      const awbContainer = document.getElementById('awb-emitter-container');
+      const lblSeguroContratado = document.getElementById('lbl-seguro-contratado');
+
       if (pasajeroBox) {
         pasajeroBox.classList.toggle('hidden', regimen !== 'TEMP_PASAJERO');
       }
+      if (awbContainer) {
+        awbContainer.classList.toggle('hidden', regimen === 'TEMP_PASAJERO');
+      }
+      if (lblSeguroContratado) {
+        lblSeguroContratado.classList.toggle('hidden', regimen === 'TEMP_PASAJERO');
+      }
+
       actualizarFormasPagoCompatible();
       evaluarReglasAereas();
     }
@@ -610,8 +641,14 @@
       const incotermContainer = document.getElementById('incoterm-container');
       const riskGraphBox = document.getElementById('risk-graph-box');
 
-      if (incotermContainer) incotermContainer.style.display = "block";
-      if (riskGraphBox) riskGraphBox.style.display = "block";
+      // Ocultar Incoterm y gráfico de riesgo tanto en PASAJERO como en RANCHO
+      if (regimen === "TEMP_PASAJERO" || regimen === "RANCHO") {
+        if (incotermContainer) incotermContainer.style.display = "none";
+        if (riskGraphBox) riskGraphBox.style.display = "none";
+      } else {
+        if (incotermContainer) incotermContainer.style.display = "block";
+        if (riskGraphBox) riskGraphBox.style.display = "block";
+      }
 
       if (regimen === "TEMP_PASAJERO") {
         selModalidad.innerHTML = `<option value="LIBRE" selected>Libre / Sin Valor Comercial (Proforma / Pasajero)</option>`;
@@ -622,8 +659,6 @@
       }
 
       if (regimen === "RANCHO") {
-        if (incotermContainer) incotermContainer.style.display = "none";
-        if (riskGraphBox) riskGraphBox.style.display = "none";
         selModalidad.innerHTML = `<option value="LIBRE" selected>Libre / Suministro de A Bordo (Rancho)</option>`;
         selModalidad.disabled = true;
         selPago.innerHTML = `<option value="SIN_PAGO" selected>Sin Pago / Suministro de A Bordo</option>`;
@@ -693,7 +728,7 @@
       switch (incoterm) {
         case 'EXW':
           porcentaje = '5%';
-          descripcion = '<strong>EXW (En Fábrica):</strong> El vendedor solo empaqueta. El comprador asume costos, trámites y riesgos desde la puerta de origen.';
+          descripcion = '<strong>EXW (En Fábrica):</strong> El vendedor solo empaqueta. El comprador asume costos, trámites y riesgos desde la puerta de origen. Para efectos aduaneros se deben declarar los <strong>gastos hasta FOB teórico</strong>.';
           break;
         case 'FCA':
           porcentaje = '30%';
@@ -705,7 +740,7 @@
           break;
         case 'CIP':
           porcentaje = '75%';
-          descripcion = '<strong>CIP (Flete y Seguro Pagados):</strong> Igual que CPT, pero el vendedor debe contratar seguro a nombre del comprador durante el transporte.';
+          descripcion = '<strong>CIP (Flete y Seguro Pagados):</strong> Igual que CPT, pero el vendedor debe contratar seguro obligatorio a nombre del comprador durante el transporte.';
           break;
         case 'DAP':
           porcentaje = '90%';
@@ -732,7 +767,7 @@
     function evaluarReglasAereas() {
       const regimen = document.getElementById('sel-regimen').value;
       const incoterm = document.getElementById('sel-incoterm').value;
-      const awbType = document.querySelector('input[name="awb_type"]:checked')?.value || 'DIRECT';
+      const awbType = document.getElementById('sel-awb-type')?.value || 'DIRECT';
       const fobUSD = parseFloat(document.getElementById('num-fob').value) || 0;
       const trasladaCamion = document.getElementById('chk-traslado-camion').checked;
       const seguroContratado = document.getElementById('chk-seguro-contratado').checked;
@@ -742,14 +777,16 @@
       const esPasajero = (regimen === "TEMP_PASAJERO");
       const esRancho = (regimen === "RANCHO");
       const esTemporalOReexp = ["TEMP_SALIDA", "TEMP_PERFECC", "REEXP"].includes(regimen);
+      const esCourier = (!esPasajero && awbType === "COURIER");
 
       const motivoPasajero = document.getElementById('sel-motivo-pasajero')?.value || "EXPORTACION_PROFORMA";
       const modalidadPasajero = document.getElementById('sel-modalidad-pasajero')?.value || "ACOMPANADO";
       const seguroPasajero = document.getElementById('chk-seguro-pasajero')?.checked || false;
 
       const requiereAgente = fobUSD >= 3000 || esPasajero || esTemporalOReexp || esRancho;
-      const requiereAWBValorada = !esRancho && ["CPT", "CIP", "DAP", "DPU", "DDP"].includes(incoterm);
-      const seguroObligatorio = !esRancho && (incoterm === "CIP");
+      const requiereAWBValorada = !esRancho && !esPasajero && ["CPT", "CIP", "DAP", "DPU", "DDP"].includes(incoterm);
+      const seguroObligatorio = !esRancho && !esPasajero && (incoterm === "CIP");
+      const esEXW = !esRancho && !esPasajero && (incoterm === "EXW");
 
       // 1. Banner Superior
       const badgeMandato = document.getElementById('badge-mandato');
@@ -768,13 +805,14 @@
       statusTitle.textContent = regimenNames[regimen] || "DUS AÉREA CHILE";
 
       if (esPasajero) {
-        statusSummary.textContent = "Legalización de DUS para pasajeros / propios medios (Sin Valor Comercial / Sin Pago) con ingreso a Zona Primaria.";
+        statusSummary.textContent = "Legalización de DUS para pasajeros / propios medios (Sin Incoterm / Sin Valor Comercial) con ingreso a Zona Primaria.";
       } else if (esRancho) {
         statusSummary.textContent = "Suministro de rancho / provisiones a bordo sin venta comercial definitiva ni reglas Incoterm.";
       } else if (esTemporalOReexp) {
         statusSummary.textContent = "Destinación sin venta comercial definitiva: no corresponde Factura de Exportación SII; se respalda con Factura Proforma / Declaración de Valor y antecedentes del régimen.";
       } else {
-        statusSummary.textContent = `Evaluación para salida de carga por vía aérea (${modalidadVenta}, pago: ${formaPago}) con respaldo documental y certificados sectoriales exigibles.`;
+        const emisorLabel = esCourier ? "Courier Internacional" : (awbType === "FORWARDER" ? "Freight Forwarder" : "Aerolínea Directa");
+        statusSummary.textContent = `Evaluación para salida aérea vía ${emisorLabel} (${modalidadVenta}, Incoterm ${incoterm}, pago: ${formaPago}) con respaldo documental y certificados sectoriales.`;
       }
 
       if (requiereAgente) {
@@ -786,17 +824,24 @@
       }
 
       // 2. Tarjetas de Evaluación Rápida
+      const lblCardGd = document.getElementById('lbl-card-gd');
       const resGdStatus = document.getElementById('res-gd-status');
       const resGdText = document.getElementById('res-gd-text');
+
+      const lblCardAwb = document.getElementById('lbl-card-awb');
       const resAwbStatus = document.getElementById('res-awb-status');
       const resAwbText = document.getElementById('res-awb-text');
+
+      const lblCardSeg = document.getElementById('lbl-card-seg');
       const resSegStatus = document.getElementById('res-seg-status');
       const resSegText = document.getElementById('res-seg-text');
 
       if (esPasajero) {
+        lblCardGd.textContent = "1. Guía de Despacho SII";
         resGdStatus.innerHTML = `<i class="fa-solid fa-circle-minus text-slate-400"></i> NO APLICA`;
         resGdText.textContent = "No requiere Guía de Despacho SII; la especie viaja con visación en Zona Primaria.";
 
+        lblCardAwb.textContent = "2. Documento de Viaje";
         if (modalidadPasajero === "ACOMPANADO") {
           resAwbStatus.innerHTML = `<i class="fa-solid fa-ticket text-indigo-600"></i> RESERVA + MANIFIESTO`;
           resAwbText.textContent = "Respaldado con ticket/reserva aérea del pasajero y manifiesto de vuelo.";
@@ -805,48 +850,80 @@
           resAwbText.textContent = "Equipaje no acompañado requiere Guía Aérea consignada al pasajero + manifiesto.";
         }
 
+        lblCardSeg.textContent = "3. Seguro / Declaración";
         if (seguroPasajero) {
           resSegStatus.innerHTML = `<i class="fa-solid fa-shield-check text-emerald-600"></i> PÓLIZA ADJUNTA`;
           resSegText.textContent = "Respaldado con póliza o certificado de seguro contratado.";
         } else {
-          resSegStatus.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-600"></i> SEGURO TEÓRICO (2%)`;
-          resSegText.textContent = "Aduana aplicará 2% teórico sobre el FOB si no hay póliza real.";
+          resSegStatus.innerHTML = `<i class="fa-solid fa-file-signature text-amber-600"></i> D.J. SIN SEGURO`;
+          resSegText.textContent = "Debe adjuntar Declaración Jurada simple indicando que viaja sin seguro.";
         }
       } else if (esRancho) {
+        lblCardGd.textContent = "1. Guía de Despacho SII";
         resGdStatus.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-500"></i> OBLIGATORIA`;
         resGdText.textContent = "Guía de despacho para traslado de provisiones hacia la aeronave.";
+
+        lblCardAwb.textContent = "2. Documento Embarque";
         resAwbStatus.innerHTML = `<i class="fa-solid fa-file-invoice text-aduana-600"></i> AWB / MANIFIESTO`;
         resAwbText.textContent = "Documento de entrega de provisiones a bordo de la aeronave.";
+
+        lblCardSeg.textContent = "3. Seguro / Gastos FOB";
         resSegStatus.innerHTML = `<i class="fa-solid fa-circle-minus text-slate-400"></i> NO APLICA`;
         resSegText.textContent = "Provisiones de rancho sin seguro comercial externo.";
       } else {
-        if (trasladaCamion) {
-          resGdStatus.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600"></i> OBLIGATORIA`;
-          resGdText.textContent = esTemporalOReexp
-            ? "Exigida por el SII para respaldar el traslado sin venta hacia el Aeropuerto."
-            : "Exigible por el SII para el tránsito de la carga hacia la Zona Primaria Aérea.";
+        // Caso Exportación General (Aerolínea, Forwarder o Courier)
+        if (esCourier) {
+          lblCardGd.textContent = "1. Guía de Recojo / Courier";
+          resGdStatus.innerHTML = `<i class="fa-solid fa-truck-fast text-aduana-600"></i> GUÍA COURIER`;
+          resGdText.textContent = "Sin Guía SII: Courier retira con documento interno valorado según Incoterm.";
+
+          lblCardAwb.textContent = "2. Valoración Guía Courier";
+          if (requiereAWBValorada) {
+            resAwbStatus.innerHTML = `<i class="fa-solid fa-file-invoice-dollar text-aduana-600"></i> VALORADA (${incoterm})`;
+            resAwbText.textContent = `Guía Courier debe desglosar flete prepagado bajo cláusula ${incoterm}.`;
+          } else {
+            resAwbStatus.innerHTML = `<i class="fa-solid fa-file-lines text-slate-700"></i> GUÍA COURIER (${incoterm})`;
+            resAwbText.textContent = `Valorada conforme a cláusula ${incoterm} para determinar FOB aduanero.`;
+          }
         } else {
-          resGdStatus.innerHTML = `<i class="fa-solid fa-circle-minus text-slate-400"></i> NO REQUERIDA`;
-          resGdText.textContent = "Sin traslado terrestre público previo al depósito aéreo.";
+          lblCardGd.textContent = "1. Guía de Despacho SII";
+          if (trasladaCamion) {
+            resGdStatus.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600"></i> OBLIGATORIA`;
+            resGdText.textContent = esTemporalOReexp
+              ? "Exigida por el SII para respaldar el traslado sin venta hacia el Aeropuerto."
+              : "Exigible por el SII para el tránsito de la carga hacia la Zona Primaria Aérea.";
+          } else {
+            resGdStatus.innerHTML = `<i class="fa-solid fa-circle-minus text-slate-400"></i> NO REQUERIDA`;
+            resGdText.textContent = "Sin traslado terrestre público previo al depósito aéreo.";
+          }
+
+          lblCardAwb.textContent = "2. Valoración AWB (Flete)";
+          if (requiereAWBValorada) {
+            resAwbStatus.innerHTML = `<i class="fa-solid fa-file-invoice-dollar text-aduana-600"></i> AWB VALORADA`;
+            resAwbText.textContent = `Venta ${incoterm} exige desglosar el flete prepagado en la guía aérea.`;
+          } else {
+            resAwbStatus.innerHTML = `<i class="fa-solid fa-file-lines text-slate-600"></i> AWB AS AGREED`;
+            resAwbText.textContent = `Cláusula ${incoterm} permite tarifa pactada u omitir flete en origen.`;
+          }
         }
 
-        if (requiereAWBValorada) {
-          resAwbStatus.innerHTML = `<i class="fa-solid fa-file-invoice-dollar text-aduana-600"></i> AWB VALORADA`;
-          resAwbText.textContent = `Venta ${incoterm} exige desglosar el flete prepagado en la guía aérea.`;
-        } else {
-          resAwbStatus.innerHTML = `<i class="fa-solid fa-file-lines text-slate-600"></i> AWB AS AGREED`;
-          resAwbText.textContent = `Cláusula ${incoterm} permite tarifa pactada u omitir flete en origen.`;
-        }
-
-        if (seguroObligatorio) {
-          resSegStatus.innerHTML = `<i class="fa-solid fa-shield-halved text-red-600"></i> PÓLIZA OBLIGATORIA`;
-          resSegText.textContent = "Cláusula CIP requiere adjuntar póliza o certificado de cobertura formal.";
+        // Tarjeta 3: Exportación (Sin Seguro Teórico de Importación; Gastos hasta FOB Teórico en EXW o Seguro Obligatorio en CIP)
+        if (esEXW) {
+          lblCardSeg.textContent = "3. Ajuste Valor FOB (EXW)";
+          resSegStatus.innerHTML = `<i class="fa-solid fa-calculator text-amber-600"></i> GASTOS HASTA FOB TEÓRICO`;
+          resSegText.textContent = "En EXW debe sumar gastos locales hasta aeropuerto (o adjuntar respaldo de gastos).";
+        } else if (seguroObligatorio) {
+          lblCardSeg.textContent = "3. Póliza / Seguro (CIP)";
+          resSegStatus.innerHTML = `<i class="fa-solid fa-shield-halved text-red-600"></i> SEGURO OBLIGATORIO`;
+          resSegText.textContent = "Cláusula CIP exige adjuntar póliza o certificado de seguro formal.";
         } else if (seguroContratado) {
+          lblCardSeg.textContent = "3. Póliza / Seguro";
           resSegStatus.innerHTML = `<i class="fa-solid fa-shield-check text-emerald-600"></i> PÓLIZA ADJUNTA`;
-          resSegText.textContent = "Póliza real contratada en Chile para respaldo de valor.";
+          resSegText.textContent = "Póliza real contratada para deducción/ajuste del valor FOB exportación.";
         } else {
-          resSegStatus.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-600"></i> SEGURO TEÓRICO (2%)`;
-          resSegText.textContent = "Aduana aplicará 2% teórico sobre el FOB a falta de prima real.";
+          lblCardSeg.textContent = "3. Póliza / Seguro";
+          resSegStatus.innerHTML = `<i class="fa-solid fa-circle-info text-slate-600"></i> SIN SEGURO CONTRATADO`;
+          resSegText.textContent = `Cláusula ${incoterm} en exportación no aplica seguro teórico; se declara valor FOB neto.`;
         }
       }
 
@@ -895,6 +972,16 @@
           badgeClass: "bg-amber-100 text-amber-800",
           icon: "fa-file-lines"
         });
+
+        if (!seguroPasajero) {
+          checklist.push({
+            nombre: "Declaración Jurada Simple de Mercancías Sin Seguro",
+            desc: "Declaración firmada por el pasajero o exportador dejando constancia de que el traslado se realiza sin póliza de seguro contratada.",
+            badge: "Obligatorio (Sin Póliza)",
+            badgeClass: "bg-amber-100 text-amber-900 font-bold",
+            icon: "fa-file-shield"
+          });
+        }
 
         if (motivoPasajero === "REPARACION") {
           checklist.push({
@@ -997,13 +1084,21 @@
             badgeClass: "bg-aduana-100 text-aduana-900",
             icon: "fa-plane"
           });
-        } else {
+        } else if (awbType === "FORWARDER") {
           checklist.push({
             nombre: "House AWB (HAWB Forwarder) + Copia Master AWB Consolidado",
             desc: "Guía aérea hija (HAWB) emitida por el agente consolidador junto al manifiesto de carga.",
             badge: "Carga Consolidada",
             badgeClass: "bg-aduana-100 text-aduana-900",
             icon: "fa-sitemap"
+          });
+        } else if (awbType === "COURIER") {
+          checklist.push({
+            nombre: "Guía Courier / Documento de Recojo Internacional (FedEx / DHL / UPS)",
+            desc: `Reemplaza la Guía de Despacho SII para el retiro en planta y traslado al aeropuerto. Se valora conforme al Incoterm ${esRancho ? 'aplicable' : incoterm} para determinar el valor FOB.`,
+            badge: "Courier / Sin Guía SII",
+            badgeClass: "bg-sky-100 text-sky-900 font-bold border border-sky-300",
+            icon: "fa-truck-fast"
           });
         }
       }
@@ -1018,7 +1113,8 @@
         });
       }
 
-      if (!esPasajero && trasladaCamion) {
+      // Solo exige Guía de Despacho SII si NO es Pasajero, NO es Courier y hay traslado en camión
+      if (!esPasajero && !esCourier && trasladaCamion) {
         checklist.push({
           nombre: "Guía de Despacho Electrónica (SII)",
           desc: esTemporalOReexp || esRancho
@@ -1027,6 +1123,16 @@
           badge: "Obligatorio Tránsito",
           badgeClass: "bg-slate-200 text-slate-800",
           icon: "fa-truck-ramp-box"
+        });
+      }
+
+      if (esEXW) {
+        checklist.push({
+          nombre: "Hoja de Cálculo de Gastos hasta FOB Teórico / Respaldo Gastos Locales",
+          desc: "En venta EXW deben adicionarse los gastos de transporte interno, manipulación y embarque hasta poner la carga a bordo/aeropuerto (valor FOB aduanero).",
+          badge: "Ajuste EXW a FOB",
+          badgeClass: "bg-amber-100 text-amber-900 font-bold",
+          icon: "fa-calculator"
         });
       }
 
@@ -1041,7 +1147,7 @@
       if ((esPasajero && seguroPasajero) || (!esPasajero && (seguroObligatorio || seguroContratado))) {
         checklist.push({
           nombre: "Póliza / Certificado de Seguro de Carga Aérea",
-          desc: seguroObligatorio ? "Exigido legalmente por la cláusula CIP." : "Documenta la prima real pagada.",
+          desc: seguroObligatorio ? "Exigido obligatoriamente por la cláusula CIP." : "Documenta la prima real pagada para el cálculo del valor FOB.",
           badge: seguroObligatorio ? "Obligatorio (CIP)" : "Adjunto",
           badgeClass: seguroObligatorio ? "bg-red-100 text-red-800" : "bg-slate-100 text-slate-700",
           icon: "fa-shield-halved"
@@ -1050,7 +1156,7 @@
 
       if (requiereAgente) {
         checklist.push({
-          nombre: "Mandato Aduanero (Endoso AWB o Poder Notarial Especial)",
+          nombre: "Mandato Aduanero (Endoso AWB/Guía o Poder Notarial Especial)",
           desc: "Autorización al Agente de Aduanas conforme al Art. 197 de la Ordenanza de Aduanas.",
           badge: "Mandato Obligatorio",
           badgeClass: "bg-red-100 text-red-800",
@@ -1084,22 +1190,34 @@
 
       normativeList.innerHTML += `<li><strong>Plazo de Embarque y Legalización DUS:</strong> El embarque y presentación del segundo mensaje (Legalización) se rigen por el plazo general de 25 días corridos contados desde la aceptación a trámite del DUS (salvo prórroga o regla especial aplicable).</li>`;
 
-      if (esTemporalOReexp || esRancho || esPasajero || modalidadVenta === "LIBRE") {
-        normativeList.innerHTML += `<li><strong>Destinación sin Venta Definitiva:</strong> En Salida Temporal, Perfeccionamiento Pasivo, Reexportación, Rancho o Pasajeros sin venta no se configura una venta comercial definitiva al exterior; se respalda con Factura Proforma / antecedentes del régimen en lugar de Factura Comercial de Exportación SII.</li>`;
+      if (esPasajero) {
+        normativeList.innerHTML += `<li><strong>Salida de Pasajeros / Propios Medios:</strong> No aplican reglas Incoterms. En ausencia de póliza contratada, se debe acompañar <strong>Declaración Jurada simple de mercancías sin seguro</strong>.</li>`;
+      } else if (esTemporalOReexp || esRancho || modalidadVenta === "LIBRE") {
+        normativeList.innerHTML += `<li><strong>Destinación sin Venta Definitiva:</strong> En Salida Temporal, Perfeccionamiento Pasivo, Reexportación o Rancho no se configura una venta comercial definitiva al exterior; se respalda con Factura Proforma / antecedentes del régimen en lugar de Factura Comercial de Exportación SII.</li>`;
       } else {
         normativeList.innerHTML += `<li><strong>Modalidad y Forma de Pago:</strong> Operación bajo modalidad <strong>${modalidadVenta}</strong>, Incoterm <strong>${incoterm}</strong> y forma de pago <strong>${formaPago}</strong>.</li>`;
+      }
+
+      if (esEXW) {
+        normativeList.innerHTML += `<li><strong>Cláusula EXW en Exportación:</strong> Dado que la valoración aduanera de exportación se expresa en base FOB, se deben sumar los <strong>gastos hasta FOB teórico</strong> (flete interno, seguros locales y costos portuarios/aeroportuarios hasta el embarque) o adjuntar los comprobantes de dichos gastos.</li>`;
+      }
+
+      if (seguroObligatorio) {
+        normativeList.innerHTML += `<li><strong>Cláusula CIP (Seguro Obligatorio):</strong> Requiere adjuntar la póliza o certificado de seguro contratado para deducir la prima y determinar correctamente el valor FOB.</li>`;
+      }
+
+      if (esCourier) {
+        normativeList.innerHTML += `<li><strong>Operación vía Courier Internacional:</strong> Al efectuar el retiro la empresa de courier con su documento interno (Guía de Recojo / Guía Courier), no corresponde emisión de Guía de Despacho SII. Dicha guía courier se valora según el Incoterm (${incoterm}) para conformar el valor FOB.</li>`;
+      } else if (!esPasajero && awbType === "FORWARDER") {
+        normativeList.innerHTML += `<li><strong>Emisión Consolidador:</strong> Se debe consignar el número de HAWB y vincularlo con el manifiesto aéreo Master de la aerolínea.</li>`;
       }
 
       if (currentTariff) {
         normativeList.innerHTML += `<li><strong>Vistos Buenos Sectoriales:</strong> La partida <strong>${currentTariff.code}</strong> (${currentTariff.glosa || 'Sin glosa'}) evalúa regulación formal ante <strong>${currentTariff.organismo || 'Régimen General'}</strong> previa transmisión del segundo mensaje.</li>`;
       }
 
-      if (!esPasajero && awbType === "FORWARDER") {
-        normativeList.innerHTML += `<li><strong>Emisión Consolidador:</strong> Se debe consignar el número de HAWB y vincularlo con el manifiesto aéreo Master de la aerolínea.</li>`;
-      }
-
       if (requiereAWBValorada) {
-        normativeList.innerHTML += `<li><strong>Incoterm ${incoterm}:</strong> Exige AWB Valorada con tarifa de flete declarada para verificar el FOB neto aduanero.</li>`;
+        normativeList.innerHTML += `<li><strong>Incoterm ${incoterm}:</strong> Exige documento de transporte valorado con tarifa de flete declarada para verificar el FOB neto aduanero.</li>`;
       }
     }
 
